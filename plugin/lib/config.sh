@@ -348,6 +348,56 @@ detect_ci_cd() {
   fi
 }
 
+# Detect project maturity based on commit count and source file count
+# Usage: detect_project_maturity [directory]
+# Returns: greenfield | early | established
+detect_project_maturity() {
+  local dir="${1:-.}"
+
+  # Guard: shallow clone — commit count is unreliable
+  local is_shallow
+  is_shallow=$(git -C "$dir" rev-parse --is-shallow-repository 2>/dev/null || echo "false")
+
+  local commit_count=0
+  if [ "$is_shallow" != "true" ]; then
+    commit_count=$(git -C "$dir" rev-list --count HEAD 2>/dev/null || echo "0")
+  fi
+
+  # Count source files excluding scaffolding
+  # Excludes: *.md, *.json, *.yml, *.yaml, *.lock, *.toml, LICENSE*, Dockerfile*,
+  #           .github/*, .gitlab-ci*, .circleci/*, .ai-dlc/*
+  local source_file_count
+  source_file_count=$(git -C "$dir" ls-files 2>/dev/null \
+    | grep -cvE '\.(md|json|ya?ml|lock|toml)$|^LICENSE|^Dockerfile|^\.github/|^\.gitlab-ci|^\.circleci/|^\.ai-dlc/' \
+    2>/dev/null || true)
+  : "${source_file_count:=0}"
+
+  # Shallow clone: use source file count only
+  if [ "$is_shallow" = "true" ]; then
+    if [ "$source_file_count" -le 5 ]; then
+      echo "greenfield"
+    elif [ "$source_file_count" -le 20 ]; then
+      echo "early"
+    else
+      echo "established"
+    fi
+    return
+  fi
+
+  # Full repo heuristics
+  if [ "$commit_count" -le 3 ]; then
+    echo "greenfield"
+  elif [ "$commit_count" -le 20 ]; then
+    if [ "$source_file_count" -le 5 ]; then
+      echo "greenfield"
+    else
+      echo "early"
+    fi
+  else
+    echo "established"
+  fi
+}
+
 # Load provider configuration with fallback chain
 # Usage: load_providers [repo_root]
 # Returns: JSON object with all provider categories

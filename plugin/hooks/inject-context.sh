@@ -35,6 +35,19 @@ if [ -f "$DAG_LIB" ]; then
   source "$DAG_LIB"
 fi
 
+# Source config library once (used for providers, maturity detection, etc.)
+CONFIG_LIB="${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
+if [ -f "$CONFIG_LIB" ]; then
+  # shellcheck source=/dev/null
+  source "$CONFIG_LIB"
+fi
+
+# Detect project maturity (greenfield / early / established)
+PROJECT_MATURITY=""
+if type detect_project_maturity &>/dev/null; then
+  PROJECT_MATURITY=$(detect_project_maturity)
+fi
+
 # Load workflows from plugin (defaults) and project (overrides)
 # Project workflows merge with plugin workflows (project takes precedence)
 PLUGIN_WORKFLOWS="${CLAUDE_PLUGIN_ROOT}/workflows.yml"
@@ -123,6 +136,34 @@ if [ -z "$ITERATION_JSON" ] && [[ "$CURRENT_BRANCH" == ai-dlc/*/* ]] && [[ "$CUR
 fi
 
 if [ -z "$ITERATION_JSON" ]; then
+  # Greenfield fast-path: skip all scanning for brand new projects
+  if [ "$PROJECT_MATURITY" = "greenfield" ]; then
+    echo "## AI-DLC Available (Greenfield Project)"
+    echo ""
+    echo "**Project maturity:** greenfield"
+    echo ""
+    echo "No active AI-DLC task. This looks like a new project — run \`/elaborate\` to start defining your first intent."
+    echo ""
+    if [ ! -f ".ai-dlc/settings.yml" ]; then
+      echo "> **First time?** Run \`/setup\` to configure AI-DLC for this project (auto-detects providers, VCS settings, etc.)"
+      echo ""
+    fi
+    # Inject provider context
+    if type format_providers_markdown &>/dev/null; then
+      PROVIDERS_MD=$(format_providers_markdown)
+      if [ -n "$PROVIDERS_MD" ]; then
+        echo "$PROVIDERS_MD"
+        echo ""
+      fi
+    fi
+    if [ -n "$AVAILABLE_WORKFLOWS" ]; then
+      echo "**Available workflows:**"
+      echo "$AVAILABLE_WORKFLOWS"
+      echo ""
+    fi
+    exit 0
+  fi
+
   # Discover resumable intents from filesystem and git branches
   declare -A FILESYSTEM_INTENTS
   declare -A BRANCH_INTENTS
@@ -218,10 +259,7 @@ if [ -z "$ITERATION_JSON" ]; then
       echo ""
     fi
     # Inject provider context for pre-elaboration awareness
-    CONFIG_LIB="${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
-    if [ -f "$CONFIG_LIB" ]; then
-      # shellcheck source=/dev/null
-      source "$CONFIG_LIB"
+    if type format_providers_markdown &>/dev/null; then
       PROVIDERS_MD=$(format_providers_markdown)
       if [ -n "$PROVIDERS_MD" ]; then
         echo "$PROVIDERS_MD"
@@ -233,6 +271,10 @@ if [ -z "$ITERATION_JSON" ]; then
     if [ -n "$AVAILABLE_WORKFLOWS" ]; then
       echo "## AI-DLC Available"
       echo ""
+      if [ -n "$PROJECT_MATURITY" ]; then
+        echo "**Project maturity:** $PROJECT_MATURITY"
+        echo ""
+      fi
       echo "No active AI-DLC task. Run \`/elaborate\` to start a new task."
       echo ""
       if [ ! -f ".ai-dlc/settings.yml" ]; then
@@ -240,10 +282,7 @@ if [ -z "$ITERATION_JSON" ]; then
         echo ""
       fi
       # Inject provider context
-      CONFIG_LIB="${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
-      if [ -f "$CONFIG_LIB" ]; then
-        # shellcheck source=/dev/null
-        source "$CONFIG_LIB"
+      if type format_providers_markdown &>/dev/null; then
         PROVIDERS_MD=$(format_providers_markdown)
         if [ -n "$PROVIDERS_MD" ]; then
           echo "$PROVIDERS_MD"
@@ -323,16 +362,17 @@ echo ""
 echo "**Iteration:** $ITERATION | **Hat:** $HAT | **Workflow:** $WORKFLOW_NAME ($WORKFLOW_HATS_STR)"
 echo ""
 
-# Inject provider context
-CONFIG_LIB="${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
-if [ -f "$CONFIG_LIB" ]; then
-  # shellcheck source=/dev/null
-  source "$CONFIG_LIB"
+# Inject provider context and maturity signal
+if type format_providers_markdown &>/dev/null; then
   PROVIDERS_MD=$(format_providers_markdown)
   if [ -n "$PROVIDERS_MD" ]; then
     echo "$PROVIDERS_MD"
     echo ""
   fi
+fi
+if [ -n "$PROJECT_MATURITY" ]; then
+  echo "**Project maturity:** $PROJECT_MATURITY"
+  echo ""
 fi
 
 # Batch load all han keep values at once (single subprocess call)

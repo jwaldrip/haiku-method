@@ -61,6 +61,12 @@ Before any elaboration, verify the working environment:
    IS_COWORK="${CLAUDE_CODE_IS_COWORK:-}"
    IN_REPO=$(git rev-parse --git-dir 2>/dev/null && echo "true" || echo "false")
    ```
+1b. **Detect project maturity**: Read `**Project maturity:**` from the session context injected by the SessionStart hook. If not present, detect directly:
+   ```bash
+   source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
+   PROJECT_MATURITY=$(detect_project_maturity)
+   ```
+   Values: `greenfield` (brand new, 0-3 commits or minimal source files), `early` (some code but still small), `established` (mature codebase). This value gates Phase 2.5 exploration behavior.
 2. If **not cowork** (`IS_COWORK` is empty) **and in a repo** (`IN_REPO` is `true`): proceed to Phase 0 (Existing Intent Check) below.
 3. If **cowork** (`IS_COWORK=1`) **or not in a repo**:
    a. **Ask how to access the project**:
@@ -271,19 +277,33 @@ This ensures:
 
 **This phase is mandatory.** Before defining success criteria or decomposing into units, you MUST deeply understand the technical landscape. Shallow understanding here causes builders to build the wrong thing.
 
+### Greenfield Adaptation
+
+**Gate exploration based on project maturity** (detected in Phase 0):
+
+- **Greenfield** (`PROJECT_MATURITY=greenfield`):
+  - **Skip** items 2 (Existing Codebases) and 5 (Existing Implementations) below — there is no codebase to explore. Do NOT spawn Explore subagents for codebase research.
+  - **Keep** items 1 (APIs/Schemas), 3 (Data Sources), 4 (Domain Model — from user input + external research), 6 (External Docs/Libraries), 7 (Providers).
+  - Focus domain discovery on external research, API introspection, and user input rather than codebase analysis.
+- **Early** (`PROJECT_MATURITY=early`):
+  - Use `Glob` and `Read` directly instead of Explore subagents — the codebase is small enough to read directly without subagent overhead.
+  - All items apply, but codebase exploration should be lightweight.
+- **Established** (`PROJECT_MATURITY=established`):
+  - Full exploration as described below. Use Explore subagents for deep codebase research.
+
 ### What to Explore
 
 Based on what the user described in Phase 2, identify every relevant technical surface and explore it thoroughly. Use ALL available research tools — codebase exploration, API introspection, web searches, and documentation fetching:
 
 1. **APIs and Schemas**: If the intent involves an API, query it. Run introspection queries. Read the actual schema. Map every type, field, query, mutation, and subscription. Don't guess what data is available — verify it.
 
-2. **Existing Codebases**: If the intent builds on or integrates with existing code, explore it via Explore subagents. Have them find relevant files, read source code, and report back on existing patterns, conventions, and architecture.
+2. **Existing Codebases** *(skip for greenfield)*: If the intent builds on or integrates with existing code, explore it via Explore subagents (or `Glob`/`Read` for early-maturity projects). Have them find relevant files, read source code, and report back on existing patterns, conventions, and architecture.
 
 3. **Data Sources**: If the intent involves data, understand where it lives. Query for real sample data. Understand what fields are populated, what's empty, what's missing. Identify gaps between what's available and what's needed.
 
 4. **Domain Model**: From your exploration, build a domain model — the key entities, their relationships, and their lifecycle. This is not a database schema; it's a conceptual map of the problem space.
 
-5. **Existing Implementations**: If there are related features, similar tools, or reference implementations, read them. Understand what already exists so you don't build duplicates or miss integration points.
+5. **Existing Implementations** *(skip for greenfield)*: If there are related features, similar tools, or reference implementations, read them. Understand what already exists so you don't build duplicates or miss integration points.
 
 6. **External Documentation and Libraries**: Use `WebSearch` and `WebFetch` to research relevant libraries, frameworks, APIs, standards, or prior art. If the intent involves a third-party system, find its documentation and understand its capabilities. If the intent involves a design pattern or technique, research best practices and common pitfalls.
 
@@ -298,7 +318,7 @@ Based on what the user described in Phase 2, identify every relevant technical s
 
 Use every research tool available. Spawn multiple explorations in parallel for independent concerns:
 
-1. **Subagents for deep codebase/API exploration**: Use `Task` with `subagent_type: "Explore"` for multi-step research that requires reading many files, querying APIs, and synthesizing findings:
+1. **Subagents for deep codebase/API exploration** *(established projects only)*: Use `Task` with `subagent_type: "Explore"` for multi-step research that requires reading many files, querying APIs, and synthesizing findings. **If greenfield: do NOT spawn Explore subagents for codebase research — there is no codebase to explore.** If early: use `Glob`/`Read` directly instead of Explore subagents.
 
 ```
 Task({
@@ -357,6 +377,111 @@ Spawn one subagent per design file, in parallel with codebase Explore agents. Wh
 - Append to `discovery.md` under `## Design Analysis: {file name}`
 - If no design MCP tools are discoverable, the subagent reports unavailability — log a warning and continue without design analysis
 
+5. **UI Mockups**: If the intent involves user-facing interfaces (frontend, CLI, TUI, etc.), generate mockups for every distinct screen or view. This step is **mandatory** for any intent with a UI component — it serves different purposes depending on whether designs exist:
+
+   - **Designs exist** (item 4 returned design analysis): Translate the design analysis into mockups that demonstrate your understanding of the designs. This is *verification* — the user confirms that you correctly interpreted the designer's intent before builders act on it. Misunderstanding a design is expensive; catching it here is cheap.
+   - **No designs exist**: Generate mockups collaboratively with the user as *pre-build visual design*. This is where layout, information hierarchy, and interaction flow get decided. Without this step, builders guess — and they guess wrong. This applies regardless of whether a design provider is configured — having a Figma account doesn't mean designs exist yet. In AI-DLC workflows, design may come later as its own unit with `discipline: design`.
+
+   #### Mockup Format
+
+   Read the mockup format from settings (default: `ascii`):
+   ```bash
+   source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
+   REPO_SETTINGS=$(load_repo_settings)
+   MOCKUP_FORMAT=$(echo "$REPO_SETTINGS" | jq -r '.mockup_format // "ascii"')
+   ```
+
+   - **`ascii`** (default): Text-based wireframes rendered in markdown code blocks. Inline in `discovery.md`. Works everywhere, no tooling needed, visible in any terminal or editor.
+   - **`html`**: Self-contained HTML files written to `.ai-dlc/{intent-slug}/mockups/{view-slug}.html`. Use semantic HTML with inline CSS — no external dependencies. Each file should be viewable by opening it directly in a browser. Reference the file path in `discovery.md` instead of inlining the mockup.
+
+   #### Per-View Mockup Process
+
+   For each distinct screen or view identified in the domain model:
+   - Create a mockup showing layout structure, key UI elements, and data placement
+   - Annotate with interaction notes (what happens on click, hover, submit, error states)
+   - Show which domain entities map to which UI regions
+   - If working from designs: note where your interpretation might diverge from the source
+
+   Present mockups to the user with `AskUserQuestion`:
+   ```json
+   {
+     "questions": [{
+       "question": "Does this mockup capture the right layout and information hierarchy for {view name}?",
+       "header": "Mockup",
+       "options": [
+         {"label": "Looks right", "description": "Layout and information hierarchy are correct"},
+         {"label": "Wrong layout", "description": "The arrangement of elements needs changes"},
+         {"label": "Missing elements", "description": "Important UI elements are not shown"},
+         {"label": "Wrong data", "description": "The data shown doesn't match what I expect"}
+       ],
+       "multiSelect": true
+     }]
+   }
+   ```
+
+   Iterate on mockups until the user confirms. Then persist:
+
+   **For `ascii` format** — append to `discovery.md`:
+   ```bash
+   cat >> "$DISCOVERY_FILE" << 'EOF'
+
+   ## UI Mockup: {View Name}
+
+   **Confirmed:** {ISO timestamp}
+   **Source:** {design provider analysis | collaborative}
+
+   ### Layout
+   ```
+   {ASCII mockup}
+   ```
+
+   ### Interactions
+   - {element}: {behavior on click/hover/submit}
+   - {element}: {error states, loading states}
+
+   ### Data Mapping
+   - {UI region} ← {domain entity}.{field}
+
+   EOF
+   ```
+
+   **For `html` format** — write HTML file and reference in `discovery.md`:
+   ```bash
+   MOCKUP_DIR=".ai-dlc/${INTENT_SLUG}/mockups"
+   mkdir -p "$MOCKUP_DIR"
+   cat > "${MOCKUP_DIR}/{view-slug}.html" << 'HTMLEOF'
+   <!DOCTYPE html>
+   <html lang="en">
+   <head><meta charset="UTF-8"><title>{View Name} — Mockup</title>
+   <style>/* inline CSS — no external deps */</style>
+   </head>
+   <body>
+   {semantic HTML mockup with inline styles}
+   </body>
+   </html>
+   HTMLEOF
+
+   # Reference in discovery.md
+   cat >> "$DISCOVERY_FILE" << EOF
+
+   ## UI Mockup: {View Name}
+
+   **Confirmed:** {ISO timestamp}
+   **Source:** {design provider analysis | collaborative}
+   **File:** \`.ai-dlc/${INTENT_SLUG}/mockups/{view-slug}.html\`
+
+   ### Interactions
+   - {element}: {behavior on click/hover/submit}
+   - {element}: {error states, loading states}
+
+   ### Data Mapping
+   - {UI region} ← {domain entity}.{field}
+
+   EOF
+   ```
+
+   **Skip this step only if:** the intent has no user-facing interface (pure backend, API, data pipeline, infrastructure, etc.).
+
 **Spawn multiple research paths in parallel.** Don't serialize explorations that are independent — launch all of them at once and synthesize when results return.
 
 If a VCS MCP is available (e.g., GitHub MCP), use it for code browsing alongside or instead of local file tools.
@@ -405,6 +530,10 @@ EOF
 - `## External Research: {topic}` — For web research, library docs, prior art
 - `## Data Source: {name}` — For data source exploration (what's available, what's missing)
 - `## Provider Context: {type}` — For ticketing, spec, or comms provider findings
+- `## UI Mockup: {view}` — ASCII mockups of user-facing views with interaction notes and data mapping
+- `## Architecture Decision: {topic}` — For greenfield/early projects: key architecture choices (frameworks, patterns, structure)
+- `## Technology Choice: {name}` — For greenfield/early projects: technology selection rationale
+- `## Reference Implementation: {name}` — For greenfield/early projects: external reference implementations or prior art informing the design
 
 **After appending to `discovery.md`, keep only a brief summary in your context** — the full details are safely on disk and will be available to builders. This is the key benefit: your context stays lean for continued exploration while nothing is lost.
 
