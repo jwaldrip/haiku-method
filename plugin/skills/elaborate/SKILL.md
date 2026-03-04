@@ -950,15 +950,17 @@ For each unit (in dependency order — units with no `depends_on` first):
 
 **Step A — Write the unit file** to `.ai-dlc/{intent-slug}/unit-NN-{slug}.md`.
 
-**Step B — Present the full unit for review.** Display the **complete file contents** — every line of the markdown, not a summary. Use a fenced code block so the user sees exactly what will be committed:
+**Step B — Present the full unit for review.** Read the file you just wrote and display its **complete contents** — every single line including frontmatter, description, technical specification, success criteria, risks, boundaries, and notes. Do NOT summarize, truncate, or show only the title. The user must see exactly what will be committed. Use a fenced code block:
 
 ```
 ### Unit NN: {Unit Title}
 
 ```markdown
-{full contents of unit-NN-{slug}.md — frontmatter and body, every line}
+{Read and paste the ENTIRE contents of unit-NN-{slug}.md — all frontmatter fields AND all body sections. Every line, no exceptions.}
 ```
 ```
+
+**CRITICAL: If your output only shows the unit title or frontmatter without the body sections (Description, Technical Specification, Success Criteria, etc.), you have truncated the output. Go back and display the full file.**
 
 **Step C — If the unit has `discipline: frontend`, open its wireframe in the browser** so the user can review the visual alongside the spec:
 
