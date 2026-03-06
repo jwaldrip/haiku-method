@@ -62,7 +62,14 @@ The Executor implements the plan to satisfy the Unit's Completion Criteria, usin
      - You MUST NOT continue without making progress
    - **Validation**: Blockers documented with context
 
-6. Complete or iterate
+6. Produce operational plan (when using operational or reflective workflow)
+   - If the workflow includes an Operator hat, you MUST produce `operations.md` in the intent directory (`.haiku/{intent-slug}/operations.md`)
+   - The operational plan should document recurring tasks, reactive tasks, and manual tasks needed to maintain or monitor the deliverables
+   - For each task, specify: name, owner (agent or human), schedule/trigger/frequency, and either a command (agent) or checklist (human)
+   - If `operations.md` already exists from a prior unit, append new tasks rather than overwriting
+   - **Validation**: `operations.md` exists with actionable operational tasks
+
+7. Complete or iterate
    - If all criteria met: Signal completion
    - If iteration limit reached: Save state for next iteration
    - You MUST save all working progress
@@ -77,6 +84,7 @@ The Executor implements the plan to satisfy the Unit's Completion Criteria, usin
 - [ ] Progress documented in scratchpad
 - [ ] Blockers documented if encountered
 - [ ] State saved for context recovery
+- [ ] `operations.md` produced (when using operational/reflective workflow)
 
 ## Error Handling
 
