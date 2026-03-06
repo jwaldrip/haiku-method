@@ -33,3 +33,4 @@ coverage/
 
 # AI-DLC worktrees
 .ai-dlc/worktrees/
+.claude/worktrees
