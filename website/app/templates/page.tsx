@@ -34,10 +34,10 @@ const templates = [
 const examples = [
 	{
 		name: "Example Intent",
-		filename: "INTENT.md",
+		filename: "intent.md",
 		description:
 			"Complete example of an AI-DLC intent for a user authentication system. Shows how to structure a real-world intent.",
-		downloadUrl: "/templates/ai-dlc-example/INTENT.md",
+		downloadUrl: "/templates/ai-dlc-example/intent.md",
 	},
 	{
 		name: "Example Unit",
@@ -137,7 +137,7 @@ export default function TemplatesPage() {
 mkdir -p .ai-dlc
 
 # Download templates
-curl -o .ai-dlc/INTENT.md https://ai-dlc.dev/templates/intent-template.md
+curl -o .ai-dlc/intent.md https://ai-dlc.dev/templates/intent-template.md
 curl -o .ai-dlc/unit-01.md https://ai-dlc.dev/templates/unit-template.md
 curl -o .ai-dlc/settings.yml https://ai-dlc.dev/templates/settings-template.yml`}</pre>
 				</div>

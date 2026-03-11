@@ -34,7 +34,7 @@ checkouts fail with database timeout errors. Been happening for
 **AI (Elaborator):** "I'll set this up for hypothesis-driven debugging.
 
 ```markdown
-# .ai-dlc/fix-checkout-500/INTENT.md
+# .ai-dlc/fix-checkout-500/intent.md
 
 ---
 status: active
@@ -359,7 +359,7 @@ Fix confirmed effective. Proceeding with full rollout."
 **AI:** "Fix verified. Updating intent...
 
 ```markdown
-# .ai-dlc/fix-checkout-500/INTENT.md
+# .ai-dlc/fix-checkout-500/intent.md
 
 ---
 status: completed

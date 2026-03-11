@@ -1,10 +1,10 @@
 ---
 title: Workflows
-description: Named workflow patterns in AI-DLC - Default, Adversarial, Design, Hypothesis, and custom workflows
+description: Named workflow patterns in AI-DLC - Default, Adversarial, Design, Hypothesis, TDD, and custom workflows
 order: 5
 ---
 
-AI-DLC provides four built-in workflows, each optimized for different types of work. Choose the workflow that matches your task, or define your own.
+AI-DLC provides five built-in workflows, each optimized for different types of work. Choose the workflow that matches your task, or define your own.
 
 ## What Is a Workflow?
 
@@ -292,23 +292,16 @@ The hypothesis workflow prevents "shotgun debugging" (changing random things hop
 
 Test-Driven Development: Red-Green-Refactor pattern.
 
-> **Note:** The TDD workflow is not a built-in named workflow in the plugin. The hats (`test-writer`, `implementer`, `refactorer`) exist, but you need to register the workflow yourself. Add it to `.ai-dlc/workflows.yml` in your project to use it:
->
-> ```yaml
-> tdd:
->   description: Test-Driven Development - Red-Green-Refactor
->   hats: [test-writer, implementer, refactorer]
-> ```
-
 ### Hats
 
-Test Writer → Implementer → Refactorer
+Test Writer → Implementer → Refactorer → Reviewer
 
 | Hat | Recommended Mode | Focus |
 |-----|------------------|-------|
 | Test Writer | OHOTL | Write failing tests first |
 | Implementer | OHOTL | Make tests pass with minimal code |
 | Refactorer | OHOTL | Improve code while keeping tests green |
+| Reviewer | HITL | Verify tests are meaningful and code is clean |
 
 ### Flow
 
@@ -322,6 +315,8 @@ Test Writer (OHOTL): Write tests that fail
 Implementer (OHOTL): Make tests pass
     ↓
 Refactorer (OHOTL): Clean up the code
+    ↓
+Reviewer (HITL): Verify tests and code quality
     ↓
 All tests still pass? → Next unit
 ```
@@ -346,6 +341,9 @@ order in applyDiscount()... Test passes."
 
 Refactorer: "Extracting discount logic to separate
 function for clarity. All tests still green."
+
+Reviewer: "Tests cover the edge case. Implementation
+is clean. Approved."
 ```
 
 ### Philosophy
@@ -398,61 +396,15 @@ When `/execute` processes each unit, it resolves the unit's workflow independent
 
 This means a single intent can have some units flowing through Planner → Designer → Reviewer while others go through Planner → Builder → Reviewer, each progressing through their own hat sequence.
 
-## Operational Workflow (Opt-in)
+## Operation and Reflection
 
-The operational workflow is for post-deployment monitoring and maintenance tasks. Use `/operate` to enter the Operation phase for an intent.
-
-### Hats
-
-Monitor → Responder → Reviewer
-
-| Hat | Recommended Mode | Focus |
-|-----|------------------|-------|
-| Monitor | AHOTL | Watch metrics, logs, and alerts |
-| Responder | OHOTL | Investigate and address issues |
-| Reviewer | HITL | Validate operational changes |
-
-### When to Use
-
-- Post-deployment monitoring
-- Incident response
-- Performance tuning in production
-- Operational runbook execution
-
-> **Note:** The Operation phase is opt-in. Most intents complete at the end of execution. Enable it via `.ai-dlc/settings.yml` when your workflow extends beyond deployment.
-
-## Reflective Workflow (Opt-in)
-
-The reflective workflow captures learnings after an intent completes. Use `/reflect` to enter the Reflection phase.
-
-### Hats
-
-Retrospector → Documenter → Reviewer
-
-| Hat | Recommended Mode | Focus |
-|-----|------------------|-------|
-| Retrospector | HITL | Analyze what went well and what didn't |
-| Documenter | OHOTL | Capture learnings and update documentation |
-| Reviewer | HITL | Validate that insights are actionable |
-
-### When to Use
-
-- After completing a complex intent
-- When you want to improve process for next time
-- Team retrospectives
-- Capturing institutional knowledge
-
-> **Note:** The Reflection phase is opt-in. Enable it via `.ai-dlc/settings.yml` when you want to build a learning loop into your development process.
+Operation and reflection are not workflow selections -- they are separate lifecycle phases that run after construction completes. Use `/operate` to enter the Operation phase and `/reflect` to enter the Reflection phase. These phases have their own hat sequences and are invoked independently of whichever workflow was used during execution. See the [Lifecycle](/docs/lifecycle/) documentation for details.
 
 ## Custom Workflows
 
 Create project-specific workflows in `.ai-dlc/workflows.yml`. Project workflows merge with the built-in workflows, and project definitions take precedence if names collide.
 
 ```yaml
-tdd:
-  description: Test-Driven Development - Red-Green-Refactor
-  hats: [test-writer, implementer, refactorer]
-
 research-first:
   description: Research before building
   hats: [researcher, planner, builder, reviewer]

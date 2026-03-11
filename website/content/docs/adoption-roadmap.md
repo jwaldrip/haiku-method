@@ -208,17 +208,17 @@ For large features spanning teams:
 
 ```
 feature-xyz/
-  INTENT.md              # High-level feature intent
+  intent.md              # High-level feature intent
   team-backend/
-    INTENT.md            # Backend team's intent
+    intent.md            # Backend team's intent
     unit-01-api.md
     unit-02-database.md
   team-frontend/
-    INTENT.md            # Frontend team's intent
+    intent.md            # Frontend team's intent
     unit-01-components.md
     unit-02-integration.md
   team-mobile/
-    INTENT.md            # Mobile team's intent
+    intent.md            # Mobile team's intent
     unit-01-screens.md
 ```
 

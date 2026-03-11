@@ -173,7 +173,7 @@ I sometimes sound confident about things I'm uncertain about. This is a limitati
 
 As conversations get long, I can "forget" earlier constraints or decisions.
 
-**AI-DLC helps:** Committed artifacts (INTENT.md, unit files) persist across context windows. I can reference them even after `/clear`.
+**AI-DLC helps:** Committed artifacts (intent.md, unit files) persist across context windows. I can reference them even after `/clear`.
 
 ### The Scope Creep Trap
 

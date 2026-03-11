@@ -56,7 +56,7 @@ User:
 **AI:** "Based on our discussion, here's the intent:
 
 ```markdown
-# .ai-dlc/add-notifications/INTENT.md
+# .ai-dlc/add-notifications/intent.md
 
 ---
 status: active

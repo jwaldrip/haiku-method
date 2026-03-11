@@ -34,14 +34,14 @@ Configuration template for customizing AI-DLC behavior in your project:
 
 The [ai-dlc-example/](./ai-dlc-example/) directory shows a complete example of an AI-DLC intent for a user authentication system:
 
-- `INTENT.md` - Overall authentication intent
+- `intent.md` - Overall authentication intent
 - `unit-01-registration.md` - Example completed unit
 
 ## Usage
 
 ### Starting a New Intent
 
-1. Copy `intent-template.md` to your `.ai-dlc/` directory as `INTENT.md`
+1. Copy `intent-template.md` to your `.ai-dlc/` directory as `intent.md`
 2. Fill in the bracketed sections with your content
 3. Delete the comment blocks
 4. Create unit files using `unit-template.md`
@@ -51,7 +51,7 @@ The [ai-dlc-example/](./ai-dlc-example/) directory shows a complete example of a
 ```
 your-project/
   .ai-dlc/
-    INTENT.md              # Your intent (from template)
+    intent.md              # Your intent (from template)
     unit-01-feature.md     # First unit
     unit-02-feature.md     # Second unit
     settings.yml           # Optional: project settings
@@ -71,11 +71,11 @@ your-project/
 mkdir -p .ai-dlc
 
 # Download templates
-curl -o .ai-dlc/INTENT.md https://ai-dlc.dev/templates/intent-template.md
+curl -o .ai-dlc/intent.md https://ai-dlc.dev/templates/intent-template.md
 curl -o .ai-dlc/unit-01.md https://ai-dlc.dev/templates/unit-template.md
 
 # Or copy from this directory if you have it locally
-cp templates/intent-template.md .ai-dlc/INTENT.md
+cp templates/intent-template.md .ai-dlc/intent.md
 cp templates/unit-template.md .ai-dlc/unit-01-feature.md
 ```
 

@@ -125,7 +125,7 @@ Teams should agree on:
 **File organization:**
 ```
 .ai-dlc/
-  INTENT.md                    # Main intent
+  intent.md                    # Main intent
   unit-01-description.md       # Sequential + descriptive
   unit-02-description.md
 ```
@@ -142,7 +142,7 @@ Criteria met: 5/5
 **PR format:**
 ```markdown
 ## Intent
-[Link to INTENT.md or copy relevant section]
+[Link to intent.md or copy relevant section]
 
 ## Units Completed
 - unit-01-x: [brief description]

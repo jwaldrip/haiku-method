@@ -47,7 +47,7 @@ A **Unit** is a cohesive, self-contained work element derived from an Intent. Th
 
 ```
 add-recommendation-engine/
-  INTENT.md
+  intent.md
   unit-01-data-collection.md    # Capture user behavior
   unit-02-model.md              # Train ML model
   unit-03-api.md                # Real-time serving API
@@ -319,7 +319,7 @@ Persisted across sessions, branches, and team members:
 
 | File | Purpose |
 |------|---------|
-| `INTENT.md` | What we're building, overall criteria |
+| `intent.md` | What we're building, overall criteria |
 | `unit-*.md` | Individual units with their criteria |
 
 ### Ephemeral State (`han keep`)

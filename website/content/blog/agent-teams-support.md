@@ -26,7 +26,7 @@ For AI-DLC, this means a builder teammate working on the backend can message the
 
 ## How It Works
 
-When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is enabled, the `/construct` loop operates as a team:
+When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is enabled, the `/execute` loop operates as a team:
 
 1. The **lead session** reads the DAG of units and their dependencies
 2. For each ready unit, the lead **spawns a teammate** in that unit's git worktree
@@ -135,7 +135,7 @@ Install or update the AI-DLC plugin:
 /plugin install ai-dlc@thebushidocollective-ai-dlc --scope project
 ```
 
-Then run `/elaborate` to define an intent with a mode, and `/construct` to start the team.
+Then run `/elaborate` to define an intent with a mode, and `/execute` to start the team.
 
 The changes are backwards-compatible. Without Agent Teams enabled, the construction loop uses subagents as before. Existing intents without a `mode` field default to OHOTL.
 

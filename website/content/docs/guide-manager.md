@@ -232,7 +232,7 @@ AI-DLC naturally creates artifacts useful for compliance:
 
 | Artifact | Contains | Useful For |
 |----------|----------|------------|
-| `INTENT.md` | Business justification, requirements | Requirements traceability |
+| `intent.md` | Business justification, requirements | Requirements traceability |
 | `unit-*.md` | Completion criteria, status | Work verification |
 | Commit history | Changes with unit references | Change tracking |
 | PR links | Reviews and approvals | Approval evidence |

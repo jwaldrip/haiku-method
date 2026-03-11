@@ -737,7 +737,7 @@ Units use a numerical index prefix followed by a meaningful slug:
 ```
 .ai-dlc/
 └── add-oauth-login/
-    ├── INTENT.md
+    ├── intent.md
     ├── unit-01-setup-provider.md
     ├── unit-02-callback-handler.md
     ├── unit-03-session-management.md

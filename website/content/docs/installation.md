@@ -128,7 +128,7 @@ AI-DLC stores its artifacts in `.ai-dlc/` at your project root:
 your-project/
   .ai-dlc/
     add-oauth-login/         # Intent directory
-      INTENT.md              # Intent definition
+      intent.md              # Intent definition
       unit-01-setup.md       # Unit files
       unit-02-callback.md
   src/

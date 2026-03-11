@@ -57,7 +57,7 @@ You left off mid-unit or a colleague handed you an intent.
 
 This loads the intent and current unit state. Review what's been done:
 
-- Read `INTENT.md` for overall goals
+- Read `intent.md` for overall goals
 - Check unit files for completion criteria status
 - Look for any documented blockers
 

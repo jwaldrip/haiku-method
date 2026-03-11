@@ -60,7 +60,7 @@ Use `/elaborate` to define your intent collaboratively with Claude.
 - [ ] Confirm unit ordering and dependencies
 
 ### Verify Artifacts
-- [ ] `INTENT.md` created with overall description
+- [ ] `intent.md` created with overall description
 - [ ] `unit-01-*.md` (and subsequent units) created
 - [ ] Each unit file has:
   - [ ] Description
@@ -168,7 +168,7 @@ Wrap up the intent.
 ### Final Review
 
 - [ ] All units marked complete
-- [ ] `INTENT.md` overall criteria satisfied
+- [ ] `intent.md` overall criteria satisfied
 - [ ] All quality gates pass across all units
 - [ ] No outstanding blockers
 
