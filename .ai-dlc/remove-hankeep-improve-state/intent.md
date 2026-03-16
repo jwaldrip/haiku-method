@@ -117,12 +117,40 @@ Replace `han parse` with lightweight alternatives:
 - **JSON-set:** Use `jq` for JSON manipulation
 - **YAML-set:** Use `sed` for simple frontmatter updates (already partially done in `dag.sh`)
 
+### Dependency Management: `jq` and `yq` (Go)
+
+The `han` CLI bundled both parsing utilities and state storage in one tool. Replacing it means the plugin now depends on two standard CLI tools:
+
+- **`jq`** (v1.7+) — JSON parsing and manipulation
+- **`yq`** (mikefarah/yq, Go version, v4+) — YAML parsing with native `--front-matter` support
+
+**Why Go `yq` specifically:** The Go version (`mikefarah/yq`) has a `--front-matter` flag that can extract/modify YAML frontmatter from markdown files directly — exactly what `han parse yaml-set` did for `unit-*.md` and `intent.md` files. The Python `yq` (kislyuk/yq) is just a jq wrapper and lacks this.
+
+**Install check at plugin load time:**
+
+Create `plugin/lib/deps.sh` that runs during plugin initialization (e.g., from `inject-context.sh`) and:
+
+1. Checks for `jq` and `yq` (Go variant) in `$PATH`
+2. Validates the `yq` variant is mikefarah's (via `yq --version` output containing `mikefarah`)
+3. If missing, emits a clear error message with install instructions:
+   ```
+   AI-DLC requires jq and yq (mikefarah/yq). Missing: yq
+   Install with:
+     brew install yq          # macOS
+     sudo snap install yq     # Ubuntu/Debian
+     go install github.com/mikefarah/yq/v4@latest  # Go
+     choco install yq         # Windows
+   ```
+4. Optionally: if running in a CI/cloud environment (detected via `CI=true` or similar), auto-install via the appropriate package manager
+
+This replaces the implicit `han` dependency with explicit, well-known tools that most developers already have.
+
 ### State Management Helper Library
 
 Create a new `plugin/lib/state.sh` that provides a clean API matching the current `han keep` interface but using files:
 
 ```bash
-# Save state (writes file, auto-commits if in git)
+# Save state (writes file)
 dlc_state_save <key> <content> [--scope intent|unit] [--unit <unit-slug>]
 
 # Load state (reads file)
@@ -137,6 +165,28 @@ dlc_state_list [--scope intent|unit] [--unit <unit-slug>]
 # Clear all state
 dlc_state_clear [--scope intent|unit] [--unit <unit-slug>]
 ```
+
+### Parse Helper Library
+
+Create `plugin/lib/parse.sh` replacing all `han parse` commands:
+
+```bash
+# JSON operations (thin wrappers around jq)
+dlc_json_get <field> [-r]           # → jq -r '.<field>'
+dlc_json_set <field> <value>        # → jq '.<field> = <value>'
+dlc_json_validate [--schema <s>]    # → jq validation
+
+# YAML operations (using yq Go)
+dlc_yaml_get <field> [-r]           # → yq '.<field>'
+dlc_yaml_set <field> <value>        # → yq '.<field> = <value>' -i
+dlc_yaml_to_json                    # → yq -o=json
+
+# Frontmatter operations (yq's killer feature)
+dlc_frontmatter_get <field> <file>  # → yq --front-matter=extract '.<field>' <file>
+dlc_frontmatter_set <field> <val> <file>  # → yq --front-matter=process '.<field> = <val>' -i <file>
+```
+
+This directly replaces `han parse yaml-set` which is used in `dag.sh:update_unit_status` and several skills.
 
 ---
 
@@ -219,29 +269,32 @@ eval "$(echo "$ITERATION_JSON" | jq -r '@sh "
 
 ## Units
 
-### Unit 1: Create `state.sh` Library
+### Unit 1: Create `deps.sh` — Dependency Check & Install
+Build `plugin/lib/deps.sh` that validates `jq` (v1.7+) and `yq` (mikefarah/yq v4+) are installed. Provide clear install instructions per platform. Detect wrong `yq` variant (kislyuk vs mikefarah). Run at plugin initialization.
+
+### Unit 2: Create `state.sh` Library
 Build `plugin/lib/state.sh` with file-based state management functions that mirror `han keep` semantics but use `.ai-dlc/{slug}/state/` files.
 
-### Unit 2: Create `parse.sh` Library
-Build `plugin/lib/parse.sh` with JSON/YAML parsing utilities that replace `han parse` using `jq`, `sed`, and existing `_yaml_get_simple` patterns.
+### Unit 3: Create `parse.sh` Library
+Build `plugin/lib/parse.sh` with JSON/YAML parsing utilities that replace `han parse` using `jq` and `yq` (mikefarah/Go). Include frontmatter operations using `yq --front-matter`.
 
-### Unit 3: Migrate Hooks
+### Unit 4: Migrate Hooks
 Update `inject-context.sh`, `enforce-iteration.sh`, and `subagent-context.sh` to use `state.sh` and `parse.sh` instead of `han keep` and `han parse`.
 
-### Unit 4: Migrate Skills
-Update all 10 skills that use `han keep` (advance, blockers, completion-criteria, construct, elaborate, execute, fail, operate, reflect, refine, reset, resume) to use the new libraries.
+### Unit 5: Migrate Skills
+Update all skills that use `han keep` (advance, blockers, completion-criteria, construct, elaborate, execute, fail, operate, reflect, refine, reset, resume) to use the new libraries.
 
-### Unit 5: Migrate Hat Documentation
+### Unit 6: Migrate Hat Documentation
 Update references in hat markdown files (builder, experimenter, observer, planner, red-team).
 
-### Unit 6: Migrate Config Libraries
+### Unit 7: Migrate Config Libraries
 Update `config.sh` and `config.ts` to remove `han keep`/`han parse` dependencies.
 
-### Unit 7: Simplify iteration.json
+### Unit 8: Simplify iteration.json
 Remove redundant `unitStates` field, add formal phase enum, reduce parsing overhead.
 
-### Unit 8: Update Documentation
-Update README.md, website docs, paper references to reflect the removal of the `han` dependency.
+### Unit 9: Update Documentation
+Update README.md, website docs, paper references to reflect the removal of the `han` dependency and addition of `jq`/`yq` requirements.
 
 ---
 
