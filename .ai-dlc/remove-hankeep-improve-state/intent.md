@@ -108,14 +108,13 @@ Since state files are in the working tree, they get committed with normal `git a
 - No special tooling needed to read/write state
 - State merge conflicts are possible but manageable (JSON/MD files)
 
-**3. `han parse` replacement**
+**3. `han parse` replacement — `jq` + `yq` (Go)**
 
-Replace `han parse` with lightweight alternatives:
-- **JSON parsing:** Use `jq` (already used in `config.sh`) or a small built-in shell function
-- **YAML parsing:** Use the existing `_yaml_get_simple` / `_yaml_get_array` functions from `dag.sh` (already working, no external dep)
-- **YAML-to-JSON:** Use `python3 -c 'import yaml, json, sys; ...'` or `yq` as optional
-- **JSON-set:** Use `jq` for JSON manipulation
-- **YAML-set:** Use `sed` for simple frontmatter updates (already partially done in `dag.sh`)
+Replace all `han parse` commands with:
+- **JSON read/write:** `jq` (already used in `config.sh`)
+- **YAML read/write:** `yq` (mikefarah/yq, Go version)
+- **Frontmatter read/write:** `yq --front-matter=extract` / `yq --front-matter=process` — directly replaces `han parse yaml-set` for `unit-*.md` and `intent.md` files
+- **YAML-to-JSON:** `yq -o=json`
 
 ### Dependency Management: `jq` and `yq` (Go)
 
@@ -126,22 +125,37 @@ The `han` CLI bundled both parsing utilities and state storage in one tool. Repl
 
 **Why Go `yq` specifically:** The Go version (`mikefarah/yq`) has a `--front-matter` flag that can extract/modify YAML frontmatter from markdown files directly — exactly what `han parse yaml-set` did for `unit-*.md` and `intent.md` files. The Python `yq` (kislyuk/yq) is just a jq wrapper and lacks this.
 
-**Install check at plugin load time:**
+**Install check at plugin load time (SessionStart hook):**
 
-Create `plugin/lib/deps.sh` that runs during plugin initialization (e.g., from `inject-context.sh`) and:
+Create `plugin/lib/deps.sh` sourced by `inject-context.sh` (and other hooks). Each hook calls `dlc_check_deps` early — replacing the current `command -v han` check.
 
-1. Checks for `jq` and `yq` (Go variant) in `$PATH`
-2. Validates the `yq` variant is mikefarah's (via `yq --version` output containing `mikefarah`)
-3. If missing, emits a clear error message with install instructions:
-   ```
-   AI-DLC requires jq and yq (mikefarah/yq). Missing: yq
-   Install with:
-     brew install yq          # macOS
-     sudo snap install yq     # Ubuntu/Debian
-     go install github.com/mikefarah/yq/v4@latest  # Go
-     choco install yq         # Windows
-   ```
-4. Optionally: if running in a CI/cloud environment (detected via `CI=true` or similar), auto-install via the appropriate package manager
+On failure: **`exit 2` with install instructions on stderr**. In Claude Code hooks, `exit 0` means stdout gets injected as context; `exit 2` means stdout is discarded and only stderr is shown to the user. This is the correct way to signal a missing dependency without polluting Claude's context.
+
+```bash
+dlc_check_deps() {
+  local missing=()
+  command -v jq &>/dev/null || missing+=("jq")
+
+  if command -v yq &>/dev/null; then
+    if ! yq --version 2>&1 | grep -q "mikefarah"; then
+      echo "AI-DLC requires mikefarah/yq (Go), but kislyuk/yq (Python) is installed." >&2
+      echo "Install: https://github.com/mikefarah/yq#install" >&2
+      exit 2
+    fi
+  else
+    missing+=("yq")
+  fi
+
+  if [ ${#missing[@]} -gt 0 ]; then
+    echo "AI-DLC requires: ${missing[*]}" >&2
+    echo "Install with:" >&2
+    echo "  brew install ${missing[*]}          # macOS" >&2
+    echo "  sudo snap install ${missing[*]}     # Ubuntu/Debian" >&2
+    echo "  go install github.com/mikefarah/yq/v4@latest  # Go (yq only)" >&2
+    exit 2
+  fi
+}
+```
 
 This replaces the implicit `han` dependency with explicit, well-known tools that most developers already have.
 
