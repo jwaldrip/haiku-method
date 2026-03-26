@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.28.0] - 2026-03-26
+
+### Added
+
+- auto-cleanup worktrees at completion milestones ([d17a34b](../../commit/d17a34b))
+
+### Other
+
+- Merge pull request #23 from TheBushidoCollective/hampton/auto-cleanup-lifecycle ([8d9118f](../../commit/8d9118f))
+
 ## [1.27.0] - 2026-03-26
 
 ### Added
