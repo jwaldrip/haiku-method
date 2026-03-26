@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.29.0] - 2026-03-26
+
+### Added
+
+- add last_updated timestamp to unit frontmatter ([d25cf8a](../../commit/d25cf8a))
+
+### Other
+
+- Merge pull request #12 from TheBushidoCollective/hampton/last-updated-metadata ([d0a170a](../../commit/d0a170a))
+- resolve conflicts with main (keep both last_updated and telemetry) ([bd44b4b](../../commit/bd44b4b))
+
 ## [1.28.2] - 2026-03-26
 
 ### Fixed
