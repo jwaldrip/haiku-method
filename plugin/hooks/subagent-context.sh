@@ -41,6 +41,13 @@ fi
 # Parse iteration state
 ITERATION=$(echo "$ITERATION_JSON" | han parse json iteration -r --default 1 2>/dev/null || echo "1")
 HAT=$(echo "$ITERATION_JSON" | han parse json hat -r --default "" 2>/dev/null || echo "")
+
+# Determine if this is a review-scoped subagent (needs less boilerplate)
+IS_REVIEW_HAT=false
+case "$HAT" in
+  reviewer|red-team|blue-team) IS_REVIEW_HAT=true ;;
+esac
+
 STATUS=$(echo "$ITERATION_JSON" | han parse json status -r --default active 2>/dev/null || echo "active")
 WORKFLOW_NAME=$(echo "$ITERATION_JSON" | han parse json workflowName -r --default default 2>/dev/null || echo "default")
 
@@ -244,32 +251,36 @@ echo "han keep load --branch \"ai-dlc/${INTENT_SLUG}/main\" <key>"
 echo "\`\`\`"
 echo ""
 
-echo "### Bootstrap (MANDATORY)"
-echo ""
-echo "Your spawn prompt tells you which worktree and branch to use."
-echo "After entering your unit worktree, load unit-scoped state:"
-echo ""
-echo "\`\`\`bash"
-echo "# Load previous context from your unit branch"
-echo "han keep load current-plan.md --quiet 2>/dev/null || true"
-echo "han keep load scratchpad.md --quiet 2>/dev/null || true"
-echo "han keep load blockers.md --quiet 2>/dev/null || true"
-echo "han keep load next-prompt.md --quiet 2>/dev/null || true"
-echo "\`\`\`"
-echo ""
-echo "These are scoped to YOUR branch. Read them to understand prior work on this unit."
-echo ""
+# Skip heavy boilerplate for review-scoped subagents
+# Reviewers don't need bootstrap, worktree isolation, or resilience rules
+if [ "$IS_REVIEW_HAT" = "false" ]; then
+  echo "### Bootstrap (MANDATORY)"
+  echo ""
+  echo "Your spawn prompt tells you which worktree and branch to use."
+  echo "After entering your unit worktree, load unit-scoped state:"
+  echo ""
+  echo "\`\`\`bash"
+  echo "# Load previous context from your unit branch"
+  echo "han keep load current-plan.md --quiet 2>/dev/null || true"
+  echo "han keep load scratchpad.md --quiet 2>/dev/null || true"
+  echo "han keep load blockers.md --quiet 2>/dev/null || true"
+  echo "han keep load next-prompt.md --quiet 2>/dev/null || true"
+  echo "\`\`\`"
+  echo ""
+  echo "These are scoped to YOUR branch. Read them to understand prior work on this unit."
+  echo ""
 
-echo "### Worktree Isolation"
-echo ""
-echo "All bolt work MUST happen in an isolated worktree."
-echo "Working outside a worktree will cause conflicts with the parent session."
-echo ""
-echo "After entering your worktree, verify:"
-echo "1. You are in \`${REPO_ROOT}/.ai-dlc/worktrees/${INTENT_SLUG}-{unit-slug}/\`"
-echo "2. You are on the correct unit branch (\`git branch --show-current\`)"
-echo "3. You loaded unit-scoped state (see Bootstrap above)"
-echo ""
+  echo "### Worktree Isolation"
+  echo ""
+  echo "All bolt work MUST happen in an isolated worktree."
+  echo "Working outside a worktree will cause conflicts with the parent session."
+  echo ""
+  echo "After entering your worktree, verify:"
+  echo "1. You are in \`${REPO_ROOT}/.ai-dlc/worktrees/${INTENT_SLUG}-{unit-slug}/\`"
+  echo "2. You are on the correct unit branch (\`git branch --show-current\`)"
+  echo "3. You loaded unit-scoped state (see Bootstrap above)"
+  echo ""
+fi
 
 echo "### Before Stopping"
 echo ""
@@ -280,29 +291,34 @@ echo ""
 echo "**Note:** Unit-level state (scratchpad.md, next-prompt.md, blockers.md) is saved to YOUR branch."
 echo "Intent-level state (iteration.json, intent.md, etc.) is managed by the orchestrator on main."
 echo ""
-echo "### Resilience (CRITICAL)"
-echo ""
-echo "Bolts MUST attempt to rescue before declaring blocked:"
-echo ""
-echo "1. **Commit early, commit often** - Don't wait until the end"
-echo "2. **If changes disappear** - Investigate, recreate, commit immediately"
-echo "3. **If on wrong branch** - Switch to correct branch and continue"
-echo "4. **If tests fail** - Fix and retry, don't give up"
-echo "5. **Only declare blocked** after 3+ genuine rescue attempts"
-echo ""
-echo "### Communication"
-echo ""
-echo "**Notify users of important events:**"
-echo ""
-echo "- \`🚀 Starting:\` When beginning significant work"
-echo "- \`✅ Completed:\` When a milestone is reached"
-echo "- \`⚠️ Issue:\` When something needs attention but isn't blocking"
-echo "- \`🛑 Blocked:\` When genuinely stuck after rescue attempts"
-echo "- \`❓ Decision needed:\` Use \`AskUserQuestion\` for user input"
-echo ""
-echo "Output status messages directly - users see them in real-time."
-echo "Document blockers in \`han keep save blockers.md\` for persistence (unit-scoped)."
-echo ""
+
+# Skip resilience and communication rules for review-scoped subagents
+if [ "$IS_REVIEW_HAT" = "false" ]; then
+  echo "### Resilience (CRITICAL)"
+  echo ""
+  echo "Bolts MUST attempt to rescue before declaring blocked:"
+  echo ""
+  echo "1. **Commit early, commit often** - Don't wait until the end"
+  echo "2. **If changes disappear** - Investigate, recreate, commit immediately"
+  echo "3. **If on wrong branch** - Switch to correct branch and continue"
+  echo "4. **If tests fail** - Fix and retry, don't give up"
+  echo "5. **Only declare blocked** after 3+ genuine rescue attempts"
+  echo ""
+
+  echo "### Communication"
+  echo ""
+  echo "**Notify users of important events:**"
+  echo ""
+  echo "- \`🚀 Starting:\` When beginning significant work"
+  echo "- \`✅ Completed:\` When a milestone is reached"
+  echo "- \`⚠️ Issue:\` When something needs attention but isn't blocking"
+  echo "- \`🛑 Blocked:\` When genuinely stuck after rescue attempts"
+  echo "- \`❓ Decision needed:\` Use \`AskUserQuestion\` for user input"
+  echo ""
+  echo "Output status messages directly - users see them in real-time."
+  echo "Document blockers in \`han keep save blockers.md\` for persistence (unit-scoped)."
+  echo ""
+fi
 
 # Team communication instructions (Agent Teams mode)
 if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then

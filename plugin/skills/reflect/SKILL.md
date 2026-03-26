@@ -1,5 +1,6 @@
 ---
 description: Analyze a completed AI-DLC intent cycle and produce reflection artifacts with learnings, metrics, and recommendations
+disable-model-invocation: true
 argument-hint: "[intent-slug]"
 ---
 

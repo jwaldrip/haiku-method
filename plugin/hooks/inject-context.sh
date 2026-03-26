@@ -400,14 +400,25 @@ if [ -n "$PROJECT_MATURITY" ]; then
   echo ""
 fi
 
-# Load project-level learnings from prior reflections (.claude/memory/learnings.md)
-# These are distilled insights captured when intents are closed via /reflect
+# Load project-level learnings pointer (lazy — full content loaded on demand)
+# Learnings are distilled insights captured via /reflect and /compound
 LEARNINGS_FILE=".claude/memory/learnings.md"
-if [ -f "$LEARNINGS_FILE" ]; then
-  echo "### Learnings from Previous Intents"
+SOLUTIONS_DIR="docs/solutions"
+if [ -f "$LEARNINGS_FILE" ] || [ -d "$SOLUTIONS_DIR" ]; then
+  echo "### Learnings Available"
   echo ""
-  # Show last 50 lines to keep context lean
-  tail -n 50 "$LEARNINGS_FILE"
+  if [ -f "$LEARNINGS_FILE" ]; then
+    LEARNINGS_COUNT=$(grep -cE '^## ' "$LEARNINGS_FILE" 2>/dev/null || echo "0")
+    echo "- **${LEARNINGS_COUNT} intent reflections** in \`.claude/memory/learnings.md\`"
+  fi
+  if [ -d "$SOLUTIONS_DIR" ]; then
+    SOLUTIONS_COUNT=$(find "$SOLUTIONS_DIR" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$SOLUTIONS_COUNT" -gt 0 ]; then
+      echo "- **${SOLUTIONS_COUNT} compound learnings** in \`docs/solutions/\`"
+    fi
+  fi
+  echo ""
+  echo "*Search these when planning or encountering familiar problems. The Planner hat has retrieval instructions.*"
   echo ""
 fi
 

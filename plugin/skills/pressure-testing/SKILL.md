@@ -1,6 +1,7 @@
 ---
 name: pressure-testing
 description: Test hat definitions using Evaluation-Driven Development. Write pressure scenarios that combine multiple pressures to verify hats enforce discipline under stress.
+disable-model-invocation: true
 user-invocable: true
 argument-hint: "[hat-name]"
 allowed-tools:
