@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.0] - 2026-03-27
+
+### Added
+
+- add relevance-ranked learning search with multi-signal ranking ([630de09](../../commit/630de09))
+
+### Other
+
+- Merge pull request #94 from TheBushidoCollective/eco/bm25-search ([37a3cc7](../../commit/37a3cc7))
+
 ## [1.32.0] - 2026-03-27
 
 ### Added
