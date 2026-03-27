@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.0] - 2026-03-27
+
+### Added
+
+- add catalog of specialized review agents by domain ([011bb08](../../commit/011bb08))
+
+### Other
+
+- Merge pull request #67 from TheBushidoCollective/eco/specialized-reviewers ([604b0b2](../../commit/604b0b2))
+
 ## [1.39.0] - 2026-03-27
 
 ### Added
