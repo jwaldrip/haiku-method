@@ -305,6 +305,39 @@ Before asking clarification questions, check for configured providers:
 - If a design provider (Figma) is configured, search for related design files
 Use discovered context to inform your clarification questions in Phase 2.
 
+### Workstreams
+
+A workstream is an isolated track of work that can run in parallel with other workstreams on the same codebase. Each workstream has its own `.ai-dlc/` subtree and intent branch.
+
+**When to use workstreams:**
+- Multiple features being developed simultaneously
+- Independent work tracks that share the codebase but not the timeline
+- Team members working on different intents in parallel
+
+**How workstreams work:**
+- Each workstream gets a namespace: `.ai-dlc/workstreams/{name}/{intent-slug}/`
+- Workstream intents use branches: `ai-dlc/{workstream}/{intent-slug}/main`
+- Workstreams are isolated — one workstream's state doesn't affect another
+- Default workstream (no namespace) is the implicit single-track mode
+
+**Creating a workstream:**
+When elaborating, if the user indicates this is part of a parallel work track, ask:
+```json
+{
+  "questions": [{
+    "question": "Is this part of a workstream?",
+    "header": "Workstream",
+    "options": [
+      {"label": "No — standalone intent", "description": "Default single-track mode"},
+      {"label": "New workstream", "description": "Create a new parallel work track"},
+      {"label": "Existing workstream", "description": "Add to an existing work track"}
+    ]
+  }]
+}
+```
+
+Store workstream name in intent.md frontmatter: `workstream: "{name}"`
+
 ---
 
 ## Phase 2: Clarify Requirements
