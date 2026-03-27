@@ -5,6 +5,125 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.59.1] - 2026-03-27
+
+### Fixed
+
+- add allowed_bots to claude-code-review workflow ([b285569](../../commit/b285569))
+
+## [1.59.0] - 2026-03-27
+
+### Added
+
+- add context budget monitor (warns at 35%/25% remaining) ([6738855](../../commit/6738855))
+
+### Fixed
+
+- redirect context-monitor warnings to stderr and exit 2 ([7b48897](../../commit/7b48897))
+
+### Other
+
+- Merge pull request #33 from TheBushidoCollective/eco/context-monitor ([346fb47](../../commit/346fb47))
+
+## [1.58.2] - 2026-03-27
+
+### Other
+
+- Merge pull request #25 from TheBushidoCollective/eco/builder-reference ([a505941](../../commit/a505941))
+- extract reference material to companion file (~35% token reduction) ([707a4e8](../../commit/707a4e8))
+
+## [1.58.1] - 2026-03-27
+
+### Other
+
+- Merge pull request #30 from TheBushidoCollective/eco/reviewer-reference ([cf00b39](../../commit/cf00b39))
+- resolve conflicts with main (incorporate CoVe, specialized reviews, and reference agents) ([436e2fd](../../commit/436e2fd))
+- extract reference material to companion file (~27% token reduction) ([f06d0c0](../../commit/f06d0c0))
+
+## [1.58.0] - 2026-03-27
+
+### Added
+
+- add structured completion markers for deterministic hat transitions ([858c13e](../../commit/858c13e))
+
+### Other
+
+- Merge pull request #32 from TheBushidoCollective/eco/planner-markers ([2c4c4d0](../../commit/2c4c4d0))
+
+## [1.57.0] - 2026-03-27
+
+### Added
+
+- add confidence-scored findings and anti-pattern scan ([13d548b](../../commit/13d548b))
+
+### Other
+
+- Merge pull request #27 from TheBushidoCollective/eco/reviewer-confidence ([148a69a](../../commit/148a69a))
+
+## [1.56.1] - 2026-03-27
+
+### Other
+
+- Merge pull request #34 from TheBushidoCollective/eco/lazy-learnings ([1aaef44](../../commit/1aaef44))
+- lazy learnings injection saves ~200-1000 tokens per session ([f586e9d](../../commit/f586e9d))
+
+## [1.56.0] - 2026-03-27
+
+### Added
+
+- add /compound skill for capturing structured learnings ([b39fe58](../../commit/b39fe58))
+
+### Other
+
+- Merge pull request #35 from TheBushidoCollective/eco/compound-skill ([ef30e99](../../commit/ef30e99))
+
+## [1.55.0] - 2026-03-27
+
+### Added
+
+- add anti-patterns guidance for constraining agent output ([884deb8](../../commit/884deb8))
+
+### Other
+
+- Merge pull request #36 from TheBushidoCollective/eco/criteria-anti-patterns ([bf50145](../../commit/bf50145))
+
+## [1.54.0] - 2026-03-27
+
+### Added
+
+- add /pressure-testing skill for hat TDD ([df9d69c](../../commit/df9d69c))
+
+### Other
+
+- Merge pull request #37 from TheBushidoCollective/eco/pressure-testing ([2456203](../../commit/2456203))
+
+## [1.53.1] - 2026-03-27
+
+### Other
+
+- Merge pull request #38 from TheBushidoCollective/eco/disable-model-invocation ([d341d0d](../../commit/d341d0d))
+- add disable-model-invocation to reflect/resume/operate ([70a5e8d](../../commit/70a5e8d))
+
+## [1.53.0] - 2026-03-27
+
+### Added
+
+- add wave-based parallel execution for multi-unit intents ([22a54e5](../../commit/22a54e5))
+
+### Other
+
+- Merge pull request #55 from TheBushidoCollective/eco/wave-parallel ([78001ca](../../commit/78001ca))
+
+## [1.52.0] - 2026-03-27
+
+### Added
+
+- add structured session handoff for bolt continuity ([c592d72](../../commit/c592d72))
+
+### Other
+
+- Merge pull request #56 from TheBushidoCollective/eco/session-handoff ([ab811d2](../../commit/ab811d2))
+
 ## [1.51.2] - 2026-03-27
 
 ### Fixed

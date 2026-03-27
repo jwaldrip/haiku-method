@@ -109,6 +109,38 @@ For complex units (3+ tasks, unfamiliar technology, or high-risk changes), deepe
 
 **When to skip:** Simple tasks, well-understood codebases, or when learnings retrieval already covered the ground.
 
+## Structured Completion Marker
+
+When completing planning, output this structured block:
+
+```markdown
+## PLANNING COMPLETE
+
+**Unit:** {unit name}
+**Bolt:** {bolt number}
+**Tasks Planned:** {count}
+**Criteria Targeted:** {count}/{total} remaining criteria
+**Risks Identified:** {count}
+
+### Plan Summary
+1. {task 1} — targets criterion: {criterion}
+2. {task 2} — targets criterion: {criterion}
+
+### Risks
+- {risk 1} — mitigation: {approach}
+```
+
+If planning cannot proceed:
+
+```markdown
+## PLANNING BLOCKED
+
+**Unit:** {unit name}
+**Reason:** {specific reason}
+**Previous Approaches Tried:** {count}
+**What Would Unblock:** {specific action needed}
+```
+
 ## Success Criteria
 
 - [ ] Remaining criteria clearly identified
