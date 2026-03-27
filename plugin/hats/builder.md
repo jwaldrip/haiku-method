@@ -140,6 +140,22 @@ When working with designs from design tools (Figma, Sketch, Adobe XD, etc.):
 3. You MUST recommend escalation to HITL
 4. You MUST NOT continue without human guidance
 
+### Token-Efficient File Operations
+
+Prefer targeted edits over full file rewrites:
+
+- **Use Edit** for modifying existing files — sends only the diff, not the whole file
+- **Use Write** only for new files or complete rewrites
+- **Never** re-read a file you just wrote — you know its contents
+- **Batch related edits** to the same file in one Edit call when possible
+
+**Token cost comparison:**
+- Edit (targeted): ~50-100 tokens (just the changed lines + context)
+- Write (full rewrite): ~500-5000 tokens (entire file content)
+
+**Anti-pattern:** Read file → Write entire file with one line changed
+**Pattern:** Edit file → replace only the changed section
+
 ## Related Hats
 
 - **Planner**: Created the plan being executed
