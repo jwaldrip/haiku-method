@@ -926,6 +926,15 @@ Then ask with `AskUserQuestion`:
 
 Ask about the delivery strategy, source branch, and merge behavior for this intent. These settings control how unit work is organized and delivered.
 
+**Before asking questions**, resolve the repo's default branch name so you can show it in the options:
+
+```bash
+source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
+resolve_default_branch "auto" "$REPO_ROOT"
+```
+
+Use the resolved branch name (e.g. `main`, `master`, `dev`) to replace `{DEFAULT_BRANCH}` in the questions below.
+
 Use `AskUserQuestion`:
 
 **Question 1: Delivery strategy**
@@ -946,8 +955,8 @@ Use `AskUserQuestion`:
           "description": "Units merge into an intent branch as they complete. Dependent units start automatically once their dependencies are done. One final MR for the whole intent."
         },
         {
-          "label": "Build everything on my default branch",
-          "description": "Same as above, but all work happens directly on the default branch. No feature branches, no MR — relies on CI to gate quality."
+          "label": "Build everything on {DEFAULT_BRANCH}",
+          "description": "Same as above, but all work happens directly on {DEFAULT_BRANCH}. No feature branches, no MR — relies on CI to gate quality."
         }
       ],
       "multiSelect": false
@@ -966,8 +975,8 @@ Use `AskUserQuestion`:
       "header": "Source Branch",
       "options": [
         {
-          "label": "Use the default branch (recommended)",
-          "description": "Create unit/intent branches from the repo's default branch (e.g. main, dev)."
+          "label": "Use {DEFAULT_BRANCH} (recommended)",
+          "description": "Create unit/intent branches from {DEFAULT_BRANCH}."
         },
         {
           "label": "Use my current branch",
@@ -998,7 +1007,7 @@ Use `AskUserQuestion`:
 }
 ```
 
-**Skip the auto-merge question for "Review each unit individually"** — in unit strategy, each unit creates its own PR and the user is responsible for merging. **Skip for "Build everything on my default branch"** — no branches to merge.
+**Skip the auto-merge question for "Review each unit individually"** — in unit strategy, each unit creates its own PR and the user is responsible for merging. **Skip for "Build everything on {DEFAULT_BRANCH}"** — no branches to merge.
 
 Store the selections. These will be written into the `intent.md` frontmatter in Phase 6 under a `git:` key:
 
@@ -1015,11 +1024,11 @@ Map user selections to config values:
 |--------------|----------------|
 | Review each unit individually | `unit` |
 | Build everything, then open one MR | `intent` |
-| Build everything on my default branch | `trunk` |
+| Build everything on {DEFAULT_BRANCH} | `trunk` |
 
 - "Review each unit individually" → `unit` (no `auto_merge` key — user merges their own PRs)
 - "Build everything, then open one MR" → `intent`
-- "Build everything on my default branch" → `trunk`
+- "Build everything on {DEFAULT_BRANCH}" → `trunk`
 - "Yes" auto-merge → `auto_merge: true` (intent strategy only)
 - "No" auto-merge → `auto_merge: false` (intent strategy only)
 
@@ -1046,7 +1055,7 @@ Use `AskUserQuestion`:
 
 If the user selects "Yes", ask which units should be reviewed individually. Note these units — their `git: { change_strategy: unit }` override will be written into unit frontmatter in Phase 6 Step 3.
 
-**Skip this question entirely if the user selected "Review each unit individually" or "Build everything on my default branch"** — per-unit overrides only make sense with the intent branch strategy.
+**Skip this question entirely if the user selected "Review each unit individually" or "Build everything on {DEFAULT_BRANCH}"** — per-unit overrides only make sense with the intent branch strategy.
 
 ---
 
