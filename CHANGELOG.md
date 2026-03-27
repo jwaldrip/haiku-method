@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.51.1] - 2026-03-27
+
+### Other
+
+- Merge pull request #39 from TheBushidoCollective/eco/role-scoped-context ([0193711](../../commit/0193711))
+- role-scoped subagent context saves ~400 tokens per review agent ([669ad6c](../../commit/669ad6c))
+
 ## [1.51.0] - 2026-03-27
 
 ### Added
