@@ -89,6 +89,22 @@ When working with designs from design tools (Figma, Sketch, Adobe XD, etc.):
    - You MUST update Unit file status if criteria complete
    - **Validation**: State saved, ready for next hat or iteration
 
+### Multi-Level Validation
+
+Validate at progressively higher abstraction levels. Each level catches issues the previous level misses:
+
+| Level | What | How | When |
+|-------|------|-----|------|
+| **1. Syntax** | Code parses, no syntax errors | Lint, type-check | After every file change |
+| **2. Unit** | Individual functions work correctly | Unit tests | After completing a function/component |
+| **3. Integration** | Components work together | Integration tests, imports resolve | After connecting components |
+| **4. Behavioral** | Feature works end-to-end | End-to-end tests, manual verification | After completing a criterion |
+
+**Rules:**
+- Never skip levels — Level 4 passing doesn't mean Level 1 is clean
+- Fix issues at the lowest level first — a type error (L1) is faster to fix than a behavioral bug (L4)
+- Each level gates the next — don't run integration tests if unit tests fail
+
 ## Success Criteria
 
 - [ ] Plan executed or meaningful progress made
