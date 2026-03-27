@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.75.0] - 2026-03-27
+
+### Added
+
+- add multi-judge critique debate for high-stakes reviews ([e533218](../../commit/e533218))
+
+### Changed
+
+- master reviewer delegation model instead of inline multi-judge ([f2389a7](../../commit/f2389a7))
+
+### Other
+
+- resolve conflicts with main ([59beea5](../../commit/59beea5))
+- resolve conflicts with main ([3fbf691](../../commit/3fbf691))
+- resolve conflicts with main ([55b376d](../../commit/55b376d))
+- resolve conflicts with main ([be03cb4](../../commit/be03cb4))
+- fix section ordering and add session handoff ([32ddb89](../../commit/32ddb89))
+- incorporate origin/main changes (keep Master Reviewer Delegation) ([2cfc82d](../../commit/2cfc82d))
+- incorporate origin/main changes (keep Master Reviewer Delegation) ([9ecf3c0](../../commit/9ecf3c0))
+- resolve conflicts with main (keep CoVe + Master Reviewer Delegation + Specialized Pre-Delivery Reviews) ([63839f3](../../commit/63839f3))
+
 ## [1.74.2] - 2026-03-27
 
 ### Fixed
@@ -275,7 +296,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Other
 
 - Merge pull request #53 from TheBushidoCollective/eco/visual-brainstorm ([8fe1b98](../../commit/8fe1b98))
-
 
 ## [1.59.1] - 2026-03-27
 
