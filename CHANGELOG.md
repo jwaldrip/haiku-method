@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.59.0] - 2026-03-27
+
+### Added
+
+- add context budget monitor (warns at 35%/25% remaining) ([6738855](../../commit/6738855))
+
+### Fixed
+
+- redirect context-monitor warnings to stderr and exit 2 ([7b48897](../../commit/7b48897))
+
+### Other
+
+- Merge pull request #33 from TheBushidoCollective/eco/context-monitor ([346fb47](../../commit/346fb47))
+
 ## [1.58.2] - 2026-03-27
 
 ### Other
