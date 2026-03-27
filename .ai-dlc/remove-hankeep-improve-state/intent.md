@@ -1,7 +1,16 @@
 ---
 workflow: default
+git:
+  change_strategy: intent
+  auto_merge: true
+  auto_squash: false
+announcements: []
+passes: []
+active_pass: ""
+iterates_on: ""
 created: 2026-03-14
 status: active
+epic: ""
 ---
 
 # Intent: Remove Han Keep Dependency & Improve Intent State Management
@@ -281,34 +290,16 @@ eval "$(echo "$ITERATION_JSON" | jq -r '@sh "
 
 ---
 
-## Units
-
-### Unit 1: Create `deps.sh` — Dependency Check & Install
-Build `plugin/lib/deps.sh` that validates `jq` (v1.7+) and `yq` (mikefarah/yq v4+) are installed. Provide clear install instructions per platform. Detect wrong `yq` variant (kislyuk vs mikefarah). Run at plugin initialization.
-
-### Unit 2: Create `state.sh` Library
-Build `plugin/lib/state.sh` with file-based state management functions that mirror `han keep` semantics but use `.ai-dlc/{slug}/state/` files.
-
-### Unit 3: Create `parse.sh` Library
-Build `plugin/lib/parse.sh` with JSON/YAML parsing utilities that replace `han parse` using `jq` and `yq` (mikefarah/Go). Include frontmatter operations using `yq --front-matter`.
-
-### Unit 4: Migrate Hooks
-Update `inject-context.sh`, `enforce-iteration.sh`, and `subagent-context.sh` to use `state.sh` and `parse.sh` instead of `han keep` and `han parse`.
-
-### Unit 5: Migrate Skills
-Update all skills that use `han keep` (advance, blockers, completion-criteria, construct, elaborate, execute, fail, operate, reflect, refine, reset, resume) to use the new libraries.
-
-### Unit 6: Migrate Hat Documentation
-Update references in hat markdown files (builder, experimenter, observer, planner, red-team).
-
-### Unit 7: Migrate Config Libraries
-Update `config.sh` and `config.ts` to remove `han keep`/`han parse` dependencies.
-
-### Unit 8: Simplify iteration.json
-Remove redundant `unitStates` field, add formal phase enum, reduce parsing overhead.
-
-### Unit 9: Update Documentation
-Update README.md, website docs, paper references to reflect the removal of the `han` dependency and addition of `jq`/`yq` requirements.
+## Success Criteria
+- [ ] Zero references to `han keep`, `han parse`, or `han hook` remain in any plugin file
+- [ ] `plugin/lib/deps.sh` exists and validates `jq` (v1.7+) and `yq` (mikefarah/Go v4+) at plugin load
+- [ ] `plugin/lib/parse.sh` exists with JSON/YAML/frontmatter utility functions wrapping `jq` and `yq`
+- [ ] `plugin/lib/state.sh` exists with file-based state management in `.ai-dlc/{slug}/state/`
+- [ ] All hooks that used `han keep load/save` now read/write state files directly
+- [ ] All hooks that used `han parse json/yaml` now use `jq`/`yq` via parse.sh
+- [ ] `hooks.json` no longer references `han hook wrap-subagent-context`
+- [ ] SessionStart hook runs `dlc_check_deps` and exits cleanly with install instructions if deps missing
+- [ ] All existing plugin functionality works identically after migration
 
 ---
 
