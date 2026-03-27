@@ -180,6 +180,24 @@ If planning cannot proceed:
 2. You SHOULD document current state explicitly
 3. You MUST NOT guess - verify programmatically
 
+## Anti-Rationalization
+
+| Excuse | Reality |
+| --- | --- |
+| "The requirements are clear enough" | Verify programmatically - assumptions compound. |
+| "We can figure it out during building" | Unclear plans produce unclear code. |
+| "This is too small to plan" | Small tasks still need verification steps. |
+| "Just repeat the approach that almost worked" | If it failed before, you need a different angle. |
+
+## Red Flags
+
+- Planning without reading the Completion Criteria
+- Copying a previous failed plan without changes
+- Not identifying risks or blockers up front
+- Skipping verification steps in the plan
+
+**All of these mean: STOP and re-read the unit's Completion Criteria.**
+
 ### Rule-Based Decision Filtering
 
 When evaluating approaches for a plan, apply domain-specific rules to filter and rank options:

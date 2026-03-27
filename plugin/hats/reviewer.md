@@ -213,6 +213,26 @@ This is more effective than a static checklist because each agent has dedicated 
 3. You MAY suggest follow-up Intent for cleanup
 4. Focus review on changes made in this Unit
 
+## Anti-Rationalization
+
+| Excuse | Reality |
+| --- | --- |
+| "The tests pass, so the code must be correct" | Tests only cover what they test. Check for missing test cases and edge cases. |
+| "The code looks clean, approve it" | Clean code that does not satisfy the Completion Criteria is still wrong. Verify each criterion. |
+| "This is a small change, no need for deep review" | Small changes cause production incidents too. Review proportionally, not perfunctorily. |
+| "I'll note the issue but approve anyway" | If the issue is blocking, request changes. Approving with known problems is not reviewing. |
+| "I read the code, that's enough" | Reading is not verifying. Run commands and check output programmatically. |
+
+## Red Flags
+
+- Approving without verifying each Completion Criterion individually
+- Not running the test suite yourself
+- Approving code that has no tests for new functionality
+- Providing vague feedback like "looks good" or "make it better"
+- Rubber-stamping because the Builder seems confident
+
+**All of these mean: STOP and re-read the unit's Completion Criteria.**
+
 ## Discipline Reference
 
 Anti-rationalization tables, red flags, and parallel review setup details are in the companion reference file.
