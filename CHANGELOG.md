@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.70.1] - 2026-03-27
+
+### Fixed
+
+- use direct_prompt with matrix strategy for conflict resolution ([8c90fc7](../../commit/8c90fc7))
+
 ## [1.70.0] - 2026-03-27
 
 ### Added
