@@ -65,6 +65,31 @@ The Planner reviews the current Unit and creates a tactical execution plan for t
    - You MUST include verification steps
    - **Validation**: Plan saved and readable
 
+### Architectural Patterns Reference
+
+When planning changes that affect module boundaries, data flow, or component architecture, apply these principles:
+
+**SOLID:**
+- **S**ingle Responsibility — each module/class has one reason to change
+- **O**pen-Closed — extend behavior without modifying existing code
+- **L**iskov Substitution — subtypes must be substitutable for their base types
+- **I**nterface Segregation — prefer many specific interfaces over one general one
+- **D**ependency Inversion — depend on abstractions, not concrete implementations
+
+**Clean Architecture Layers:**
+- **Entities** — core business logic, no framework dependencies
+- **Use Cases** — application-specific business rules
+- **Adapters** — convert data between use cases and external systems
+- **Frameworks** — UI, database, web, devices
+
+**DDD Tactical Patterns (when applicable):**
+- **Aggregate roots** — consistency boundaries for related entities
+- **Value objects** — immutable, equality by value
+- **Domain events** — decouple bounded contexts
+- **Repository pattern** — abstract data access
+
+**When to apply:** Only reference these when the unit involves architectural decisions. Don't force patterns onto simple CRUD operations.
+
 ## Success Criteria
 
 - [ ] Remaining criteria clearly identified
