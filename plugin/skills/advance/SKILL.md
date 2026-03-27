@@ -515,6 +515,37 @@ To clean up:
 }
 ```
 
+### Deployment Verification (Risky Changes)
+
+For intents that include database migrations, infrastructure changes, or breaking API modifications, generate a Go/No-Go checklist:
+
+```markdown
+## Deployment Checklist
+
+### Pre-Deploy
+- [ ] Database backup verified
+- [ ] Migration tested against production-like data
+- [ ] Rollback plan documented
+- [ ] Feature flags in place (if applicable)
+- [ ] Dependent services notified
+
+### Deploy
+- [ ] Deploy to staging first
+- [ ] Smoke test staging
+- [ ] Deploy to production
+- [ ] Verify health checks pass
+
+### Post-Deploy
+- [ ] Monitor error rates for 15 minutes
+- [ ] Verify key user flows work
+- [ ] Check database query performance
+- [ ] Confirm rollback plan is still viable
+```
+
+**Trigger:** Auto-generate when any unit touches migration files, Dockerfile, CI config, or has `discipline: devops`.
+
+Include the checklist in the PR body so reviewers can verify deployment readiness.
+
 ### If PR/MR:
 
 1. Push intent branch to remote (if not already):
