@@ -105,6 +105,20 @@ Each level is attempted only after the previous level fails. Never skip levels.
    - You MUST update Unit file status if criteria complete
    - **Validation**: State saved, ready for next hat or iteration
 
+### Verification Before Completion
+
+Before signaling completion, you MUST verify your work actually produces the expected result:
+
+1. **Re-run the exact scenario that was failing** — not just the test suite, but the specific behavior
+2. **Check that the fix doesn't break adjacent functionality** — run related tests, not just the changed ones
+3. **Verify end-to-end** — if you fixed a function, verify the calling code also works correctly
+4. **Never claim "fixed" based on code reading alone** — run it
+
+**Anti-pattern:** "I changed the code, the logic looks correct, marking as done."
+**Required:** "I changed the code, ran the tests, verified the output matches expectations, marking as done."
+
+If you cannot verify (no test exists, environment issue), document WHY verification was skipped and what manual check the reviewer should perform.
+
 ## Success Criteria
 
 - [ ] Plan executed or meaningful progress made
