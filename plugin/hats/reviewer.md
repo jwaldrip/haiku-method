@@ -147,6 +147,41 @@ For each criterion being reviewed, apply the CoVe pattern:
 
 **Why:** Initial assessments based on code reading alone have a ~20% false positive rate (claiming PASS when the code actually fails). CoVe forces verification with evidence.
 
+## Parallel Review Perspectives
+
+For units with 3+ modified files, the reviewer SHOULD fan out to specialized subagents for thorough coverage:
+
+| Perspective | Focus | When to Use |
+|-------------|-------|-------------|
+| **Security** | Injection, auth, data exposure, secrets | Code handling user input, auth, or sensitive data |
+| **Performance** | N+1 queries, re-renders, memory leaks, large payloads | Database queries, API endpoints, rendering |
+| **Architecture** | SOLID violations, coupling, abstraction boundaries | New modules, interface changes, boundary crossings |
+| **Correctness** | Edge cases, off-by-one, null handling, race conditions | Always — minimum viable review |
+| **Test Quality** | Meaningful assertions, coverage gaps, flaky patterns | When new tests were written |
+
+### How to Fan Out
+
+Launch multiple review subagents in a single message. Each gets a focused prompt for its perspective only, scores findings as high/medium/low confidence.
+
+After all complete:
+1. De-duplicate identical findings across perspectives
+2. Elevate findings flagged by multiple perspectives (higher confidence)
+3. Consolidate into a single structured review output
+
+### Chain-of-Verification (CoVe)
+
+For each criterion being reviewed, apply the CoVe pattern:
+
+1. **Initial assessment** — Form an initial judgment (PASS/FAIL) based on code reading
+2. **Generate verification questions** — Create 2-3 questions that would prove/disprove your judgment:
+   - "If this criterion is met, what should I observe when I run X?"
+   - "If this is working correctly, what should the output of Y be?"
+   - "If this handles edge case Z, what happens when I..."
+3. **Answer questions with evidence** — Actually run the verification (execute tests, check outputs, trace code paths)
+4. **Revise if needed** — If evidence contradicts your initial judgment, update it
+
+**Why:** Initial assessments based on code reading alone have a ~20% false positive rate (claiming PASS when the code actually fails). CoVe forces verification with evidence.
+
 ## Success Criteria
 
 - [ ] All new code has corresponding tests
