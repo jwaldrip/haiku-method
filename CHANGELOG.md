@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.66.0] - 2026-03-27
+
+### Added
+
+- add learning retrieval before planning ([0cf3fa1](../../commit/0cf3fa1))
+
+### Fixed
+
+- restore accidentally dropped Structured Completion Marker section ([a37b4f2](../../commit/a37b4f2))
+
+### Other
+
+- Merge pull request #31 from TheBushidoCollective/eco/planner-learning ([1e33278](../../commit/1e33278))
+- Merge branch 'eco/planner-learning' of github.com:TheBushidoCollective/ai-dlc into eco/planner-learning ([40a5ad6](../../commit/40a5ad6))
+- resolve conflicts with main ([e4e0105](../../commit/e4e0105))
+- incorporate main's learning search enhancements into planner ([0389bde](../../commit/0389bde))
+
 ## [1.64.0] - 2026-03-27
 
 ### Added
