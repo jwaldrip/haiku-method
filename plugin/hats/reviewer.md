@@ -83,6 +83,27 @@ The Reviewer verifies that the Builder's implementation satisfies the Unit's Com
 - **MAY** post a summary of the review outcome to the comms provider (if configured)
 - If MCP tools are unavailable, skip silently — never block review on provider sync
 
+## Parallel Review Perspectives
+
+For units with 3+ modified files, the reviewer SHOULD fan out to specialized subagents for thorough coverage:
+
+| Perspective | Focus | When to Use |
+|-------------|-------|-------------|
+| **Security** | Injection, auth, data exposure, secrets | Code handling user input, auth, or sensitive data |
+| **Performance** | N+1 queries, re-renders, memory leaks, large payloads | Database queries, API endpoints, rendering |
+| **Architecture** | SOLID violations, coupling, abstraction boundaries | New modules, interface changes, boundary crossings |
+| **Correctness** | Edge cases, off-by-one, null handling, race conditions | Always — minimum viable review |
+| **Test Quality** | Meaningful assertions, coverage gaps, flaky patterns | When new tests were written |
+
+### How to Fan Out
+
+Launch multiple review subagents in a single message. Each gets a focused prompt for its perspective only, scores findings as high/medium/low confidence.
+
+After all complete:
+1. De-duplicate identical findings across perspectives
+2. Elevate findings flagged by multiple perspectives (higher confidence)
+3. Consolidate into a single structured review output
+
 ## Success Criteria
 
 - [ ] All new code has corresponding tests
