@@ -654,6 +654,19 @@ if type haiku_is_configured &>/dev/null && haiku_is_configured; then
 fi
 
 # ============================================================================
+# 1% RULE - Mandatory skill consideration
+# ============================================================================
+
+cat <<'RULE'
+
+## The 1% Rule
+
+If there is even a 1% chance that a skill applies to the current task, you MUST invoke it using the Skill tool. Skills exist to prevent known failure modes — skipping a relevant skill because "it probably doesn't apply" is how failures happen.
+
+Before starting any task, scan available skills and ask: "Could any of these help?" If the answer is anything other than "definitely not," invoke it.
+RULE
+
+# ============================================================================
 # SHARED ITERATION MANAGEMENT INSTRUCTIONS
 # These apply to ALL hats and are not customizable
 # ============================================================================
