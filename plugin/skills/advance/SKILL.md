@@ -464,6 +464,27 @@ git commit -m "announce: generate completion announcements for ${INTENT_SLUG}"
 
 Skip this step if `announcements` is empty or `[]`.
 
+### Feature Walkthrough (Optional)
+
+For frontend-facing units, generate a visual walkthrough to include in the PR:
+
+1. If Playwright is available, capture screenshots of key states:
+   ```bash
+   npx playwright screenshot --viewport-size="1440,900" "$APP_URL/feature-path" ".ai-dlc/${INTENT_SLUG}/walkthrough-01.png"
+   npx playwright screenshot --viewport-size="375,812" "$APP_URL/feature-path" ".ai-dlc/${INTENT_SLUG}/walkthrough-mobile-01.png"
+   ```
+
+2. Include walkthrough images in the PR body:
+   ```markdown
+   ### Visual Walkthrough
+   ![Desktop](walkthrough-01.png)
+   ![Mobile](walkthrough-mobile-01.png)
+   ```
+
+3. Commit walkthrough artifacts: `git add .ai-dlc/${INTENT_SLUG}/walkthrough-*.png`
+
+**Skip if:** No UI changes, Playwright unavailable, or no running dev server.
+
 **Gate on change strategy.** The delivery prompt only applies to intent-level strategy. With unit strategy, each unit already has its own PR.
 
 ```bash
