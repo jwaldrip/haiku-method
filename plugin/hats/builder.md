@@ -89,6 +89,27 @@ When working with designs from design tools (Figma, Sketch, Adobe XD, etc.):
    - You MUST update Unit file status if criteria complete
    - **Validation**: State saved, ready for next hat or iteration
 
+### Silent Execution
+
+When executing a sequence of related tool calls (running tests, fixing lint errors, applying multiple file edits):
+
+1. **Batch operations** — Execute all independent operations before commenting
+2. **No narration** — Don't describe what you're about to do for each individual tool call
+3. **Report results** — Only speak when the batch is complete or when something unexpected happens
+
+**Anti-pattern:**
+> "Now I'll run the tests..."
+> [runs tests]
+> "The tests passed. Now I'll run the linter..."
+> [runs linter]
+> "Linting passed. Now let me check types..."
+
+**Pattern:**
+> [runs tests, linter, type-check in sequence]
+> "All quality gates pass: tests (42 passed), lint (clean), types (no errors)."
+
+This saves ~50-100 tokens per build cycle by eliminating narration overhead.
+
 ## Success Criteria
 
 - [ ] Plan executed or meaningful progress made
