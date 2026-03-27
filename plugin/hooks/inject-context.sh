@@ -415,6 +415,41 @@ if [ -n "$PROJECT_MATURITY" ]; then
   echo ""
 fi
 
+# Tech Stack Standards
+# Detect project technology and inject relevant coding standards
+if [ -f "package.json" ]; then
+  DEPS=$(cat package.json 2>/dev/null)
+  if echo "$DEPS" | grep -q '"react"'; then
+    echo "### React Standards"
+    echo "- Use functional components with hooks, not class components"
+    echo "- Colocate styles, tests, and types with components"
+    echo "- Use React.memo() only when profiling shows re-render issues"
+  fi
+  if echo "$DEPS" | grep -q '"next"'; then
+    echo "### Next.js Standards"
+    echo "- Use App Router patterns (app/ directory)"
+    echo "- Prefer Server Components by default, 'use client' only when needed"
+    echo "- Use next/image for all images, next/link for navigation"
+  fi
+  if echo "$DEPS" | grep -q '"typescript"'; then
+    echo "### TypeScript Standards"
+    echo "- Use strict mode, no any types"
+    echo "- Prefer interfaces over type aliases for object shapes"
+    echo "- Use discriminated unions over type assertions"
+  fi
+fi
+if [ -f "Cargo.toml" ]; then
+  echo "### Rust Standards"
+  echo "- Handle all Result/Option types explicitly, no unwrap() in production code"
+  echo "- Use clippy lints, no warnings allowed"
+fi
+if [ -f "go.mod" ]; then
+  echo "### Go Standards"
+  echo "- Follow effective Go patterns"
+  echo "- Handle all errors, no blank identifiers for errors"
+  echo "- Use table-driven tests"
+fi
+
 # Load project-level learnings from prior reflections (.claude/memory/learnings.md)
 # These are distilled insights captured when intents are closed via /reflect
 LEARNINGS_FILE=".claude/memory/learnings.md"
