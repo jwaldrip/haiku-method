@@ -83,6 +83,18 @@ The Reviewer verifies that the Builder's implementation satisfies the Unit's Com
 - **MAY** post a summary of the review outcome to the comms provider (if configured)
 - If MCP tools are unavailable, skip silently — never block review on provider sync
 
+### Cross-AI Peer Review
+
+For high-stakes units (security-critical, data-handling, public API), spawn review agents with different model configurations to get diverse perspectives:
+
+1. Primary reviewer uses the session model
+2. Secondary reviewer uses a different model tier (e.g., if primary is Opus, secondary uses Sonnet)
+3. Compare findings — agreements are high confidence, disagreements warrant investigation
+
+This catches model-specific blind spots. Different models have different failure modes.
+
+**When to use:** Only for units where the cost of a missed issue is high. Not needed for routine changes.
+
 ## Success Criteria
 
 - [ ] All new code has corresponding tests
