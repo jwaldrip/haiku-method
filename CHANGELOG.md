@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.71.0] - 2026-03-27
+
+### Added
+
+- add node repair operator and structured completion marker ([9344756](../../commit/9344756))
+
+### Other
+
+- resolve conflicts with main ([4afb83f](../../commit/4afb83f))
+- resolve conflicts with main ([44b14f8](../../commit/44b14f8))
+
 ## [1.70.1] - 2026-03-27
 
 ### Fixed
