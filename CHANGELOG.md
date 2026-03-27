@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.58.1] - 2026-03-27
+
+### Other
+
+- Merge pull request #30 from TheBushidoCollective/eco/reviewer-reference ([cf00b39](../../commit/cf00b39))
+- resolve conflicts with main (incorporate CoVe, specialized reviews, and reference agents) ([436e2fd](../../commit/436e2fd))
+- extract reference material to companion file (~27% token reduction) ([f06d0c0](../../commit/f06d0c0))
+
 ## [1.58.0] - 2026-03-27
 
 ### Added
