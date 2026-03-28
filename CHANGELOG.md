@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.76.1] - 2026-03-28
+
+### Added
+
+- add foundation libraries replacing han CLI dependency ([94e045b](../../commit/94e045b))
+
+### Fixed
+
+- merge main, migrate subagent-hook.sh, resolve conflicts ([1bdc8d5](../../commit/1bdc8d5))
+
+### Changed
+
+- simplify iteration.json — remove unitStates, add phase validation, single-pass jq ([554c96a](../../commit/554c96a))
+- migrate all han keep/parse/hook refs to dlc_state/parse API ([fcb0f92](../../commit/fcb0f92))
+
+### Other
+
+- Merge pull request #103 from TheBushidoCollective/ai-dlc/remove-hankeep-improve-state/main ([b8dcc84](../../commit/b8dcc84))
+- remove han references from comments ([d96a9cf](../../commit/d96a9cf))
+- update README to remove han CLI dependency references ([48577a4](../../commit/48577a4))
+- Merge unit-02-migrate-hooks into intent branch ([b87a147](../../commit/b87a147))
+- migrate han keep/parse/hook references to dlc_state_save/load API ([9e1565e](../../commit/9e1565e))
+- Merge unit-04-migrate-hat-docs into intent branch ([bf13f11](../../commit/bf13f11))
+- migrate han keep references to dlc_state_save/load API ([b776d65](../../commit/b776d65))
+- Merge unit-01-foundation-libraries into intent branch ([1c7a150](../../commit/1c7a150))
+- draft unit-05-simplify-iteration-state ([76e860c](../../commit/76e860c))
+- draft unit-04-migrate-hat-docs ([09c2964](../../commit/09c2964))
+- draft unit-03-migrate-skill-docs ([3f34a3b](../../commit/3f34a3b))
+- draft unit-02-migrate-hooks ([e89a77e](../../commit/e89a77e))
+- draft unit-01-foundation-libraries ([a2a3893](../../commit/a2a3893))
+- define intent ([a4b4dc2](../../commit/a4b4dc2))
+- initialize discovery log with review findings ([72f9867](../../commit/72f9867))
+
 ## [1.76.0] - 2026-03-28
 
 ### Added
