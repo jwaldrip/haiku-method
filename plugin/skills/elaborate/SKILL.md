@@ -340,7 +340,12 @@ STACK_COMPUTE=$(get_stack_layer "compute")
 STACK_MONITORING=$(get_stack_layer "monitoring")
 STACK_OPS=$(get_stack_layer "operations")
 # Skip if all layers are empty arrays/objects AND intent doesn't introduce new deployable services
-HAS_STACK=$([ "$STACK_INFRA" != "[]" ] || [ "$STACK_COMPUTE" != "[]" ] || [ "$STACK_MONITORING" != "[]" ] || [ "$STACK_OPS" != "{}" ] && echo "true" || echo "false")
+if [ "$STACK_INFRA" != "[]" ] || [ "$STACK_COMPUTE" != "[]" ] || \
+   [ "$STACK_MONITORING" != "[]" ] || [ "$STACK_OPS" != "{}" ]; then
+  HAS_STACK=true
+else
+  HAS_STACK=false
+fi
 ```
 
 If the intent involves a new deployable service, API, worker, or infrastructure change — OR if stack config layers are populated — ask targeted deployment and operations questions using `AskUserQuestion`:

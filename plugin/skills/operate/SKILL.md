@@ -88,24 +88,32 @@ DEPLOY_TARGET=""
 FLAG_STATUS=false
 FLAG_TEARDOWN=false
 
-# Parse flags first
+# Two-pass parsing: flags first, then positionals
+# Pass 1: extract flags
 for arg in $ARGS; do
   case "$arg" in
-    --deploy)  FLAG_DEPLOY=true ;;
-    --status)  FLAG_STATUS=true ;;
+    --deploy)   FLAG_DEPLOY=true ;;
+    --status)   FLAG_STATUS=true ;;
     --teardown) FLAG_TEARDOWN=true ;;
-    *)
-      # Positional args: first is intent, second is operation (or deploy target after --deploy)
-      if [ "$FLAG_DEPLOY" = true ] && [ -z "$DEPLOY_TARGET" ] && [ -n "$INTENT_SLUG" ]; then
-        DEPLOY_TARGET="$arg"
-      elif [ -z "$INTENT_SLUG" ]; then
-        INTENT_SLUG="$arg"
-      elif [ -z "$OPERATION_NAME" ]; then
-        OPERATION_NAME="$arg"
-      fi
-      ;;
   esac
 done
+
+# Pass 2: collect positional arguments (non-flag tokens in order)
+POSITIONALS=()
+for arg in $ARGS; do
+  case "$arg" in
+    --deploy|--status|--teardown) ;;  # skip flags
+    *) POSITIONALS+=("$arg") ;;
+  esac
+done
+
+# Assign positionals: first is always intent, second depends on mode
+INTENT_SLUG="${POSITIONALS[0]:-}"
+if [ "$FLAG_DEPLOY" = true ]; then
+  DEPLOY_TARGET="${POSITIONALS[1]:-}"
+else
+  OPERATION_NAME="${POSITIONALS[1]:-}"
+fi
 ```
 
 **Route to the correct mode:**
@@ -308,15 +316,13 @@ For `owner: agent` operations:
      --arg status "$OP_STATUS" \
      --argjson exit "$EXIT_CODE" \
      --arg output "$OUTPUT" \
-     '.operations[$name] = {
+     '.operations[$name] = ((.operations[$name] // {}) + {
        "last_run": $time,
        "last_presented": null,
        "status": $status,
        "last_exit_code": $exit,
-       "last_output": ($output | .[0:2000]),
-       "deployed": ((.operations[$name].deployed) // false),
-       "deploy_target": ((.operations[$name].deploy_target) // null)
-     }')
+       "last_output": ($output | .[0:2000])
+     }) | .operations[$name].deployed //= false | .operations[$name].deploy_target //= null')
    dlc_state_save "$INTENT_DIR" "operation-status.json" "$UPDATED"
    ```
 
@@ -380,8 +386,7 @@ For `owner: human` operations:
    UPDATED=$(echo "$STATUS_JSON" | jq \
      --arg name "$OPERATION_NAME" \
      --arg time "$TIMESTAMP" \
-     '.operations[$name].last_presented = $time |
-      .operations[$name].status = ((.operations[$name].status) // "pending")')
+     '.operations[$name] = ((.operations[$name] // {}) | .last_presented = $time | .status = (.status // "pending"))')
    dlc_state_save "$INTENT_DIR" "operation-status.json" "$UPDATED"
    ```
 
@@ -557,14 +562,14 @@ When invoked as `/operate {intent} --deploy [target]`:
    Configure a compute or pipeline provider in .ai-dlc/settings.yml.
    ```
 
-5. **Update status** for each deployed operation:
+5. **Update status** for each deployed operation (using the loop iteration variable `$OP_NAME`, not the ad-hoc `$OPERATION_NAME`):
    ```bash
+   OP_NAME=$(basename "$op_file" .md)
    STATUS_JSON=$(dlc_state_load "$INTENT_DIR" "operation-status.json" 2>/dev/null || echo '{"operations":{}}')
    UPDATED=$(echo "$STATUS_JSON" | jq \
-     --arg name "$OPERATION_NAME" \
+     --arg name "$OP_NAME" \
      --arg target "$TARGET" \
-     '.operations[$name].deployed = true |
-      .operations[$name].deploy_target = $target')
+     '.operations[$name] = ((.operations[$name] // {}) + {"deployed": true, "deploy_target": $target})')
    dlc_state_save "$INTENT_DIR" "operation-status.json" "$UPDATED"
    ```
 
