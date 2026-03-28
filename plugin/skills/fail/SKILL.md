@@ -29,17 +29,16 @@ If already at the first hat (planner by default), this command is blocked.
 
 ```bash
 # Intent-level state is stored on current branch (intent branch)
-STATE=$(han keep load iteration.json --quiet)
+STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json")
 ```
 
 ### Step 2: Determine Previous Hat
 
 ```javascript
-// Resolve workflow for this unit: per-unit workflow takes priority, then intent-level fallback
+// Resolve workflow for this unit: per-unit workflow from frontmatter takes priority, then intent-level fallback
 const currentUnit = state.currentUnit;
-const unitWorkflow = (currentUnit && state.unitStates?.[currentUnit]?.workflow)
-  || state.workflow
-  || ["planner", "builder", "reviewer"];
+const unitWorkflow = state.workflow || ["planner", "builder", "reviewer"];
+// Per-unit workflow override: read from unit frontmatter if set
 const currentIndex = unitWorkflow.indexOf(state.hat);
 const prevIndex = currentIndex - 1;
 
@@ -58,12 +57,12 @@ Before updating state, save the reason for failing:
 ```bash
 # Append to blockers (unit-level state - saved to current branch)
 REASON="Reviewer found issues: [describe issues]"
-han keep save blockers.md "$REASON"
+dlc_state_save "$INTENT_DIR" "blockers.md" "$REASON"
 ```
 
 ### Step 3a: Commit Blocker Documentation
 
-If any blocker documentation was written to the working tree (not han keep), commit immediately:
+If any blocker documentation was written to the working tree (not state files), commit immediately:
 
 ```bash
 if [ -n "$(git status --porcelain)" ]; then
@@ -78,7 +77,7 @@ fi
 # Update hat to previous hat
 # Intent-level state saved to current branch (intent branch)
 # state.hat = prevHat
-han keep save iteration.json '<updated JSON with hat set to previous>'
+dlc_state_save "$INTENT_DIR" "iteration.json" '<updated JSON with hat set to previous>'
 ```
 
 ### Step 4b: Re-spawn Teammate (Agent Teams)
@@ -91,11 +90,11 @@ AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
 
 If `AGENT_TEAMS_ENABLED` is set:
 
-1. Read `unitStates` from `iteration.json`
-2. Increment `unitStates.{currentUnit}.retries`
+1. Read retry count from unit frontmatter (`dlc_frontmatter_get "retries" "$UNIT_FILE"`)
+2. Increment retries in unit frontmatter
 3. Check retry limit:
    - If `retries >= 3`: Mark unit as blocked, save blocker documentation
-   - If `retries < 3`: Update `unitStates.{currentUnit}.hat = "builder"`
+   - If `retries < 3`: Update hat in unit frontmatter: `dlc_frontmatter_set "hat" "builder" "$UNIT_FILE"`
 4. Spawn new builder teammate with reviewer feedback:
 
 ```javascript
@@ -118,7 +117,7 @@ Task({
 })
 ```
 
-5. Save updated `unitStates` to `iteration.json`
+5. Commit updated unit frontmatter
 
 **Without Agent Teams:** The existing behavior (update hat to previous, continue in sequential loop) remains unchanged.
 
