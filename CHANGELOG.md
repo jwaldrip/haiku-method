@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual fidelity hard gate: reviewer blocks approval on high-severity visual findings or infrastructure failures
 - Capture interface contract (`capture-interface.md`) defining provider plugin system, manifest schema, and exit codes
 
+## [1.76.2] - 2026-03-28
+
+### Fixed
+
+- ensure intent and unit statuses are reliably set to completed ([1ead6fa](../../commit/1ead6fa))
+
+### Other
+
+- mark remove-hankeep-improve-state as completed ([9510a99](../../commit/9510a99))
+
 ## [1.76.1] - 2026-03-28
 
 ### Added
