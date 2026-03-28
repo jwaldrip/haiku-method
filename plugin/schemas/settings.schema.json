@@ -295,6 +295,14 @@
 				"manifest_validate": {
 					"$ref": "#/definitions/qualityGateEntry",
 					"description": "Deployment manifest validation command (e.g., 'kubectl --dry-run=client', 'helm template | kubeval')"
+				},
+				"observable_validate": {
+					"$ref": "#/definitions/qualityGateEntry",
+					"description": "Observability validation command (e.g., verify metric imports, validate dashboard JSON)"
+				},
+				"operations_validate": {
+					"$ref": "#/definitions/qualityGateEntry",
+					"description": "Operations validation command (e.g., run scripts with --dry-run, validate manifests)"
 				}
 			},
 			"additionalProperties": {

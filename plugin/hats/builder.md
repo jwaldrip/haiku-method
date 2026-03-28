@@ -47,6 +47,9 @@ Detailed design implementation guidance, provider sync details, and deviation ru
 - Working with design mockups from Figma/Sketch/Adobe XD
 - Updating ticket status via provider MCP tools
 - Unsure whether to auto-fix or escalate an issue
+- Producing deployment artifacts (Dockerfiles, IaC, Helm charts, CI/CD pipelines)
+- Instrumenting code with monitoring metrics or generating dashboards/alerts
+- Writing operation scripts or deployment manifests
 
 2. Implement incrementally
    - You MUST work in small, verifiable increments
@@ -98,7 +101,69 @@ Each level is attempted only after the previous level fails. Never skip levels.
 | PRUNE | Approach fundamentally wrong | 1 |
 | ESCALATE | All above exhausted | immediate |
 
-6. Complete or iterate
+6. Produce deployment artifacts (when unit has `deployment:` block)
+   - You MUST read `deployment.type` from unit frontmatter to determine artifact type
+   - You MUST read stack config via `get_stack_layer "compute"` and `get_stack_layer "infrastructure"` to determine providers/formats
+   - You MUST produce artifacts based on deployment type:
+
+   | deployment.type | Artifacts |
+   |---|---|
+   | `service` | Dockerfile, health check endpoint, graceful shutdown, k8s/ECS/compose manifests (per stack), pipeline update |
+   | `function` | Handler wrapper, deployment config (Lambda/Cloud Functions), pipeline update |
+   | `static` | Build config, CDN/hosting config, pipeline update |
+   | `job` | Entry point, retry logic, k8s Job/CronJob (per stack), pipeline update |
+   | `library` | Package config only (no deployment artifacts) |
+   | `none` | Skip deployment phase entirely |
+
+   - You MUST check for existing deployment artifacts before creating new ones — extend, don't overwrite
+   - You MUST update CI/CD pipeline config for new artifacts (read `get_stack_layer "pipeline"` for provider)
+   - You MUST run the `deploy_validate` quality gate if configured
+   - You MUST NOT skip this phase when `deployment:` block is present
+   - **Validation**: DEPLOYABLE gate passes
+
+7. Produce monitoring configuration (when unit has `monitoring:` block)
+   - You MUST read `monitoring.metrics` array and instrument code with metric emissions
+   - You MUST read stack config via `get_stack_layer "monitoring"` to determine provider
+   - You MUST use provider-appropriate instrumentation:
+     - `prometheus` → prom-client / prometheus_client
+     - `datadog` → dd-trace / datadog-metrics
+     - `otel` → @opentelemetry/sdk (language-appropriate)
+     - `cloudwatch` → AWS CloudWatch SDK
+     - `newrelic` → New Relic SDK
+     - `none` → structured console.log-based metrics
+   - You MUST generate dashboard definitions matching monitoring provider format
+   - You MUST generate alert rules based on `monitoring.slos` (error budget burn rate, threshold alerts)
+   - You MUST read stack config via `get_stack_layer "alerting"` for alert routing
+   - You SHOULD place monitoring config in `monitoring/` directory at project root (or per stack config path)
+   - You MUST NOT skip this phase when `monitoring:` block is present
+   - **Validation**: OBSERVABLE gate passes
+
+8. Produce operation scripts (when unit has `operations:` block)
+   - For each operation entry, produce THREE files in `.ai-dlc/{intent}/operations/`:
+
+   **a. Operation spec** (`{operation-name}.md`):
+   - YAML frontmatter: name, type, schedule/trigger, owner, runtime, inputs, outputs
+   - Body: purpose, success criteria checklist
+
+   **b. Operation script** (`{operation-name}.{ext}`):
+   - Language determined by `get_operations_runtime` (node→.ts, python→.py, go→.go, shell→.sh)
+   - Self-contained — no imports from project source
+   - Standard I/O contract: env vars in, JSON stdout out, exit code for success/failure
+   - MUST include `--dry-run` flag for validation
+   - Uses Anthropic SDK for AI reasoning ONLY when needed (anomaly analysis, incident triage)
+
+   **c. Operation deployment manifest** (`{operation-name}.deploy.{ext}`):
+   - Format determined by stack.operations config:
+     - kubernetes → CronJob/Deployment YAML
+     - github-actions → workflow YAML
+     - docker-compose → service definition
+     - none → skip manifest
+
+   - You MUST run operation validation: script executes with `--dry-run`, manifest validates
+   - You MUST NOT skip this phase when `operations:` block is present
+   - **Validation**: OPERATIONS_READY gate passes
+
+9. Complete or iterate
    - If all criteria met: Signal completion
    - If bolt limit reached: Save state for next iteration
    - You MUST commit all working changes
@@ -118,6 +183,19 @@ Before signaling completion, you MUST verify your work actually produces the exp
 **Required:** "I changed the code, ran the tests, verified the output matches expectations, marking as done."
 
 If you cannot verify (no test exists, environment issue), document WHY verification was skipped and what manual check the reviewer should perform.
+
+### Operations Gates (Conditional)
+
+These gates are checked alongside existing quality gates when the unit has operational frontmatter:
+
+| Gate | Trigger | Checks |
+|------|---------|--------|
+| DEPLOYABLE | `deployment:` block present | Artifact exists, builds/validates, pipeline updated, health check responds (for services) |
+| OBSERVABLE | `monitoring:` block present | Metric instrumentation exists, dashboard JSON/YAML valid, alert rules reference correct metrics |
+| OPERATIONS_READY | `operations:` block present | Spec files exist per entry, scripts pass `--dry-run`, manifests validate |
+
+These gates run after existing gates (tests, lint, types). All must pass before marking unit complete.
+When no operational blocks are present, these gates are skipped entirely.
 
 ## Success Criteria
 

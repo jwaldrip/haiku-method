@@ -114,6 +114,10 @@ git:
 #     command: docker build .
 #   manifest_validate:
 #     command: helm template charts/ | kubeval
+#   observable_validate:
+#     command: ./scripts/validate-observability.sh
+#   operations_validate:
+#     command: ./scripts/validate-operations.sh --dry-run
 
 # Review Agents
 # Configure which specialized review agents run for this project.
