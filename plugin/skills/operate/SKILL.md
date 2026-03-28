@@ -409,25 +409,27 @@ When invoked as `/operate {intent} --deploy [target]`:
 
 3. **Determine deploy target** for each operation:
 
-   If `$DEPLOY_TARGET` was explicitly provided (e.g., `/operate myapp --deploy github-actions`), use that for all operations. Otherwise derive from stack config:
+   First, parse the operation's type from its frontmatter:
+   ```bash
+   TYPE=$(dlc_frontmatter_get "type" "$op_file")
+   ```
+
+   If `$DEPLOY_TARGET` was explicitly provided (e.g., `/operate myapp --deploy github-actions`), use that for all operations. Otherwise derive from stack config using the `has_stack_provider` helper:
 
    ```bash
-   # Determine from stack config compute layer
-   if echo "$COMPUTE_LAYER" | jq -e '.[] | select(.name == "kubernetes")' > /dev/null 2>&1; then
+   # Determine from stack config using has_stack_provider helper
+   if has_stack_provider "compute" "kubernetes"; then
      if [ "$TYPE" = "scheduled" ]; then
        TARGET="k8s-cronjob"
      else
        TARGET="k8s-deployment"
      fi
-   elif echo "$COMPUTE_LAYER" | jq -e '.[] | select(.name == "docker-compose")' > /dev/null 2>&1; then
+   elif has_stack_provider "compute" "docker-compose"; then
      TARGET="docker-compose"
+   elif has_stack_provider "pipeline" "github-actions"; then
+     TARGET="github-actions"
    else
-     # Check pipeline layer
-     if echo "$PIPELINE_LAYER" | jq -e '.[] | select(.name == "github-actions")' > /dev/null 2>&1; then
-       TARGET="github-actions"
-     else
-       TARGET="none"
-     fi
+     TARGET="none"
    fi
    ```
 
