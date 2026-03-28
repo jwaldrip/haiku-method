@@ -1311,6 +1311,20 @@ design_ref: ""  # Optional: path to external design file (PNG/JPG/HTML) or direc
 views: []  # Optional: list of views/routes this unit produces (e.g., ["/", "/about"]). Used for screenshot capture targeting.
 # git:                         # Optional: per-unit VCS override (only include when unit has an override)
 #   change_strategy: ""        # Overrides intent-level strategy for this unit (e.g., "unit" for foundational units)
+# --- Operations frontmatter (OPTIONAL — only include when unit has deployment surface) ---
+# deployment:
+#   target: ""          # e.g., kubernetes, ecs, lambda, docker-compose
+#   artifacts: []       # e.g., [Dockerfile, helm-chart, terraform]
+#   environments: []    # e.g., [staging, production]
+# monitoring:
+#   metrics: []         # key metrics this unit should emit
+#   dashboards: []      # dashboard definitions or references
+#   alerts: []          # alert rules for this unit
+#   slos: []            # SLO definitions
+# operations:
+#   runbooks: []        # operational runbook references
+#   rollback: ""        # rollback procedure
+#   scaling: ""         # scaling strategy
 ---
 
 # unit-NN-{slug}
@@ -1347,6 +1361,20 @@ misinterpret what to build.}
 ## Notes
 {Implementation hints, context, pitfalls to avoid}
 ```
+
+**Operations frontmatter blocks** (`deployment:`, `monitoring:`, `operations:`) are **optional** — only include them when the unit has a deployment surface. To determine applicability, check the unit's discipline against config.sh helpers:
+
+```bash
+source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
+# Include deployment: block when deployable category is applicable
+is_category_applicable "$DISCIPLINE" "deployable" && INCLUDE_DEPLOYMENT=true
+# Include monitoring: block when observable category is applicable
+is_category_applicable "$DISCIPLINE" "observable" && INCLUDE_MONITORING=true
+# Include operations: block when operable category is applicable
+is_category_applicable "$DISCIPLINE" "operable" && INCLUDE_OPERATIONS=true
+```
+
+For `discipline: infrastructure` or `discipline: observability` units, always populate the relevant ops blocks. For other disciplines, only include blocks where the category is applicable per `get_discipline_categories()`. When included, uncomment the relevant block(s) in the frontmatter and populate with values from Phase 2 ops answers.
 
 > **Template selection by discipline:** For `discipline: design` units, use the design template below (Design Deliverables, States to Cover, Constraints, Design Tokens Reference). For all other disciplines (`frontend`, `backend`, `api`, `documentation`, `devops`, etc.), use the standard template above (Domain Entities, Data Sources, Technical Specification).
 
