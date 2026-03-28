@@ -2,7 +2,7 @@
 # telemetry.sh - OTEL telemetry library for AI-DLC
 #
 # Sends structured log events to an OTLP/JSON endpoint via curl.
-# Reports as service.name=ai-dlc alongside han's service.name=han.
+# Reports as service.name=ai-dlc.
 #
 # Environment variables:
 #   CLAUDE_CODE_ENABLE_TELEMETRY=1  - Master switch (must be "1" to enable)
@@ -42,7 +42,7 @@ aidlc_telemetry_init() {
 
   _AIDLC_TELEMETRY_ENABLED=1
 
-  # Endpoint (default matches han's default)
+  # Endpoint (default OTLP collector)
   _AIDLC_TELEMETRY_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}"
   # Strip trailing slash
   _AIDLC_TELEMETRY_ENDPOINT="${_AIDLC_TELEMETRY_ENDPOINT%/}"

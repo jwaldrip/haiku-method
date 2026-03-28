@@ -43,7 +43,7 @@ AI: Intent complete! [summary]
 - Fully autonomous - Agent continues across units without stopping
 - Subagents have clean context - No `/clear` needed between iterations
 - User intervention - Only required when ALL units are blocked
-- State preserved - Progress saved in han keep between sessions
+- State preserved - Progress saved in `.ai-dlc/{slug}/state/` between sessions
 - Clean context recommended - Run `/clear` before `/execute` if prior conversation exists
 
 **CRITICAL: No Questions During Execution**
@@ -54,7 +54,7 @@ During the execution loop, you MUST NOT:
 - Request user decisions
 - Pause for user feedback
 
-This breaks han's hook logic. The execution loop must be fully autonomous.
+This breaks the hook logic. The execution loop must be fully autonomous.
 
 If you encounter ambiguity:
 1. Make a reasonable decision based on available context
@@ -62,7 +62,7 @@ If you encounter ambiguity:
 3. Let the reviewer hat catch issues on the next pass
 
 If truly blocked (cannot proceed without user input):
-1. Document the blocker clearly in `han keep save blockers.md`
+1. Document the blocker clearly in `dlc_state_save "$INTENT_DIR" "blockers.md"`
 2. Stop the loop naturally (don't call /advance)
 3. The Stop hook will alert the user that human intervention is required
 
@@ -119,7 +119,7 @@ Hard gates are named checkpoints that MUST be satisfied before the workflow adva
 
 | Gate | Between | Condition | Enforcement |
 |------|---------|-----------|-------------|
-| `PLAN_APPROVED` | planner -> builder | Plan saved to han keep, all criteria have planned tasks | Check plan exists and covers all criteria |
+| `PLAN_APPROVED` | planner -> builder | Plan saved to `.ai-dlc/{slug}/state/`, all criteria have planned tasks | Check plan exists and covers all criteria |
 | `TESTS_PASS` | builder -> reviewer | All quality gates (tests, lint, types) pass | Run test suite, verify exit code 0 |
 | `CRITERIA_MET` | reviewer -> advance | Each criterion has PASS with evidence | Parse structured completion marker |
 
@@ -341,7 +341,7 @@ if [ -n "$TICKETING_TYPE" ]; then
 
   # Check epic field in intent.md
   if [ -f "$INTENT_DIR/intent.md" ]; then
-    EPIC=$(han parse yaml epic -r --default "" < "$INTENT_DIR/intent.md" 2>/dev/null || echo "")
+    EPIC=$(dlc_frontmatter_get "epic" "$INTENT_DIR/intent.md" 2>/dev/null || echo "")
     if [ -z "$EPIC" ]; then
       MISSING="${MISSING}\n- intent.md: epic field is empty"
     fi
@@ -350,7 +350,7 @@ if [ -n "$TICKETING_TYPE" ]; then
   # Check ticket field in each unit file
   for unit_file in "$INTENT_DIR"/unit-*.md; do
     [ -f "$unit_file" ] || continue
-    TICKET=$(han parse yaml ticket -r --default "" < "$unit_file" 2>/dev/null || echo "")
+    TICKET=$(dlc_frontmatter_get "ticket" "$unit_file" 2>/dev/null || echo "")
     if [ -z "$TICKET" ]; then
       MISSING="${MISSING}\n- $(basename "$unit_file"): ticket field is empty"
     fi
@@ -370,9 +370,10 @@ fi
 ### Step 1: Load State
 
 ```bash
-# Intent-level state is stored on the current branch (intent branch)
-STATE=$(han keep load iteration.json --quiet)
-INTENT_SLUG=$(han keep load intent-slug --quiet)
+# Intent-level state is stored in .ai-dlc/{slug}/state/
+INTENT_DIR=".ai-dlc/${INTENT_SLUG}"
+STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json")
+# INTENT_SLUG already derived from Step 0
 ```
 
 If `INTENT_SLUG` is empty (no intent exists at all):
@@ -392,20 +393,20 @@ INTENT_DIR=".ai-dlc/${INTENT_SLUG}"
 INTENT_FILE="$INTENT_DIR/intent.md"
 
 # Read workflow from intent.md frontmatter
-WORKFLOW_NAME=$(han parse yaml workflow -r --default "default" < "$INTENT_FILE" 2>/dev/null || echo "default")
+WORKFLOW_NAME=$(dlc_frontmatter_get "workflow" "$INTENT_FILE" 2>/dev/null || echo "default")
 
 # Resolve workflow to hat sequence
 if [ -f ".ai-dlc/workflows.yml" ]; then
-  WORKFLOW_HATS=$(han parse yaml "${WORKFLOW_NAME}" < ".ai-dlc/workflows.yml" 2>/dev/null || echo "")
+  WORKFLOW_HATS=$(dlc_frontmatter_get "${WORKFLOW_NAME}" ".ai-dlc/workflows.yml" 2>/dev/null || echo "")
 fi
 if [ -z "$WORKFLOW_HATS" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/workflows.yml" ]; then
-  WORKFLOW_HATS=$(han parse yaml "${WORKFLOW_NAME}" < "${CLAUDE_PLUGIN_ROOT}/workflows.yml" 2>/dev/null || echo "")
+  WORKFLOW_HATS=$(dlc_frontmatter_get "${WORKFLOW_NAME}" "${CLAUDE_PLUGIN_ROOT}/workflows.yml" 2>/dev/null || echo "")
 fi
 FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
 
 # Initialize iteration state
 STATE='{"iteration":1,"hat":"'"${FIRST_HAT}"'","workflowName":"'"${WORKFLOW_NAME}"'","workflow":'"${WORKFLOW_HATS}"',"status":"active"}'
-han keep save iteration.json "$STATE"
+dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 If status is "complete":
@@ -418,12 +419,12 @@ Task already complete! Run /reset to start a new task.
 ```bash
 # If targeting: save to state
 if [ -n "$TARGET_UNIT" ]; then
-  STATE=$(echo "$STATE" | han parse json --set "targetUnit=$TARGET_UNIT")
+  STATE=$(echo "$STATE" | dlc_json_set "targetUnit" "$TARGET_UNIT")
 else
   # Clear any stale targetUnit from previous targeted run
-  STATE=$(echo "$STATE" | han parse json --set "targetUnit=")
+  STATE=$(echo "$STATE" | dlc_json_set "targetUnit" "")
 fi
-han keep save iteration.json "$STATE"
+dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 ### State Persistence
@@ -472,7 +473,7 @@ update_state_section "$INTENT_DIR" "Current Position" "- **Hat:** builder
 
 ```bash
 AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
-CHANGE_STRATEGY=$(han parse yaml "git.change_strategy" -r --default "unit" < "$INTENT_DIR/intent.md")
+CHANGE_STRATEGY=$(dlc_frontmatter_get "git.change_strategy" "$INTENT_DIR/intent.md" 2>/dev/null || echo "unit")
 
 # Pure unit strategy always uses Sequential path (subagent delegation, no team orchestration).
 # Hybrid strategy (intent-level "intent" + some units overriding to "unit") keeps Teams enabled —
@@ -542,8 +543,8 @@ TeamCreate({
 Save `teamName` to `iteration.json`:
 
 ```bash
-STATE=$(echo "$STATE" | han parse json --set "teamName=$TEAM_NAME")
-han keep save iteration.json "$STATE"
+STATE=$(echo "$STATE" | dlc_json_set "teamName" "$TEAM_NAME")
+dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 ### Step 3 (Teams): Spawn ALL Ready Units in Parallel
@@ -555,7 +556,7 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 READY_UNITS=$(find_ready_units "$INTENT_DIR")
 
 # Intent-level workflow (default fallback)
-INTENT_WORKFLOW_HATS=$(echo "$STATE" | han parse json workflow)
+INTENT_WORKFLOW_HATS=$(echo "$STATE" | dlc_json_get "workflow")
 ```
 
 **Include repo URL for cowork**: If operating in a cloned workspace, include the repo URL in each teammate's prompt: "Repository: `<remote-url>`. Clone and checkout `ai-dlc/<intent-slug>` if you don't have local access." This enables teammates to clone independently in cowork mode.
@@ -595,11 +596,11 @@ git commit -m "status: mark $(basename "$UNIT_FILE" .md) as in_progress"
 3. **Resolve per-unit workflow** — read the unit's `workflow:` frontmatter field. If present, resolve it to a hat sequence. If absent, check for discipline-based defaults before falling back to the intent-level workflow:
 
 ```bash
-UNIT_WORKFLOW_NAME=$(han parse yaml workflow -r --default "" < "$UNIT_FILE" 2>/dev/null || echo "")
+UNIT_WORKFLOW_NAME=$(dlc_frontmatter_get "workflow" "$UNIT_FILE" 2>/dev/null || echo "")
 
 # Discipline-based fallback: auto-route discipline: design → workflow: design
 if [ -z "$UNIT_WORKFLOW_NAME" ]; then
-  UNIT_DISCIPLINE=$(han parse yaml discipline -r --default "" < "$UNIT_FILE" 2>/dev/null || echo "")
+  UNIT_DISCIPLINE=$(dlc_frontmatter_get "discipline" "$UNIT_FILE" 2>/dev/null || echo "")
   case "$UNIT_DISCIPLINE" in
     design) UNIT_WORKFLOW_NAME="design" ;;
     *)      ;;  # fall through to intent-level
@@ -610,10 +611,10 @@ if [ -n "$UNIT_WORKFLOW_NAME" ]; then
   # Resolve unit-specific workflow
   UNIT_WORKFLOW_HATS=""
   if [ -f ".ai-dlc/workflows.yml" ]; then
-    UNIT_WORKFLOW_HATS=$(han parse yaml "${UNIT_WORKFLOW_NAME}.hats" < ".ai-dlc/workflows.yml" 2>/dev/null || echo "")
+    UNIT_WORKFLOW_HATS=$(dlc_frontmatter_get "${UNIT_WORKFLOW_NAME}.hats" ".ai-dlc/workflows.yml" 2>/dev/null || echo "")
   fi
   if [ -z "$UNIT_WORKFLOW_HATS" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/workflows.yml" ]; then
-    UNIT_WORKFLOW_HATS=$(han parse yaml "${UNIT_WORKFLOW_NAME}.hats" < "${CLAUDE_PLUGIN_ROOT}/workflows.yml" 2>/dev/null || echo "")
+    UNIT_WORKFLOW_HATS=$(dlc_frontmatter_get "${UNIT_WORKFLOW_NAME}.hats" "${CLAUDE_PLUGIN_ROOT}/workflows.yml" 2>/dev/null || echo "")
   fi
   [ -z "$UNIT_WORKFLOW_HATS" ] && UNIT_WORKFLOW_HATS="$INTENT_WORKFLOW_HATS"
 else
@@ -623,17 +624,18 @@ fi
 FIRST_HAT=$(echo "$UNIT_WORKFLOW_HATS" | jq -r '.[0]')
 ```
 
-4. **Initialize unit state in `unitStates`** (includes the resolved workflow):
+4. **Track unit hat in unit frontmatter** (per-unit hat derived from unit-*.md + DAG):
 
 ```bash
-STATE=$(echo "$STATE" | han parse json \
-  --set "unitStates.${UNIT_NAME}.hat=${FIRST_HAT}" \
-  --set "unitStates.${UNIT_NAME}.retries=0" \
-  --set "unitStates.${UNIT_NAME}.workflow=${UNIT_WORKFLOW_HATS}")
-han keep save iteration.json "$STATE"
+# Per-unit hat tracking is derived from unit frontmatter status and the DAG.
+# The unit's current workflow position is determined by its status field
+# and the workflow defined in unit frontmatter or intent-level fallback.
+dlc_frontmatter_set "hat" "${FIRST_HAT}" "$INTENT_DIR/${UNIT_NAME}.md"
+git add "$INTENT_DIR/${UNIT_NAME}.md"
+git commit -m "status: set hat for ${UNIT_NAME}"
 ```
 
-4. **Load hat instructions for the first hat**:
+5. **Load hat instructions for the first hat**:
 
 ```bash
 # Load hat instructions for the teammate's role
@@ -742,15 +744,15 @@ The lead processes auto-delivered teammate messages. Handle each event type:
 
 When a teammate reports successful completion:
 
-1. Read current hat for this unit from `unitStates.{unit}.hat`
-2. Read this unit's workflow from `unitStates.{unit}.workflow` (per-unit workflow, already resolved at spawn time)
+1. Read current hat for this unit from unit frontmatter (`dlc_frontmatter_get "hat" "$UNIT_FILE"`)
+2. Read this unit's workflow from unit frontmatter or intent-level fallback
 3. Find current hat's index in the unit's workflow array
 4. Determine next hat: `unitWorkflow[currentIndex + 1]`
 
 **If next hat exists** (not at end of workflow):
 
-a. Update `unitStates.{unit}.hat = nextHat`
-b. Save state: `han keep save iteration.json "$STATE"`
+a. Update hat in unit frontmatter: `dlc_frontmatter_set "hat" "$nextHat" "$UNIT_FILE"`
+b. Commit: `git add "$UNIT_FILE" && git commit -m "status: advance hat for $(basename "$UNIT_FILE" .md)"`
 c. Load hat file for nextHat:
 
 ```bash
@@ -831,8 +833,7 @@ update_unit_status "$UNIT_FILE" "completed"
 git add "$UNIT_FILE"
 git commit -m "status: mark $(basename "$UNIT_FILE" .md) as completed"
 ```
-b. Remove unit from `unitStates`
-c. Merge or PR based on effective change strategy:
+b. Merge or PR based on effective change strategy:
 
 ```bash
 # Determine merge behavior based on per-unit or intent-level change strategy
@@ -854,7 +855,7 @@ if [ "$EFFECTIVE_CS" = "unit" ]; then
   # Per-unit strategy: create PR to default branch (same as advance/SKILL.md unit path)
   git push -u origin "$UNIT_BRANCH" 2>/dev/null || true
 
-  UNIT_TICKET=$(han parse yaml ticket -r --default "" < "$UNIT_FILE" 2>/dev/null || echo "")
+  UNIT_TICKET=$(dlc_frontmatter_get "ticket" "$UNIT_FILE" 2>/dev/null || echo "")
   TICKET_LINE=""
   [ -n "$UNIT_TICKET" ] && TICKET_LINE="Closes ${UNIT_TICKET}"
 
@@ -903,11 +904,11 @@ Then follow the same spawn logic from Step 3 (load hat instructions, select agen
 
 When a teammate reports issues or rejects the work:
 
-1. Read current hat index from `workflow` array
+1. Read current hat from unit frontmatter
 2. Determine previous hat: `workflow[currentIndex - 1]`
-3. Increment `unitStates.{unit}.retries`
-4. If `retries >= 3`: Mark unit as blocked, document in `han keep save blockers.md`
-5. Otherwise: Set `unitStates.{unit}.hat = previousHat`
+3. Increment retry count in unit frontmatter (`dlc_frontmatter_get "retries" "$UNIT_FILE"`)
+4. If `retries >= 3`: Mark unit as blocked, document in `dlc_state_save "$INTENT_DIR" "blockers.md"`
+5. Otherwise: Update hat in unit frontmatter: `dlc_frontmatter_set "hat" "$previousHat" "$UNIT_FILE"`
 6. Load hat file for previousHat
 7. Spawn teammate at previous hat with the feedback/issues in the prompt
 
@@ -915,7 +916,7 @@ This means ANY hat can reject -- not just the reviewer. A red-team finding issue
 
 #### Blocked
 
-1. Document the blocker in `han keep save blockers.md`
+1. Document the blocker in `dlc_state_save "$INTENT_DIR" "blockers.md"`
 2. Check if ALL units are blocked
 3. If all blocked, alert user: "All units blocked. Human intervention required."
 
@@ -929,7 +930,7 @@ Before shutting down the team, run the `/integrate` skill as a teammate on the *
 
 ```bash
 # Check if integration has already passed
-INTEGRATOR_COMPLETE=$(echo "$STATE" | han parse json integratorComplete -r --default "false")
+INTEGRATOR_COMPLETE=$(echo "$STATE" | dlc_json_get "integratorComplete" "false")
 
 # Count total units
 UNIT_COUNT=$(ls -1 "$INTENT_DIR"/unit-*.md 2>/dev/null | wc -l)
@@ -1059,8 +1060,8 @@ fi
 Mark intent complete:
 
 ```bash
-STATE=$(echo "$STATE" | han parse json --set "status=complete")
-han keep save iteration.json "$STATE"
+STATE=$(echo "$STATE" | dlc_json_set "status" "complete")
+dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 4. Output completion summary (same as current Step 5 format from `/advance`)
@@ -1128,7 +1129,7 @@ DEFAULT_BRANCH=$(echo "$CONFIG" | jq -r '.default_branch')
 TICKET_REFS=""
 for unit_file in "$INTENT_DIR"/unit-*.md; do
   [ -f "$unit_file" ] || continue
-  TICKET=$(han parse yaml ticket -r --default "" < "$unit_file" 2>/dev/null || echo "")
+  TICKET=$(dlc_frontmatter_get "ticket" "$unit_file" 2>/dev/null || echo "")
   if [ -n "$TICKET" ]; then
     TICKET_REFS="${TICKET_REFS}\nCloses ${TICKET}"
   fi
@@ -1182,28 +1183,13 @@ To clean up:
 
 ### Per-Unit Hat Tracking
 
-The `iteration.json` is extended with `unitStates` for parallel hat tracking:
+Per-unit hat tracking is derived from unit-*.md frontmatter and the DAG, rather than stored in iteration.json. Each unit file tracks:
 
-```json
-{
-  "iteration": 3,
-  "hat": "builder",
-  "status": "active",
-  "workflowName": "default",
-  "workflow": ["planner", "builder", "reviewer"],
-  "teamName": "ai-dlc-my-intent",
-  "unitStates": {
-    "unit-01-foundation": { "hat": "reviewer", "retries": 0, "workflow": ["planner", "builder", "reviewer"] },
-    "unit-02-design-dashboard": { "hat": "designer", "retries": 0, "workflow": ["planner", "designer", "reviewer"] },
-    "unit-03-dag-view": { "hat": "builder", "retries": 1, "workflow": ["planner", "builder", "reviewer"] }
-  }
-}
-```
+- `hat`: Current hat for this specific unit (frontmatter field)
+- `retries`: Number of reviewer rejection cycles, max 3 before escalating to blocked (frontmatter field)
+- Workflow: Resolved from unit frontmatter `workflow:` field, falling back to intent-level workflow
 
-- `hat`: Current hat for this specific unit
-- `retries`: Number of reviewer rejection cycles (max 3 before escalating to blocked)
-- `workflow`: The hat sequence for this unit (resolved from unit frontmatter `workflow:` field, falling back to intent-level workflow)
-- Units are added when spawned, removed when completed
+This keeps `iteration.json` small and avoids duplicating state that already lives in the unit files.
 
 ### Parallel Commit Strategy
 
@@ -1241,7 +1227,7 @@ This prevents conflicts with the parent session and enables true isolation.
 
 ```bash
 # If targeting a specific unit, use it directly; otherwise find next ready unit
-TARGET_UNIT=$(echo "$STATE" | han parse json targetUnit -r --default "")
+TARGET_UNIT=$(echo "$STATE" | dlc_json_get "targetUnit" "")
 if [ -n "$TARGET_UNIT" ]; then
   UNIT_FILE="$INTENT_DIR/${TARGET_UNIT}.md"
 else
@@ -1284,8 +1270,8 @@ git commit -m "status: mark $(basename "$UNIT_FILE" .md) as in_progress"
 ```bash
 # Update currentUnit in state, e.g., "unit-01-core-backend"
 # Intent-level state saved to current branch (intent branch)
-STATE=$(echo "$STATE" | han parse json --set "currentUnit=$UNIT_NAME")
-han keep save iteration.json "$STATE"
+STATE=$(echo "$STATE" | dlc_json_set "currentUnit" "$UNIT_NAME")
+dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 #### Step 3: Spawn Subagent
