@@ -80,7 +80,6 @@ Operation status is stored at `.ai-dlc/{intent}/state/operation-status.json` via
 ### Step 0: Parse Arguments
 
 ```bash
-ARGS="$*"
 INTENT_SLUG=""
 OPERATION_NAME=""
 FLAG_DEPLOY=false
@@ -89,8 +88,9 @@ FLAG_STATUS=false
 FLAG_TEARDOWN=false
 
 # Two-pass parsing: flags first, then positionals
+# Iterate over "$@" directly to preserve quoting for values with spaces.
 # Pass 1: extract flags
-for arg in $ARGS; do
+for arg in "$@"; do
   case "$arg" in
     --deploy)   FLAG_DEPLOY=true ;;
     --status)   FLAG_STATUS=true ;;
@@ -100,7 +100,7 @@ done
 
 # Pass 2: collect positional arguments (non-flag tokens in order)
 POSITIONALS=()
-for arg in $ARGS; do
+for arg in "$@"; do
   case "$arg" in
     --deploy|--status|--teardown) ;;  # skip flags
     *) POSITIONALS+=("$arg") ;;
@@ -329,7 +329,7 @@ For `owner: agent` operations:
 5. **Commit if files changed:**
    ```bash
    if [ -n "$(git status --porcelain)" ]; then
-     git add -A
+     git add ".ai-dlc/${INTENT_SLUG}/"
      git commit -m "operate(${INTENT_SLUG}): execute ${OPERATION_NAME}"
    fi
    ```
@@ -599,9 +599,84 @@ When invoked as `/operate {intent} --status`:
 2. **Load operation specs** from `.ai-dlc/{intent}/operations/*.md` to get schedule info
 
 3. **For each operation, determine if overdue:**
-   - Compare `last_run` timestamp against the operation's schedule/frequency
-   - If `last_run` is null and type is `scheduled`, mark as `pending`
-   - If time since `last_run` exceeds the expected interval, mark as `needs-attention`
+   - If `last_run` is null and type is `scheduled` or `process`, mark as `pending`
+   - Otherwise, compute elapsed seconds since `last_run` and compare against the expected interval with a 1.5x grace period
+
+   **Frequency-to-interval mapping (in days):**
+
+   | Frequency | Days |
+   |---|---|
+   | `daily` | 1 |
+   | `weekly` | 7 |
+   | `biweekly` | 14 |
+   | `monthly` | 30 |
+   | `quarterly` | 90 |
+   | `annually` | 365 |
+
+   **Cron heuristic:** For cron expressions, approximate the interval from the fields. Examples:
+   - `*/5 * * * *` = 5 minutes
+   - `0 * * * *` = 60 minutes (hourly)
+   - `0 0 * * *` = 1440 minutes (daily)
+   - `0 0 * * 0` = 10080 minutes (weekly)
+   - `0 0 1 * *` = 43200 minutes (monthly)
+
+   **Pseudocode:**
+   ```bash
+   # Map human-readable frequency to seconds
+   freq_to_seconds() {
+     case "$1" in
+       daily)     echo $((1  * 86400)) ;;
+       weekly)    echo $((7  * 86400)) ;;
+       biweekly)  echo $((14 * 86400)) ;;
+       monthly)   echo $((30 * 86400)) ;;
+       quarterly) echo $((90 * 86400)) ;;
+       annually)  echo $((365 * 86400)) ;;
+       *)         echo 0 ;;  # unknown — skip overdue check
+     esac
+   }
+
+   # Approximate cron interval in seconds (simple heuristic)
+   cron_to_seconds() {
+     local min hour dom mon dow
+     read -r min hour dom mon dow <<< "$1"
+     if [[ "$min" == *//* ]]; then
+       # */N pattern in minutes field
+       echo $(( ${min#*/} * 60 ))
+     elif [ "$hour" = "*" ] && [ "$dom" = "*" ]; then
+       echo 3600        # hourly
+     elif [ "$dom" = "*" ] && [ "$dow" = "*" ]; then
+       echo 86400       # daily
+     elif [ "$dom" = "*" ] && [ "$dow" != "*" ]; then
+       echo 604800      # weekly
+     elif [ "$dom" != "*" ] && [ "$mon" = "*" ]; then
+       echo 2592000     # monthly
+     else
+       echo 7776000     # quarterly fallback
+     fi
+   }
+
+   # Determine expected interval
+   if [ -n "$FREQUENCY" ]; then
+     EXPECTED=$(freq_to_seconds "$FREQUENCY")
+   elif [ -n "$SCHEDULE" ]; then
+     EXPECTED=$(cron_to_seconds "$SCHEDULE")
+   else
+     EXPECTED=0
+   fi
+
+   # Check overdue (1.5x grace period)
+   if [ "$EXPECTED" -gt 0 ]; then
+     NOW=$(date -u +%s)
+     LAST=$(date -u -d "$LAST_RUN" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$LAST_RUN" +%s 2>/dev/null || echo 0)
+     ELAPSED=$((NOW - LAST))
+     GRACE=$(( EXPECTED * 3 / 2 ))   # 1.5x
+     if [ "$ELAPSED" -gt "$GRACE" ]; then
+       OP_STATUS="needs-attention"
+     fi
+   fi
+   ```
+
+   If the frequency/schedule is unrecognized or the interval is 0, skip the overdue check and keep the existing status.
 
 4. **Display status table:**
    ```markdown

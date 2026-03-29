@@ -669,6 +669,9 @@ get_stack_layer() {
 # Check if a stack layer contains a specific provider
 # Usage: has_stack_provider <layer_name> <provider_name> [repo_root]
 # Returns: 0 if provider exists in layer, 1 otherwise
+# NOTE: This function expects array-type layers (e.g., compute, pipeline, packaging).
+# It does NOT support the "operations" layer, which is an object, not an array.
+# For operations config, use get_operations_runtime or get_stack_layer "operations" directly.
 has_stack_provider() {
   local layer="$1"
   local provider="$2"

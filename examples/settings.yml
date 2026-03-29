@@ -11,7 +11,6 @@ git:
   # How changes are organized into branches:
   # - trunk: All work on main branch, no feature branches
   # - unit: One branch per unit of work (default, recommended for most teams)
-  # - bolt: One branch per intent with squashed commits
   # - intent: One long-lived branch per intent with linear history
   change_strategy: unit
 
