@@ -205,6 +205,7 @@ LEGACY_FILE="$INTENT_DIR/operations.md"
    ```
 
 2. **Check for legacy format.** If `$LEGACY_FILE` exists AND `$OPS_DIR` does not exist, go to **Step 8** (Legacy Compatibility).
+   > **Note:** When both `operations.md` (legacy) and `operations/` (per-file) exist, the per-file format takes precedence and the legacy file is silently ignored.
 
 3. If `$OPS_DIR` does not exist or contains no `.md` files:
    ```markdown
@@ -448,6 +449,7 @@ When invoked as `/operate {intent} --deploy [target]`:
    ```
 
    Valid deploy targets: `k8s-cronjob`, `k8s-deployment`, `github-actions`, `docker-compose`, `systemd`
+   <!-- systemd — explicit only (no stack auto-detection; use `--deploy systemd`) -->
 
 4. **Generate manifest** per operation based on target. Write to `$DEPLOY_DIR/{operation-name}.{ext}`:
 
@@ -522,6 +524,8 @@ When invoked as `/operate {intent} --deploy [target]`:
          - name: Run {operation-name}
            run: {runtime-command} .ai-dlc/{intent}/operations/{name}.{ext}
    ```
+
+   > **Note:** GitHub Actions workflows must be in `.github/workflows/` on the default branch to trigger. Copy the generated manifest there and commit to activate.
 
    #### docker-compose
 
@@ -657,7 +661,7 @@ When invoked as `/operate {intent} --status`:
      esac
      local min hour dom mon dow
      read -r min hour dom mon dow <<< "$schedule"
-     if [[ "$min" == *//* ]]; then
+     if [[ "$min" == \*/* ]]; then
        # */N pattern in minutes field
        echo $(( ${min#*/} * 60 ))
      elif [ "$hour" = "*" ] && [ "$dom" = "*" ]; then
