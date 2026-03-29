@@ -751,6 +751,9 @@ get_discipline_categories() {
     devops)
       echo '{"functional":null,"deployable":"required","observable":null,"operable":"required"}'
       ;;
+    mobile)
+      echo '{"functional":"required","deployable":"required","observable":null,"operable":null}'
+      ;;
     *)
       # Default: only functional required
       echo '{"functional":"required","deployable":null,"observable":null,"operable":null}'
