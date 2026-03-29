@@ -21,6 +21,8 @@ This methodology synthesizes foundational work from the AI development community
 
 **Boris Cherny & Anthropic** — Ralph Wiggum plugin for Claude Code, demonstrating production viability of autonomous development loops.
 
+**Anthropic Engineering** — [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) (2026). The harness pattern — orchestration scaffolding that coordinates specialized agents through structured phases with file-based handoffs and generator-evaluator feedback loops — provides the conceptual framework that AI-DLC implements as a collaborative, SDLC-specialized harness.
+
 **Steve Wilson (OWASP)** — Human-on-the-Loop governance frameworks and the articulation of HITL vs HOTL operating modes.
 
 **paddo.dev** — Analysis of SDLC collapse, the "19-agent trap," and the insight that phase gates become friction rather than quality control in AI-driven workflows.
@@ -1594,9 +1596,11 @@ For detailed runbooks with system prompts, entry/exit criteria, and failure mode
 
 8. **Anthropic.** *Claude Code: Best Practices for Agentic Coding.* 2025.
 
-9. **Model Context Protocol (MCP).** *Specification and Server Implementations.* 2025.
+9. **Anthropic Engineering.** *Harness Design for Long-Running Application Development.* 2026. https://www.anthropic.com/engineering/harness-design-long-running-apps
 
-10. **Karpathy, Andrej.** *LLMs in Software Development.* 2025.
+10. **Model Context Protocol (MCP).** *Specification and Server Implementations.* 2025.
+
+11. **Karpathy, Andrej.** *LLMs in Software Development.* 2025.
 
 ---
 

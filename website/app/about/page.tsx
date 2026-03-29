@@ -141,6 +141,39 @@ export default function AboutPage() {
 						</li>
 					</ul>
 
+					<h2>A Harness for Development</h2>
+					<p>
+						In AI engineering,{" "}
+						<a
+							href="https://www.anthropic.com/engineering/harness-design-long-running-apps"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-blue-600 hover:underline dark:text-blue-400"
+						>
+							a harness
+						</a>{" "}
+						is orchestration scaffolding that coordinates AI agents through
+						structured phases, manages context across long-running tasks, and
+						encodes assumptions about what models cannot do on their own.
+						AI-DLC is a harness — specifically, a collaborative,
+						SDLC-specialized one.
+					</p>
+					<p>
+						Where generic harnesses wire together separate agent processes,
+						AI-DLC uses Claude Code&apos;s plugin system — skills, hooks, and
+						rules — to shape behavior within a single session. Hats are
+						specialized agent roles. File-based specs are structured handoffs.
+						Backpressure hooks are external evaluators. The{" "}
+						<code>/resume</code> skill is a context reset with state
+						reconstruction.
+					</p>
+					<p>
+						The key difference: AI-DLC is built for humans on the loop, not
+						autonomous agent-to-agent loops. Three operating modes — HITL,
+						OHOTL, and AHOTL — let teams dial autonomy from full oversight to
+						full autonomy. The harness supports both ends of that spectrum.
+					</p>
+
 					<h2>Getting Started</h2>
 					<p>
 						AI-DLC is distributed as a Claude Code plugin. Install it in your
