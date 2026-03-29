@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.78.1] - 2026-03-29
+
+### Fixed
+
+- address post-merge review bugs from PR #105 ([a7d5d7f](../../commit/a7d5d7f))
+
 ## [1.78.0] - 2026-03-28
 
 ### Added
