@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://han.guru/schemas/ai-dlc-settings.schema.json",
+	"$id": "https://ai-dlc.dev/schemas/ai-dlc-settings.schema.json",
 	"title": "AI-DLC Settings",
 	"description": "Configuration schema for .ai-dlc/settings.yml files that configure AI-DLC behavior including VCS strategy",
 	"type": "object",

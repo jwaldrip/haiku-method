@@ -1256,7 +1256,7 @@ fi
 This ensures the DAG accurately reflects that work has started on this unit.
 
 ```bash
-# Source the DAG library (CLAUDE_PLUGIN_ROOT is the jutsu-ai-dlc plugin directory)
+# Source the DAG library (CLAUDE_PLUGIN_ROOT is the ai-dlc plugin directory)
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 
 # Update unit status to in_progress in the intent worktree

@@ -5,7 +5,7 @@
 #
 # This hook fires when a session ends. It determines the appropriate action:
 # 1. **Work remains** (units ready or in progress):
-#    - Instruct agent to call `/construct` to continue
+#    - Instruct agent to call `/execute` to continue
 #    - Subagents have CLEAN CONTEXT - no need for /clear
 # 2. **All complete** (no pending units):
 #    - Intent is done, no action needed
@@ -31,7 +31,7 @@ INTENT_DIR=$(dlc_find_active_intent)
 ITERATION_JSON=""
 [ -n "$INTENT_DIR" ] && ITERATION_JSON=$(dlc_state_load "$INTENT_DIR" "iteration.json")
 
-# Unit-branch sessions (teammates or subagents) should NOT be told to /construct
+# Unit-branch sessions (teammates or subagents) should NOT be told to /execute
 # The orchestrator on the intent branch manages the construction loop
 if [ "$IS_UNIT_BRANCH" = "true" ]; then
   echo "## AI-DLC: Unit Session Ending"

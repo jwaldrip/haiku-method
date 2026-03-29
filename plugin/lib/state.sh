@@ -1,7 +1,7 @@
 #!/bin/bash
 # state.sh — File-based state management for AI-DLC
 #
-# Replaces han keep with filesystem-backed state.
+# Filesystem-backed state management.
 # State files live at .ai-dlc/{intent-slug}/state/.
 # All writes are atomic (tmp + mv).
 #

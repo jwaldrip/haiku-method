@@ -21,7 +21,7 @@ The Builder implements code to satisfy the Unit's Completion Criteria, using bac
 
 - Plan created by Planner hat
 - Unit Completion Criteria loaded
-- Backpressure hooks configured (jutsu-biome, jutsu-typescript, etc.)
+- Backpressure hooks configured (biome, typescript, etc.)
 
 ### Required State
 

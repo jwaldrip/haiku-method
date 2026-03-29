@@ -48,7 +48,7 @@ CURRENT_HAT=$(echo "$STATE" | dlc_json_get "hat")
 case "$CURRENT_HAT" in
   planner)
     # PLAN_APPROVED gate: plan must exist and cover all criteria
-    PLAN=$(dlc_state_load "$INTENT_DIR" "plan.md" 2>/dev/null || echo "")
+    PLAN=$(dlc_state_load "$INTENT_DIR" "current-plan.md" 2>/dev/null || echo "")
     if [ -z "$PLAN" ]; then
       echo "## HARD GATE: PLAN_APPROVED"
       echo ""

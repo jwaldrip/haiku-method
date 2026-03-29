@@ -87,10 +87,12 @@ done
 
 Read from `.ai-dlc/{slug}/intent.md`:
 
-```javascript
-const intentFile = `.ai-dlc/${slug}/intent.md`;
-const workflow = han_parse_yaml(intentFile, "workflow") || "default";
-const title = han_parse_yaml(intentFile, "title") || slug;
+```bash
+intentFile=".ai-dlc/${slug}/intent.md"
+workflow=$(dlc_frontmatter_get "workflow" "$intentFile")
+[ -z "$workflow" ] && workflow="default"
+title=$(dlc_frontmatter_get "title" "$intentFile")
+[ -z "$title" ] && title="$slug"
 ```
 
 ### Step 3: Determine Starting Hat

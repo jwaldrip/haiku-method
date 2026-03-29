@@ -1,7 +1,7 @@
 #!/bin/bash
 # parse.sh — JSON and YAML parsing utilities for AI-DLC
 #
-# Thin wrappers around jq and yq (mikefarah/Go) replacing the han parse API.
+# Thin wrappers around jq and yq (mikefarah/Go) for JSON and YAML parsing.
 # All functions handle errors gracefully (return empty/default, never crash hooks).
 #
 # Usage:

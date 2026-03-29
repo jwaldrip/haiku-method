@@ -11,6 +11,16 @@
 #   context=$(haiku_memory_context 100)
 #   haiku_memory_write "learnings" "$CONTENT" "append"
 
+# Source state.sh for _state_yaml_get_simple (used via _yaml_get_simple alias below)
+HAIKU_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=state.sh
+source "$HAIKU_SCRIPT_DIR/state.sh"
+
+# Alias matching dag.sh convention (avoid pulling in full dag.sh + config.sh)
+if ! type _yaml_get_simple &>/dev/null; then
+  _yaml_get_simple() { _state_yaml_get_simple "$@"; }
+fi
+
 # Resolve the H•AI•K•U workspace path (if configured)
 # Returns empty string if not configured.
 # Usage: haiku_resolve_workspace

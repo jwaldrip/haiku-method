@@ -477,7 +477,7 @@ Backpressure is:
 - **Efficient** - Catches issues early
 
 Implementation:
-- Use Han hooks for Stop events
+- Use Stop hooks for quality gates
 - Start simple, add strictness gradually
 - Cache results for performance
 - Provide clear error messages
