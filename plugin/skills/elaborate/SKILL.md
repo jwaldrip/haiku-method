@@ -1350,6 +1350,15 @@ Read the file and look for the `## Quality Gate Candidates` section. Parse the d
 
 If the user selects **"Let me choose"**, present each gate individually and collect their selections.
 
+After the user confirms (options 1 or 2), inform them how to customize individual commands if needed:
+
+> Gates confirmed. To modify a gate command (e.g., change `npm test` to `npm test -- --coverage`), edit the `quality_gates:` field in `.ai-dlc/{intent-slug}/intent.md` directly after this step. Gates are written as a YAML list:
+>
+> ```yaml
+> - name: tests
+>   command: npm test -- --coverage
+> ```
+
 If no candidates were found in discovery, inform the user:
 
 > No quality gates were auto-detected from project tooling. You can add custom gates later by editing the `quality_gates:` field in intent.md frontmatter. Proceeding with `quality_gates: []`.
@@ -1357,6 +1366,7 @@ If no candidates were found in discovery, inform the user:
 **Step C — Update intent.md frontmatter.** Write the confirmed gates to intent.md using `yq`:
 
 ```bash
+# yq accepts JSON-style objects in expressions; output is always clean YAML (keys unquoted, no JSON braces).
 # For selected gates (example with two gates):
 yq -i '.quality_gates = [{"name": "tests", "command": "npm test"}, {"name": "lint", "command": "npm run lint"}]' .ai-dlc/${INTENT_SLUG}/intent.md
 

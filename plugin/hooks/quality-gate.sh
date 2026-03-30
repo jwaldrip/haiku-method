@@ -18,7 +18,14 @@ INPUT=$(cat)
 # Early exit: deps
 dlc_check_deps || exit 0
 
-# Early exit: stop_hook_active (prevents infinite loop on retry)
+# Early exit: stop_hook_active guard
+#
+# When a Stop hook blocks the agent, the harness retries with stop_hook_active=true.
+# This guard exits 0 on retry — which means ALL quality gates are bypassed on the
+# second stop attempt. This is by design: without it, nested subagents would loop
+# forever. The implication is that enforcement is one-attempt-only per stop: if the
+# builder triggers a second stop in the same session, all gates are skipped. The
+# reviewer's ratchet check (step 6) is the complementary enforcement for that gap.
 STOP_HOOK_ACTIVE=$(echo "$INPUT" | dlc_json_get "stop_hook_active")
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
   exit 0
@@ -52,7 +59,11 @@ case "$HAT" in
   *) exit 0 ;;
 esac
 
-# Early exit: completed or blocked status
+# Early exit: completed or blocked status.
+# "completed" means the unit is done — no need to enforce gates post-completion.
+# "blocked" means the builder hit an escalation blocker and cannot proceed; enforcing
+# gates would trap the agent on stop when the unit is intentionally stalled. Gates are
+# re-enforced once the unit transitions out of blocked and the builder resumes work.
 case "$STATUS" in
   completed|blocked) exit 0 ;;
 esac
@@ -93,7 +104,11 @@ if [ -n "$CURRENT_UNIT" ]; then
   UNIT_GATES=$(load_gates "$UNIT_FILE")
 fi
 
-# Merge gates additively
+# Merge gates additively.
+# jq -s slurps multiple top-level JSON values from stdin as separate inputs —
+# INTENT_GATES and UNIT_GATES are two complete JSON arrays, newline-separated.
+# jq -s wraps them in an outer array (.[0] and .[1]), then + concatenates them.
+# The newline separator is intentional; it is NOT string concatenation.
 ALL_GATES=$(jq -s '.[0] + .[1]' <<< "${INTENT_GATES}
 ${UNIT_GATES}")
 
@@ -106,6 +121,11 @@ fi
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 
 # Run each gate and collect results
+#
+# Note: gate names are NOT deduplicated — if intent.md and a unit both define a
+# gate with the same name (e.g., "tests"), both run. This is intentional: the
+# additive merge guarantees no gate is silently dropped. Duplicate names may
+# appear in failure output; this is expected and not a bug.
 FAILURES="[]"
 ALL_PASSED=true
 
@@ -121,11 +141,13 @@ for i in $(seq 0 $((GATE_COUNT - 1))); do
   GATE_OUTPUT=""
   GATE_EXIT=0
   if [ -n "$TIMEOUT_CMD" ]; then
-    GATE_OUTPUT=$($TIMEOUT_CMD 30 bash -c "cd '$REPO_ROOT' && $GATE_CMD" 2>&1) || GATE_EXIT=$?
+    # Pass REPO_ROOT as a positional arg to avoid single-quote injection if the
+    # repo path contains a single quote (e.g. /home/user/it's-a-project/).
+    GATE_OUTPUT=$($TIMEOUT_CMD 30 bash -c 'cd "$1" && eval "$2"' _ "$REPO_ROOT" "$GATE_CMD" 2>&1) || GATE_EXIT=$?
   else
     # No timeout command available — use background process with kill
     tmp_out=$(mktemp)
-    bash -c "cd '$REPO_ROOT' && $GATE_CMD" > "$tmp_out" 2>&1 &
+    bash -c 'cd "$1" && eval "$2"' _ "$REPO_ROOT" "$GATE_CMD" > "$tmp_out" 2>&1 &
     bg_pid=$!
     ( sleep 30 && kill "$bg_pid" 2>/dev/null ) &
     timer_pid=$!
@@ -135,6 +157,12 @@ for i in $(seq 0 $((GATE_COUNT - 1))); do
     GATE_OUTPUT=$(cat "$tmp_out")
     rm -f "$tmp_out"
   fi
+
+  # Defensive guard: ensure GATE_EXIT is numeric. Under set -e, if GATE_EXIT is
+  # empty (e.g. wait returned a signal-related code on some platforms), the jq
+  # tonumber call below would fail and set -e would exit 0 — silently allowing
+  # the agent to stop despite a gate failure. Default to 1 if unset or empty.
+  GATE_EXIT=${GATE_EXIT:-1}
 
   if [ "$GATE_EXIT" -ne 0 ]; then
     ALL_PASSED=false
@@ -170,4 +198,7 @@ for i in $(seq 0 $((FAILURE_COUNT - 1))); do
 done
 
 # Output blocking JSON
+# Per CC spec: exit 0 + JSON body = structured block. Explicit exit 0 ensures
+# the correct exit code even if jq changes behavior in future versions.
 jq -n --arg reason "$REASON" '{"decision": "block", "reason": $reason}'
+exit 0

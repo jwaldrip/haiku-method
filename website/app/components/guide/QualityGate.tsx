@@ -14,6 +14,9 @@ export function Tollbooth() {
 			<div className="mb-6 text-lg font-bold text-cyan-400">
 				&#x1F6A7; Quality Checkpoint &#x1F6A7;
 			</div>
+			<p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+				Enforced by <code className="text-amber-500">quality-gate.sh</code> on every Stop — the agent cannot bypass these.
+			</p>
 
 			{/* Pass lanes */}
 			<div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -105,7 +108,7 @@ export function GateCards() {
 			<GateCard
 				num={2}
 				title="Quality Gate"
-				desc="Tests + types + lint must all pass before the Reviewer looks at the code."
+				desc="Harness-enforced: quality_gates: in frontmatter are executed by quality-gate.sh on every Stop. The agent cannot advance until all gates pass."
 				quote="No review of broken code."
 			/>
 			<GateCard

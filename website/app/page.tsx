@@ -566,7 +566,7 @@ export default function Home() {
 							<div className="pl-5">
 								<span className="font-semibold text-blue-500">hooks/</span>{" "}
 								<span className="text-gray-400">
-									-- 8 lifecycle hooks (.sh)
+									-- 9 lifecycle hooks (.sh)
 								</span>
 							</div>
 							<div className="pl-5">
@@ -1281,8 +1281,8 @@ export default function Home() {
 						{...fadeIn}
 						className="mb-2 text-gray-500 dark:text-gray-400"
 					>
-						Every time the AI tries to advance from one hat to the next, it must
-						pass through a gate. No exceptions.
+						Every time the AI tries to stop, it must pass through a gate. Quality
+						gates are harness-enforced — defined in frontmatter, run by hooks, no exceptions.
 					</motion.p>
 
 					<Tollbooth />
@@ -1291,7 +1291,7 @@ export default function Home() {
 						{...fadeIn}
 						className="mt-6 mb-2 text-gray-700 dark:text-gray-300"
 					>
-						Three hard gates stand between hats. The AI cannot bypass them:
+						Three hard gates stand between hats. The harness enforces them mechanically — the agent cannot bypass them:
 					</motion.p>
 
 					<GateCards />
@@ -1320,7 +1320,7 @@ export default function Home() {
 						forceOpen={isRef}
 					>
 						<p className="mb-3">
-							Eight hooks form the automated safety system. Each fires at a
+							Nine hooks form the automated safety system. Each fires at a
 							specific point in the Claude Code lifecycle.
 						</p>
 						<div className="space-y-2">
@@ -1354,6 +1354,11 @@ export default function Home() {
 									name: "context-monitor.sh",
 									trigger: "Post-tool-use",
 									desc: "Monitors context window usage. Warns at 35% remaining.",
+								},
+								{
+									name: "quality-gate.sh",
+									trigger: "Session end (sync)",
+									desc: "Harness-enforced quality gates. Reads quality_gates: from intent and unit frontmatter, runs each gate command, and blocks the agent from stopping if any fail. Only enforced on building hats.",
 								},
 								{
 									name: "enforce-iteration.sh",
