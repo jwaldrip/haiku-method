@@ -796,7 +796,7 @@ done
 3. Create PR/MR:
 
 ```bash
-gh pr create \
+PR_URL=$(gh pr create \
   --title "${INTENT_TITLE}" \
   --base "$DEFAULT_BRANCH" \
   --head "$INTENT_BRANCH" \
@@ -817,7 +817,7 @@ $(printf "%b" "${TICKET_REFS}")
 ---
 *Built with [AI-DLC](https://ai-dlc.dev)*
 EOF
-)"
+)" 2>&1)
 
 if [ -n "$PR_URL" ]; then
   source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
