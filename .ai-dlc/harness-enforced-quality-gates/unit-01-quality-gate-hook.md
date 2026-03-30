@@ -1,6 +1,6 @@
 ---
 status: in_progress
-hat: builder
+hat: reviewer
 retries: 1
 last_updated: ""
 depends_on: []
