@@ -54,7 +54,7 @@ COMMITS=$(git log $GIT_RANGE --no-merges --pretty=format:"%h|%s|%an|%ad" --date=
 	| grep -v "^[a-f0-9]*|status: " \
 	| grep -v "^[a-f0-9]*|state: " \
 	| grep -v "^[a-f0-9]*|Merge unit-" \
-	| grep -v "^[a-f0-9]*|Revert \"" \
+	| grep -v "^[a-f0-9]*|Revert \"Reapply " \
 	| grep -v "^[a-f0-9]*|Reapply \"" \
 	|| true)
 
