@@ -116,8 +116,10 @@ Parse the findings YAML from the results body. For each finding:
 
 **Auto-apply when ALL of:**
 - `confidence: high`
-- `fix_type` is one of: `add_dependency`, `add_criterion`, or `spec_edit` (mechanical only)
+- `fix_type` is one of: `add_dependency`, `add_criterion`, or `spec_edit` (mechanical only — defined as: fixing a typo in a field name, correcting a file path, aligning a quoted reference to its source text)
 - `fix_type` is NOT `remove_unit` or `manual`
+
+When a `spec_edit` finding is high-confidence but the edit is non-mechanical (e.g., rewriting a description, restructuring a section), present to user instead of auto-applying.
 
 For auto-applied fixes:
 1. Apply the suggested fix to the target file (edit frontmatter for `add_dependency`, append to criteria for `add_criterion`, edit specific section for `spec_edit`)

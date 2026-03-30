@@ -28,7 +28,7 @@ backend - This unit will be executed by general-purpose agents.
 ## Data Sources
 - **Existing subagent skills** (filesystem): Read `plugin/skills/elaborate-discover/SKILL.md`, `plugin/skills/elaborate-wireframes/SKILL.md`, and `plugin/skills/elaborate-ticket-sync/SKILL.md` to match the established pattern (frontmatter structure, brief/results format, section layout, allowed-tools pattern)
 - **Reviewer hat confidence scoring** (filesystem): Read `plugin/hats/reviewer.md` for the high/medium/low confidence pattern and how it gates decisions
-- **Red Team hat adversarial mindset** (filesystem): Read `plugin/hats/red-team.md` for the anti-rationalization table pattern and adversarial analysis approach
+- **Red Team hat adversarial mindset** (filesystem): Read `plugin/hats/red-team.md` for the adversarial mindset and systematic enumeration approach (note: the anti-rationalization rules in this skill are original, not borrowed from the red-team hat)
 
 ## Technical Specification
 
@@ -132,3 +132,4 @@ This unit creates ONLY the subagent skill file. It does NOT:
 - Study the elaborate-discover SKILL.md carefully — it's the closest analog (reads specs, writes structured results, runs autonomously)
 - The skill should read spec files via filesystem (Read/Glob), not assume they're in the brief body — but the brief SHOULD include the full content as a fallback
 - Keep the skill focused on analysis and finding generation — the orchestrator handles all fix application and user interaction
+- The narrower allowed-tools list (Read, Write, Glob, Grep, Bash only — no web, MCP, or Agent) is intentional: this subagent only analyzes local spec files
