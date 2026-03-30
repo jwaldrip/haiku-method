@@ -55,6 +55,43 @@ Then you'll write these as files in `.ai-dlc/{intent-slug}/` for the execution p
 
 ---
 
+## Autonomous Mode (invoked from `/autopilot`)
+
+When elaboration is invoked from `/autopilot`, it runs in **autonomous mode**. The feature description has already been provided by the user. The goal is to produce a complete, high-quality spec with **minimal or zero user interaction** — make reasonable decisions instead of asking questions.
+
+**How to detect:** If the conversation context shows that `/autopilot` invoked this skill, you are in autonomous mode. Do not ask the user to confirm this — just operate accordingly.
+
+**Autonomous defaults per phase:**
+
+| Phase | Interactive behavior | Autonomous behavior |
+|---|---|---|
+| **1 (Gather Intent)** | Ask "What do you want to build?" | Use the feature description from `/autopilot`. Do NOT ask. |
+| **2 (Clarify Requirements)** | Ask 2-4 clarification questions | **Skip entirely.** Infer requirements from the feature description and domain discovery. The description from autopilot is assumed to be sufficient for well-understood features. |
+| **2 (Deployment/Ops)** | Ask deployment target, monitoring, ops questions | **Skip.** Default to "Existing infrastructure" / "Use existing monitoring" / "Standard ops". If the codebase has no deployment surface, skip as usual. |
+| **2.5 (Domain Model validation)** | Ask user to confirm domain model accuracy | **Auto-approve.** Log the domain model for reference but do not ask. Discovery is still mandatory — only the confirmation prompt is skipped. |
+| **3 (Workflow selection)** | Show options and ask user to choose | **Use the recommended workflow.** Run the recommendation logic, then apply it directly without asking. |
+| **4 (Success Criteria)** | Ask about NFRs, then confirm criteria list | **Generate criteria and auto-approve.** Derive NFRs from the domain model and codebase patterns. Do NOT ask for confirmation. |
+| **5.5 (Cross-cutting concerns)** | Ask per concern: foundation unit vs convention | **Decide autonomously.** If the concern requires shared code → foundation unit. If it's a pattern → convention. Do NOT ask. |
+| **5.75 (Spec Alignment Gate)** | Ask user to confirm overall direction | **Auto-approve.** Skip the alignment question. |
+| **5.8 (Git Strategy)** | Ask delivery strategy, source branch, hybrid | **Default to intent strategy** (`change_strategy: intent`, `auto_merge: true`) from the repo's default branch. No hybrid overrides. Do NOT ask. |
+| **5.9 (Announcements)** | Ask what announcement formats to generate | **Default to `[changelog]`.** Do NOT ask. |
+| **6 (Per-unit review)** | Present each unit and ask for approval | **Auto-approve each unit.** Still write and commit each unit, still display them in the output, but do NOT ask for approval. Move to the next unit immediately. |
+| **6.25 (Wireframe review)** | Ask product to review wireframes | **Auto-approve.** Still generate wireframes, but skip the review gate. |
+| **7 (Spec Review)** | Ask user on FAIL findings | **Auto-fix FAIL findings** without asking. If auto-fix is not possible (genuine ambiguity about what the user wants), STOP and return control to autopilot with a clear error. |
+| **8 (Handoff)** | Ask how to proceed | **Do NOT ask.** Return control to the autopilot caller. Do not offer Execute/PR options — autopilot handles next steps. |
+
+**When to pause even in autonomous mode:**
+
+Autonomous mode is NOT "ignore all problems." STOP and return control to autopilot (with a clear explanation) if:
+
+1. **Domain discovery reveals fundamental ambiguity** — the feature description is too vague to determine what entities, APIs, or systems are involved, and guessing wrong would mean building the wrong thing entirely.
+2. **Spec review finds unfixable FAIL issues** — critical problems (circular dependencies, missing core requirements) that require human judgment to resolve.
+3. **The codebase contradicts the feature description** — e.g., the user asked to "add dark mode" but the app has no theming system and no CSS framework, making the approach entirely unclear.
+
+In all other cases, make the best decision and keep moving. Autopilot is for well-understood features — the user chose it because they trust the AI to make reasonable calls.
+
+---
+
 ## Phase 0 (Pre-check): Environment Check
 
 Before any elaboration, verify the working environment:
