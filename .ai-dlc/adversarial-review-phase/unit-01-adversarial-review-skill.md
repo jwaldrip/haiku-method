@@ -9,6 +9,7 @@ workflow: ""
 ticket: ""
 design_ref: ""
 views: []
+hat: builder
 ---
 
 # unit-01-adversarial-review-skill
