@@ -1,16 +1,15 @@
 ---
 status: pending
 last_updated: ""
-depends_on:
-  - unit-01-hook-migration
-branch: ai-dlc/harness-enforced-quality-gates/02-quality-gate-hook
+depends_on: []
+branch: ai-dlc/harness-enforced-quality-gates/01-quality-gate-hook
 discipline: backend
 pass: ""
 workflow: ""
 ticket: ""
 ---
 
-# unit-02-quality-gate-hook
+# unit-01-quality-gate-hook
 
 ## Description
 Create `plugin/hooks/quality-gate.sh` — a Stop/SubagentStop hook that reads `quality_gates:` from intent and unit YAML frontmatter, runs each gate command, and blocks the agent from stopping if any gate fails. This is the core enforcement mechanism that removes the agent from its own trust chain.

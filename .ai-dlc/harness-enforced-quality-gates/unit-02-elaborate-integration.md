@@ -2,15 +2,15 @@
 status: pending
 last_updated: ""
 depends_on:
-  - unit-02-quality-gate-hook
-branch: ai-dlc/harness-enforced-quality-gates/03-elaborate-integration
+  - unit-01-quality-gate-hook
+branch: ai-dlc/harness-enforced-quality-gates/02-elaborate-integration
 discipline: backend
 pass: ""
 workflow: ""
 ticket: ""
 ---
 
-# unit-03-elaborate-integration
+# unit-02-elaborate-integration
 
 ## Description
 Update the elaborate skill to discover repo tooling during domain discovery and populate `quality_gates:` in intent.md frontmatter. This ensures every intent gets appropriate gates defined during elaboration — the phase where the human is most engaged and can validate the choices.

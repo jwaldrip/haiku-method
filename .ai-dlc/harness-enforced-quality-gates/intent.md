@@ -21,10 +21,9 @@ The current "hard gates" in the advance skill are agent-interpreted — the agen
 Additionally, the plugin's Stop/SubagentStop/SessionStart hooks are delegated through `han hook run`, adding unnecessary indirection when the underlying scripts have zero han runtime dependencies.
 
 ## Solution
-1. **Migrate hooks**: Replace all `han hook run ai-dlc ...` commands in `hooks/hooks.json` with direct bash script calls. Delete `han-plugin.yml`.
-2. **Implement quality gate hook**: Create `quality-gate.sh` that reads `quality_gates:` from intent and unit frontmatter, runs each command, and blocks (exit 0 + `{"decision": "block"}`) if any fail. Register for both Stop and SubagentStop events.
-3. **Integrate with elaboration**: Update the elaborate skill to discover repo tooling and populate `quality_gates:` in intent.md frontmatter during elaboration.
-4. **Update hats and advance**: Replace hardcoded gate commands in builder/reviewer hats and advance skill with references to frontmatter-defined gates.
+1. **Implement quality gate hook**: Create `quality-gate.sh` that reads `quality_gates:` from intent and unit frontmatter, runs each command, and blocks (exit 0 + `{"decision": "block"}`) if any fail. Register for both Stop and SubagentStop events.
+2. **Integrate with elaboration**: Update the elaborate skill to discover repo tooling and populate `quality_gates:` in intent.md frontmatter during elaboration.
+3. **Update hats and advance**: Replace hardcoded gate commands in builder/reviewer hats and advance skill with references to frontmatter-defined gates.
 
 Gates are additive (intent defaults + unit additions), add-only during construction (ratchet effect), and harness-enforced (agent cannot bypass).
 
@@ -51,8 +50,6 @@ Gates are additive (intent defaults + unit additions), add-only during construct
 - None — all required infrastructure exists in CC hooks and the plugin's lib/ scripts
 
 ## Success Criteria
-- [ ] `plugin/hooks/hooks.json` contains zero `han hook run` commands — all hooks call bash scripts directly
-- [ ] `plugin/han-plugin.yml` is deleted
 - [ ] A new `plugin/hooks/quality-gate.sh` exists that reads `quality_gates:` from intent and unit frontmatter, runs each command, and exits with `{"decision": "block"}` if any fail
 - [ ] Quality gate hook is registered for both Stop and SubagentStop events in `hooks/hooks.json` (NOT async)
 - [ ] Quality gate hook only enforces when iteration.json has a "building" hat (builder, implementer, refactorer) — skips for planner, reviewer, designer, observer, etc.
