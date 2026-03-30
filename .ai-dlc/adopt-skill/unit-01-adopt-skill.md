@@ -1,6 +1,6 @@
 ---
-status: pending
-last_updated: ""
+status: in_progress
+last_updated: "2026-03-30T04:53:07Z"
 depends_on: []
 branch: ai-dlc/adopt-skill/01-adopt-skill
 discipline: documentation
