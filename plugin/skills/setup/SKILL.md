@@ -163,7 +163,7 @@ If existing settings differ from detection, show both:
 
 Include the visual review detection in the table:
 ```
-| Visual Review | true / false | MCP tool detected / existing settings |
+| Visual Review | enabled / disabled | MCP tool detected / existing settings |
 ```
 
 Then ask a **single confirmation question**:
