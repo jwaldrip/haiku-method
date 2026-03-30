@@ -235,7 +235,7 @@ export const diagramData: DiagramData = {
 			id: "state-management",
 			label: "State Management",
 			description:
-				"Two-tier model: Committed artifacts (.ai-dlc/) persist; ephemeral state (han keep) is session-scoped.",
+				"Two-tier model: Committed artifacts (.ai-dlc/) persist; ephemeral state is session-scoped.",
 			href: "/paper/#memory-providers-expand-knowledge",
 			category: "principle",
 			x: xPos(3, 4),

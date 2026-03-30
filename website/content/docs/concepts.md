@@ -322,7 +322,7 @@ Persisted across sessions, branches, and team members:
 | `intent.md` | What we're building, overall criteria |
 | `unit-*.md` | Individual units with their criteria |
 
-### Ephemeral State (`han keep`)
+### Ephemeral State
 
 Session-scoped, cleared on `/reset`:
 
@@ -337,7 +337,7 @@ Session-scoped, cleared on `/reset`:
 If you `/clear` without the stop hook:
 
 1. Committed artifacts (`.ai-dlc/`) are safe
-2. Ephemeral state persists in `han keep`
+2. Ephemeral state persists in the state directory
 3. Run `/execute` to continue
 
 ## Iteration Through Passes
