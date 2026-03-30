@@ -1,1 +1,1 @@
-{"iteration":1,"hat":"planner","workflowName":"default","workflow":["planner","builder","reviewer"],"status":"active","teamName":"ai-dlc-visual-review-integration"}
+{"iteration":1,"hat":"reviewer","workflowName":"default","workflow":["planner","builder","reviewer"],"status":"completed","teamName":"ai-dlc-visual-review-integration","integratorComplete":true}
