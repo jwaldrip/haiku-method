@@ -38,7 +38,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Revert "Reapply "intent: Visual Review Full Integration & Bug Fixes"" ([6e15a68](../../commit/6e15a68))
 
+### Changed
+
+- Update plugin source path variable to CLAUDE_PROJECT_DIR
+
 ## [1.82.4] - 2026-03-30
+
+### Changed
+
+- Add project config, sync rules, and visual-review intent
 
 ## [1.82.3] - 2026-03-30
 

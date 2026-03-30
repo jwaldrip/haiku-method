@@ -138,11 +138,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === "open_review") {
     const input = OpenReviewInput.parse(args);
 
-    // Validate intent_dir stays within .ai-dlc/ to prevent path traversal.
-    // Use resolve() to handle both relative and absolute paths correctly.
+    // Resolve intent_dir to an absolute path. When a relative path is provided
+    // (e.g., ".ai-dlc/my-intent"), it resolves against process.cwd(), which is
+    // expected to be the project root. MCP servers inherit cwd from the client
+    // that spawned them (e.g., Claude Code), so this is normally correct.
+    // Additionally validate that the path stays within .ai-dlc/ to prevent
+    // path traversal.
     const allowedBase = resolve(process.cwd(), ".ai-dlc");
-    const absoluteDir = resolve(process.cwd(), input.intent_dir);
-    if (!absoluteDir.startsWith(allowedBase + "/") && absoluteDir !== allowedBase) {
+    const intentDir = resolve(process.cwd(), input.intent_dir);
+    if (!intentDir.startsWith(allowedBase + "/") && intentDir !== allowedBase) {
       return {
         content: [
           {
@@ -155,13 +159,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     // Parse intent data
-    const intent = await parseIntent(input.intent_dir);
+    const intent = await parseIntent(intentDir);
     if (!intent) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Error: Could not parse intent at ${input.intent_dir}`,
+            text: `Error: Could not parse intent at ${intentDir}`,
           },
         ],
         isError: true,
@@ -169,7 +173,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     // Parse units
-    const units = await parseAllUnits(input.intent_dir);
+    const units = await parseAllUnits(intentDir);
 
     // Build DAG and mermaid
     const dag = buildDAG(units);
@@ -187,7 +191,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     // Create session first so we have the session ID for mockup URLs
     const session = createSession({
-      intent_dir: input.intent_dir,
+      intent_dir: intentDir,
       intent_slug: intent.slug,
       review_type: input.review_type,
       target: input.target ?? "",
@@ -201,7 +205,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // Scan intent mockups/ directory for wireframes and images
     const intentMockups: MockupInfo[] = [];
     try {
-      const mockupsDir = join(input.intent_dir, "mockups");
+      const mockupsDir = join(intentDir, "mockups");
       const entries = await readdir(mockupsDir);
       for (const entry of entries.sort()) {
         const ext = entry.substring(entry.lastIndexOf(".")).toLowerCase();
@@ -234,7 +238,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     for (const unit of units) {
       if (!unitMockups.has(unit.slug)) {
         try {
-          const mockupsDir = join(input.intent_dir, "mockups");
+          const mockupsDir = join(intentDir, "mockups");
           const entries = await readdir(mockupsDir);
           const matches = entries
             .filter((f) => {

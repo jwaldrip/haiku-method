@@ -41,7 +41,9 @@ export function renderStaticLayout(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeAttr(title)}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"
+          integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K"
+          crossorigin="anonymous"></script>
   ${tailwindConfig}
   <style>
     [role="tabpanel"][hidden] { display: none; }
@@ -113,38 +115,41 @@ export function renderStaticLayout(
     })();
   </script>
 
-  <!-- Mermaid: ESM import, theme-aware init, re-render on theme change -->
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  <!-- Mermaid: UMD build with SRI, theme-aware init, re-render on theme change -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.13.0/dist/mermaid.min.js"
+          integrity="sha384-tI0sDqjGJcqrQ8e/XKiQGS+ee11v5knTNWx2goxMBxe4DO9U0uKlfxJtYB9ILZ4j"
+          crossorigin="anonymous"></script>
+  <script>
+    (function() {
+      function isDark() {
+        return document.documentElement.classList.contains('dark');
+      }
 
-    function isDark() {
-      return document.documentElement.classList.contains('dark');
-    }
+      document.querySelectorAll('.mermaid').forEach(function(el) {
+        el.setAttribute('data-original', el.textContent || '');
+      });
 
-    document.querySelectorAll('.mermaid').forEach(function(el) {
-      el.setAttribute('data-original', el.textContent || '');
-    });
-
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: isDark() ? 'dark' : 'default',
-    });
-    await mermaid.run();
-
-    window.addEventListener('themeChanged', async function() {
       mermaid.initialize({
+        startOnLoad: false,
         theme: isDark() ? 'dark' : 'default',
       });
-      for (var el of document.querySelectorAll('.mermaid')) {
-        var original = el.getAttribute('data-original');
-        if (original) {
-          el.removeAttribute('data-processed');
-          // Use textContent (not innerHTML) to avoid XSS when restoring Mermaid source
-          el.textContent = original;
-        }
-      }
-      await mermaid.run();
-    });
+      mermaid.run();
+
+      window.addEventListener('themeChanged', function() {
+        mermaid.initialize({
+          theme: isDark() ? 'dark' : 'default',
+        });
+        document.querySelectorAll('.mermaid').forEach(function(el) {
+          var original = el.getAttribute('data-original');
+          if (original) {
+            el.removeAttribute('data-processed');
+            // Use textContent (not innerHTML) to avoid XSS when restoring Mermaid source
+            el.textContent = original;
+          }
+        });
+        mermaid.run();
+      });
+    })();
   </script>
 </body>
 </html>`;
