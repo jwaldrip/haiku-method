@@ -120,11 +120,11 @@ If a slug can be derived from the argument, verify it doesn't conflict with an e
 
 ```bash
 if [ -n "$FEATURE_DESCRIPTION" ]; then
-  # Generate candidate slug from description
-  CANDIDATE_SLUG=$(echo "$FEATURE_DESCRIPTION" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
+  # Generate candidate slug from description (apply same truncation as Phase 1)
+  CANDIDATE_SLUG=$(echo "$FEATURE_DESCRIPTION" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//' | cut -c1-50)
   if [ -d "$REPO_ROOT/.ai-dlc/$CANDIDATE_SLUG" ]; then
     echo "WARNING: Intent directory .ai-dlc/$CANDIDATE_SLUG already exists."
-    echo "The existing intent will not be overwritten."
+    echo "Phase 1 will prompt for how to handle this conflict."
   fi
 fi
 ```
@@ -148,7 +148,7 @@ If no argument was provided, ask the user:
 }
 ```
 
-The user will provide a free-text description via the "Other" input. If the argument was provided, use it directly.
+The user types their feature description directly into the free-text field. If the argument was provided on the command line, use it directly and skip this question.
 
 ### Ask for Code Paths
 
@@ -199,10 +199,40 @@ Validate the slug doesn't conflict with existing intents:
 
 ```bash
 if [ -d "$REPO_ROOT/.ai-dlc/$SLUG" ]; then
-  # Ask user for an alternative slug or confirm overwrite
-  # via AskUserQuestion
+  # Conflict detected — ask user how to proceed
 fi
 ```
+
+If a conflict is detected, use `AskUserQuestion` to resolve it:
+
+```json
+{
+  "questions": [{
+    "question": "An intent already exists at .ai-dlc/{SLUG}/. How would you like to proceed?",
+    "header": "Slug Conflict",
+    "options": [
+      {"label": "Enter a different slug", "description": "I'll provide an alternative name for this adoption"},
+      {"label": "Append to existing", "description": "Add units to the existing intent rather than creating a new one"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+If the user chooses "Enter a different slug", prompt for the replacement:
+
+```json
+{
+  "questions": [{
+    "question": "Enter a slug for this adoption (alphanumeric and hyphens only, max 50 characters):",
+    "header": "Custom Slug",
+    "options": [],
+    "multiSelect": false
+  }]
+}
+```
+
+Set `SLUG` to the user-provided value (sanitized: lowercase, spaces to hyphens, max 50 chars) before proceeding.
 
 ---
 
@@ -570,6 +600,39 @@ Present the proposed operations:
 
 **Wait for user confirmation.** Iterate on feedback until approved.
 
+### Synthesize Approved Operations
+
+After user approval, build the `OPERATIONS` array from the confirmed operation specs:
+
+```bash
+# Build an array of JSON objects representing each approved operation
+# Each element contains the operation name and whether it is agent-owned
+OPERATIONS=()
+for each approved_op in confirmed_operations; do
+  OPERATIONS+=("$(cat <<JSON
+{
+  "name": "${op_identifier}",
+  "type": "${op_type}",
+  "owner": "${op_owner}",
+  "schedule": "${op_schedule_or_empty}",
+  "trigger": "${op_trigger_or_empty}",
+  "frequency": "${op_frequency_or_empty}",
+  "runtime": "${op_runtime}"
+}
+JSON
+)")
+done
+
+# Counts used in Phase 6 state save
+OP_COUNT=${#OPERATIONS[@]}
+```
+
+If operations were skipped (user chose "Skip operations"), set:
+```bash
+OPERATIONS=()
+OP_COUNT=0
+```
+
 ---
 
 ## Phase 6: Write Artifacts
@@ -749,7 +812,13 @@ git commit -m "adopt(${SLUG}): reverse-engineer existing feature into AI-DLC art
 
 ### Save State
 
+Derive counts from the approved artifacts before saving state:
+
 ```bash
+# Count unit files written in this phase
+UNIT_COUNT=$(find "$INTENT_DIR" -maxdepth 1 -name "unit-*.md" | wc -l | tr -d ' ')
+
+# OP_COUNT is already set from the Phase 5 synthesis step (0 if operations were skipped)
 dlc_state_save "$INTENT_DIR" "adopt-metadata.json" "{
   \"adopted_on\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
   \"feature_description\": \"${FEATURE_DESCRIPTION}\",
