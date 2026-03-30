@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.82.1] - 2026-03-30
+
+### Fixed
+
+- prevent planner hat from entering plan mode, reorder strategy options, remove auto-merge question ([1aa04c3](../../commit/1aa04c3))
+
+## [1.82.0] - 2026-03-30
+
+### Added
+
+- story-driven home page and plugin lifecycle guides ([df4d4ad](../../commit/df4d4ad))
+
+## [1.81.1] - 2026-03-30
+
+### Fixed
+
+- make intent strategy the default option, remove auto-merge question ([2b81ab5](../../commit/2b81ab5))
+
+## [1.81.0] - 2026-03-30
+
+### Added
+
+- rename Construction Phase to Execution Phase, add configurable default passes ([001d2c1](../../commit/001d2c1))
+
+## [1.80.1] - 2026-03-30
+
+### Fixed
+
+- remove han dependency from plugin hooks ([9eacf07](../../commit/9eacf07))
+
 ## [1.80.0] - 2026-03-29
 
 ### Added
