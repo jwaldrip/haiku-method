@@ -1,5 +1,6 @@
 ---
-status: pending
+status: in_progress
+hat: planner
 last_updated: ""
 depends_on: []
 branch: ai-dlc/harness-enforced-quality-gates/01-quality-gate-hook
