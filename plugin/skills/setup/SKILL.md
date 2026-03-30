@@ -327,6 +327,38 @@ Ask the user about their preferred workflow intensity:
 
 ---
 
+## Phase 5b: Default Iteration Passes
+
+Ask the user about their default cross-functional iteration passes for new intents. Most teams only need a single dev pass.
+
+Use `AskUserQuestion`:
+
+```json
+{
+  "questions": [{
+    "question": "What iteration passes should new intents use by default?",
+    "header": "Default Iteration Passes",
+    "options": [
+      {"label": "Dev only", "description": "Single pass — elaborate and build (default for most work)"},
+      {"label": "Design + Dev", "description": "Design pass produces artifacts, then dev pass builds from them"},
+      {"label": "Design + Product + Dev", "description": "Full cross-functional: design artifacts → product specs → working code"},
+      {"label": "Product + Dev", "description": "Product defines acceptance criteria, then dev builds"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+Map selections to `default_passes` in settings.yml:
+- "Dev only" → `default_passes: []`
+- "Design + Dev" → `default_passes: [design, dev]`
+- "Design + Product + Dev" → `default_passes: [design, product, dev]`
+- "Product + Dev" → `default_passes: [product, dev]`
+
+Pre-fill from existing `settings.yml` `default_passes` if available.
+
+---
+
 ## Phase 6: VCS Strategy
 
 Ask the user about their preferred delivery strategy, source branch, and auto-merge behavior.
@@ -418,6 +450,9 @@ git:  # or jj:
   auto_merge: true
   elaboration_review: true
 
+# Only include if non-default (non-empty)
+default_passes: [design, dev]
+
 # Only include providers that were confirmed
 providers:
   ticketing:
@@ -461,6 +496,7 @@ Display a final summary:
 | Default Branch | main |
 | Change Strategy | unit |
 | Auto-merge | yes |
+| Default Passes | dev only |
 | Ticketing | jira (PROJ) |
 | Spec | confluence (TEAM) |
 | Design | — |
