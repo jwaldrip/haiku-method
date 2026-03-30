@@ -1,6 +1,6 @@
 ---
-status: in_progress
-hat: reviewer
+status: completed
+hat: done
 last_updated: ""
 depends_on:
   - unit-01-quality-gate-hook
