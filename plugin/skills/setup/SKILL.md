@@ -187,7 +187,7 @@ Use `AskUserQuestion`:
     "question": "Enable browser-based visual review for elaboration gates? (Requires the ai-dlc-review MCP server, which is bundled with the plugin.)",
     "header": "Visual Review",
     "options": [
-      {"label": "Enable", "description": "Use the browser-based review UI at elaboration gates (MCP server detected)"},
+      {"label": "Enable", "description": "Use the browser-based review UI at elaboration gates"},
       {"label": "Disable", "description": "Use standard terminal-based AskUserQuestion prompts at elaboration gates"}
     ],
     "multiSelect": false
@@ -195,8 +195,8 @@ Use `AskUserQuestion`:
 }
 ```
 
-If the MCP tool was NOT detected, adjust the "Enable" option description to note this:
-- `"description": "Use the browser-based review UI at elaboration gates (MCP server NOT detected — ensure it is registered in .mcp.json)"`
+- If the MCP tool was detected, append `(MCP server detected)` to the Enable description.
+- If NOT detected, append `(MCP server NOT detected — ensure ai-dlc-review is registered in .mcp.json)` to the Enable description.
 
 Store the result as `VISUAL_REVIEW_ENABLED` (`true` or `false`).
 
@@ -499,6 +499,7 @@ providers:
 
 Rules:
 - Only include `git:` or `jj:` — not both — based on `DETECTED_VCS`
+- Set `visual_review` to the value of `VISUAL_REVIEW_ENABLED` from Phase 3b
 - Only include provider sections for providers the user confirmed
 - Preserve any `instructions:` fields from existing settings
 - Preserve any fields not covered by this wizard (e.g., custom `config` keys)
