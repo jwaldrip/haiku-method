@@ -1,6 +1,6 @@
 ---
-status: in_progress
-hat: reviewer
+status: completed
+hat: done
 retries: 1
 last_updated: ""
 depends_on: []
