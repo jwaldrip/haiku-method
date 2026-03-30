@@ -205,3 +205,151 @@ Spec-driven development (Thoughtworks, GitHub Spec Kit) emphasizes:
 4. **Unified finding format** — each finding should include: issue description, affected units, confidence level, suggested fix, and evidence/reasoning
 5. **Auto-fix for high-confidence issues** — the orchestrator can apply fixes without user confirmation when the finding is deterministic (e.g., missing dependency edge, contradictory field references)
 
+## Architecture Decision: Subagent vs. Inline Review
+
+### Option A: Inline subagent (like current Phase 7)
+
+Phase 7 currently uses an inline Agent() call with a prompt — no separate skill file. This is simpler but limits the adversarial review's capabilities:
+
+- Cannot have its own allowed-tools list
+- Cannot be invoked independently for testing
+- Prompt is embedded in the elaborate SKILL.md (already 2000+ lines)
+- No brief/results file pattern for structured data exchange
+
+### Option B: Dedicated skill file (like elaborate-discover)
+
+Create `plugin/skills/elaborate-adversarial-review/SKILL.md` with its own brief/results pattern. This:
+
+- Follows the established subagent delegation pattern (discover, wireframes, ticket-sync)
+- Has its own `allowed-tools` list (needs Read, Write, Glob, Grep, Bash for file analysis)
+- Can be invoked independently for testing
+- Uses structured brief/results files for clean data exchange
+- Keeps elaborate SKILL.md from growing even larger
+- Enables the subagent to commit findings incrementally
+
+**Decision: Option B (Dedicated skill file).** Consistency with existing patterns, independent testability, and structured data exchange outweigh the simplicity of inline.
+
+### Implementation Shape
+
+Files to create/modify:
+
+1. **NEW: `plugin/skills/elaborate-adversarial-review/SKILL.md`** — The adversarial review subagent skill
+   - `context: fork`, `agent: general-purpose`, `user-invocable: false`
+   - Reads brief from `.ai-dlc/{slug}/.briefs/elaborate-adversarial-review.md`
+   - Writes results to `.ai-dlc/{slug}/.briefs/elaborate-adversarial-review-results.md`
+   - Allowed tools: Read, Write, Glob, Grep, Bash (for spec analysis — no web search, no MCP, no AskUserQuestion)
+
+2. **MODIFY: `plugin/skills/elaborate/SKILL.md`** — Add Phase 7.5 delegation
+   - After Phase 7, add Phase 7.5 that:
+     a. Writes the adversarial review brief (intent.md + all unit-*.md + discovery.md context)
+     b. Commits the brief
+     c. Invokes the subagent
+     d. Reads results
+     e. Auto-applies high-confidence fixes (edit spec files, commit)
+     f. Presents low-confidence findings to user via AskUserQuestion
+     g. Commits any user-driven fixes
+
+3. **MODIFY: `plugin/schemas/settings.schema.json`** — (Optional) Add `adversarial_review` boolean setting
+   - Could be used to gate the phase, but since it adds value without cost, defaulting to always-on is simpler
+   - **Decision: Always-on by default** — no settings gate needed initially. Can be added later if users request opt-out.
+
+## Architecture Decision: Finding Format
+
+Each adversarial review finding needs a structured format that enables:
+1. The subagent to write findings systematically
+2. The orchestrator to parse and triage findings
+3. Auto-fix logic to apply high-confidence fixes programmatically
+4. User-facing presentation of low-confidence findings
+
+### Proposed Finding Format
+
+```yaml
+findings:
+  - id: F001
+    category: contradiction  # contradiction | hidden-complexity | assumption | dependency | scope | completeness | boundary
+    confidence: high  # high | medium | low
+    severity: blocking  # blocking | warning | suggestion
+    affected_units: [unit-02-api-layer, unit-03-frontend]
+    title: "Contradictory data source references"
+    description: "unit-02 specifies REST API as data source for user profiles, but unit-03 references GraphQL for the same data"
+    evidence: "unit-02 line 45: 'GET /api/users/{id}' vs unit-03 line 32: 'query { user(id: $id) { ... } }'"
+    suggested_fix: "Align both units to use the same data source. Since the API is REST-based (per discovery.md), update unit-03 to reference REST endpoints."
+    fix_type: spec_edit  # spec_edit | add_dependency | remove_unit | add_criterion | reorder | manual
+    fix_target: unit-03-frontend  # Which file to edit for auto-fix
+```
+
+### Finding Categories
+
+| Category | What It Catches | Example |
+|---|---|---|
+| `contradiction` | Units make conflicting claims about the same entity, API, or behavior | Unit A says REST, unit B says GraphQL |
+| `hidden-complexity` | A unit appears simple but hides significant technical challenge | "Implement real-time sync" with no mention of conflict resolution |
+| `assumption` | An unvalidated assumption that could invalidate the unit | Assumes API supports pagination when it doesn't |
+| `dependency` | Missing, incorrect, or unnecessary dependency edges | Unit 3 uses output of unit 2 but doesn't depend_on it |
+| `scope` | YAGNI violation or scope creep beyond the intent | Unit for "admin dashboard" when intent is "user profile page" |
+| `completeness` | Missing success criteria, missing error paths, gaps in spec | No criterion for error handling in API unit |
+| `boundary` | Unit boundary violation — work that belongs in another unit | Frontend unit includes backend validation logic |
+
+### Fix Types
+
+| Fix Type | Auto-Apply? | Description |
+|---|---|---|
+| `spec_edit` | Medium-high confidence only | Edit a specific section of a unit file |
+| `add_dependency` | High confidence | Add a `depends_on` entry to unit frontmatter |
+| `remove_unit` | Never auto | Remove a unit (too destructive) |
+| `add_criterion` | Medium confidence | Add a success criterion to a unit |
+| `reorder` | High confidence | Reorder unit numbering |
+| `manual` | Never auto | Requires human judgment |
+
+## Architecture Decision: Auto-Fix Boundary
+
+The brief specifies: "High-confidence fixes are applied automatically by the orchestrator. Low-confidence issues are presented to the user as follow-up questions."
+
+**Auto-fix rules:**
+- `confidence: high` + `fix_type: add_dependency` → Auto-apply (deterministic: unit references another but lacks depends_on)
+- `confidence: high` + `fix_type: spec_edit` → Auto-apply only for mechanical fixes (e.g., fixing a field name reference)
+- `confidence: high` + `fix_type: add_criterion` → Auto-apply (adding missing obvious criteria)
+- `confidence: medium` → Present to user with suggested fix, ask for confirmation
+- `confidence: low` → Present to user as informational finding
+- `fix_type: remove_unit` or `fix_type: manual` → Always present to user regardless of confidence
+
+**The subagent writes the findings. The orchestrator (elaborate SKILL.md) applies the fixes.** The subagent does NOT modify spec files — it only reads and reports. This separation ensures:
+1. Findings are reviewed (even if automatically) before any changes
+2. The subagent can't accidentally corrupt spec files
+3. All fix commits are attributed to the orchestrator, maintaining clear provenance
+
+## Codebase Pattern: Elaborate SKILL.md Structure for New Phases
+
+Looking at how existing delegated phases are structured in elaborate SKILL.md, the pattern is:
+
+```markdown
+## Phase N.N: {Phase Name} (Delegated)
+
+{Skip condition if applicable}
+
+### Step 1: {Precondition/config loading}
+### Step 2: Write {name} brief
+### Step 3: Invoke {name} subagent
+### Step 4: Read results
+### Step 5: Handle results (commit, present to user, etc.)
+
+---
+```
+
+Phase 7.5 should follow this exact structure:
+
+```markdown
+## Phase 7.5: Adversarial Spec Review (Delegated)
+
+### Step 1: Gather spec context
+### Step 2: Write adversarial review brief
+### Step 3: Invoke adversarial review subagent
+### Step 4: Read results
+### Step 5: Auto-apply high-confidence fixes
+### Step 6: Present remaining findings to user
+### Step 7: Apply user-approved fixes
+### Step 8: Commit final spec state
+
+---
+```
+
