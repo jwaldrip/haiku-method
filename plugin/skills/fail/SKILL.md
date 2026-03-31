@@ -10,12 +10,12 @@ user-invocable: false
 ## Synopsis
 
 ```
-/fail
+/ai-dlc:fail
 ```
 
 ## Description
 
-**Internal command** - Called by the AI during `/execute`, not directly by users.
+**Internal command** - Called by the AI during `/ai-dlc:execute`, not directly by users.
 
 Goes back to the previous hat in the workflow. Typically used when:
 - Reviewer finds issues -> return to builder
@@ -145,5 +145,5 @@ If already at the first hat (planner by default), output:
 ```
 You are at the first hat (planner).
 
-Cannot go back further. Use `/reset` to start over, or re-elaborate with `/elaborate <slug>`.
+Cannot go back further. Use `/ai-dlc:reset` to start over, or re-elaborate with `/ai-dlc:elaborate <slug>`.
 ```

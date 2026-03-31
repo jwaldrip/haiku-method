@@ -70,8 +70,8 @@ export function HatExplainer() {
 						<li>What the agent MUST NOT do (boundaries)</li>
 						<li>Quality gates it must pass before finishing</li>
 						<li>
-							When to call <code className="text-green-500">/advance</code> or{" "}
-							<code className="text-rose-500">/fail</code>
+							When to call <code className="text-green-500">/ai-dlc:advance</code> or{" "}
+							<code className="text-rose-500">/ai-dlc:fail</code>
 						</li>
 					</ul>
 				</div>

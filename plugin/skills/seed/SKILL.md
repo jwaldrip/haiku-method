@@ -12,9 +12,9 @@ argument-hint: "[plant|list|check]"
 ## Synopsis
 
 ```
-/seed plant
-/seed list
-/seed check
+/ai-dlc:seed plant
+/ai-dlc:seed list
+/ai-dlc:seed check
 ```
 
 ## Description
@@ -46,7 +46,7 @@ status: planted | surfaced | harvested | pruned
 
 ## Implementation
 
-### Command: `/seed plant`
+### Command: `/ai-dlc:seed plant`
 
 Interactively capture a new seed idea.
 
@@ -90,7 +90,7 @@ Trigger: {trigger condition}
 File: .ai-dlc/seeds/{slug}.md
 ```
 
-### Command: `/seed list`
+### Command: `/ai-dlc:seed list`
 
 Display all planted seeds grouped by status.
 
@@ -99,7 +99,7 @@ Display all planted seeds grouped by status.
 ```bash
 SEED_DIR=".ai-dlc/seeds"
 if [ ! -d "$SEED_DIR" ] || [ -z "$(ls -A "$SEED_DIR" 2>/dev/null)" ]; then
-  echo "No seeds planted yet. Use /seed plant to capture an idea."
+  echo "No seeds planted yet. Use /ai-dlc:seed plant to capture an idea."
   exit 0
 fi
 ```
@@ -132,7 +132,7 @@ fi
 
 Only show sections that have entries.
 
-### Command: `/seed check`
+### Command: `/ai-dlc:seed check`
 
 Check if any planted seeds should surface based on current context.
 
@@ -217,7 +217,7 @@ This ensures seeds are not forgotten and surface naturally when the right work b
 
 ### Planting a seed
 ```
-> /seed plant
+> /ai-dlc:seed plant
 What is your idea? "Add visual dependency graphs for unit DAGs"
 When should this surface? "When working on any intent related to UI, dashboards, or visualization"
 
@@ -228,7 +228,7 @@ File: .ai-dlc/seeds/add-visual-dependency-graphs-for-unit-dags.md
 
 ### Checking seeds during elaboration
 ```
-> /seed check
+> /ai-dlc:seed check
 
 A previously planted seed may be relevant:
 

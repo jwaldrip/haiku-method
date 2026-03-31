@@ -35,7 +35,7 @@ With blocker documentation:
 
 Blockers are a form of knowledge transfer:
 - From current session → next session
-- From current hat → next hat (if `/fail` called)
+- From current hat → next hat (if `/ai-dlc:fail` called)
 - From AI → human (if intervention needed)
 
 ## Blocker Anatomy
@@ -221,7 +221,7 @@ AI addresses directly:
 "I see there was a blocker with OAuth. Let me try disabling strict mode first..."
 ```
 
-### After `/fail`
+### After `/ai-dlc:fail`
 
 When reviewer sends back to builder:
 ```markdown
@@ -325,7 +325,7 @@ Document blockers, save progress, iterate.
 
 ### Reviewer Hat
 
-Creates blockers when `/fail`:
+Creates blockers when `/ai-dlc:fail`:
 - Quality issues found
 - Missing functionality
 - Failed criteria

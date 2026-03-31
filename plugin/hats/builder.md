@@ -168,7 +168,7 @@ Each level is attempted only after the previous level fails. Never skip levels.
    **c. Operation deployment manifest template** (`deploy/{operation-name}.{type}.{ext}` in `operations/deploy/`):
    - Template manifest created at build time in `.ai-dlc/{intent}/operations/deploy/`
    - These templates serve as the validation target for the OPERATIONS_READY gate
-   - `/operate --deploy` later regenerates production-ready manifests in the same location
+   - `/ai-dlc:operate --deploy` later regenerates production-ready manifests in the same location
    - Format determined by stack.operations config:
      - kubernetes → CronJob/Deployment YAML (`{name}.cronjob.yaml` or `{name}.deployment.yaml`)
      - github-actions → workflow YAML (`{name}.workflow.yaml`)

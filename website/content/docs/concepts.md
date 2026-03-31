@@ -335,7 +335,7 @@ Persisted across sessions, branches, and team members:
 
 ### Ephemeral State (`han keep`)
 
-Session-scoped, cleared on `/reset`:
+Session-scoped, cleared on `/ai-dlc:reset`:
 
 | Key | Purpose |
 |-----|---------|
@@ -349,7 +349,7 @@ If you `/clear` without the stop hook:
 
 1. Committed artifacts (`.ai-dlc/`) are safe
 2. Ephemeral state persists in `han keep`
-3. Run `/execute` to continue
+3. Run `/ai-dlc:execute` to continue
 
 ## Iteration Through Passes
 
@@ -381,7 +381,7 @@ When dev discovers a technical constraint that changes the product spec, the int
 
 ## Operations Phase
 
-After construction and integration complete, many features require ongoing maintenance — scheduled jobs, reactive responses to production events, or periodic human reviews. The operations phase provides a structured way to define and manage these tasks using `/operate`. Operations are defined as spec files alongside the code and tracked through the same state system as the rest of AI-DLC.
+After construction and integration complete, many features require ongoing maintenance — scheduled jobs, reactive responses to production events, or periodic human reviews. The operations phase provides a structured way to define and manage these tasks using `/ai-dlc:operate`. Operations are defined as spec files alongside the code and tracked through the same state system as the rest of AI-DLC.
 
 See the [Operations Guide](/docs/operations-guide/) for a full walkthrough.
 

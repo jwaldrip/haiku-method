@@ -123,4 +123,4 @@ The Test Writer creates failing tests that define expected behavior before imple
 
 - **Implementer**: Will make this test pass
 - **Refactorer**: Will clean up after tests pass
-- **Elaboration phase** (`/elaborate`): Defined the criteria being tested
+- **Elaboration phase** (`/ai-dlc:elaborate`): Defined the criteria being tested

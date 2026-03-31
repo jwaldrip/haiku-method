@@ -12,10 +12,10 @@ argument-hint: "[add|list|review|promote] [description]"
 ## Synopsis
 
 ```
-/backlog add <idea>
-/backlog list
-/backlog review
-/backlog promote <id>
+/ai-dlc:backlog add <idea>
+/ai-dlc:backlog list
+/ai-dlc:backlog review
+/ai-dlc:backlog promote <id>
 ```
 
 ## Description
@@ -52,7 +52,7 @@ created: YYYY-MM-DD
 ### `add` - Add a new idea
 
 ```
-/backlog add <idea description>
+/ai-dlc:backlog add <idea description>
 ```
 
 1. Derive a slug from the idea description (lowercase, hyphens, max 50 chars).
@@ -65,7 +65,7 @@ created: YYYY-MM-DD
 ### `list` - List all backlog items
 
 ```
-/backlog list
+/ai-dlc:backlog list
 ```
 
 1. Scan `.ai-dlc/backlog/*.md` for all items.
@@ -80,12 +80,12 @@ add-search-filters    medium    feature      2026-03-22
 update-readme-links   low       improvement  2026-03-25
 ```
 
-4. If no items exist, print: `Backlog is empty. Use /backlog add <idea> to add one.`
+4. If no items exist, print: `Backlog is empty. Use /ai-dlc:backlog add <idea> to add one.`
 
 ### `review` - Interactive triage
 
 ```
-/backlog review
+/ai-dlc:backlog review
 ```
 
 1. Load all backlog items sorted by created date (oldest first).
@@ -100,14 +100,14 @@ update-readme-links   low       improvement  2026-03-25
 ### `promote` - Promote to intent
 
 ```
-/backlog promote <id>
+/ai-dlc:backlog promote <id>
 ```
 
 1. Read the backlog item at `.ai-dlc/backlog/{id}.md`.
 2. If not found, print error and list available IDs.
 3. Confirm with the user: `Promote "{title}" to a full intent for elaboration?`
 4. On confirmation:
-   a. Invoke `/elaborate` with the item's description as the starting context.
+   a. Invoke `/ai-dlc:elaborate` with the item's description as the starting context.
    b. Delete the backlog file from `.ai-dlc/backlog/`.
    c. Print: `Promoted {id} to intent. Elaboration started.`
 
@@ -116,4 +116,4 @@ update-readme-links   low       improvement  2026-03-25
 - All state is file-based in `.ai-dlc/backlog/` — no database, no external deps.
 - Slugs are derived from the description: lowercase, non-alphanumeric replaced with hyphens, collapsed, trimmed to 50 chars.
 - The `review` command is interactive and should use `AskUserQuestion` for each item.
-- The `promote` command delegates to the existing `/elaborate` skill for intent creation.
+- The `promote` command delegates to the existing `/ai-dlc:elaborate` skill for intent creation.

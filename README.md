@@ -125,7 +125,7 @@ Used environment variables for credentials as per security guidelines.
 ### 1. Start with Elaboration
 
 ```
-User: /elaborate
+User: /ai-dlc:elaborate
 ```
 
 Work with the AI to define:
@@ -138,7 +138,7 @@ Work with the AI to define:
 ### 2. Run the Execution Loop
 
 ```
-User: /execute
+User: /ai-dlc:execute
 ```
 
 The AI autonomously:
@@ -152,8 +152,8 @@ The AI autonomously:
 ### 3. Continue After Each Session
 
 ```
-Stop hook: "Run /execute to continue"
-User: /execute
+Stop hook: "Run /ai-dlc:execute to continue"
+User: /ai-dlc:execute
 ```
 
 Context is preserved across sessions:
@@ -166,23 +166,23 @@ Context is preserved across sessions:
 After execution completes:
 
 ```
-User: /operate    # Execute operational tasks (deployments, config, etc.)
-User: /reflect    # Analyze the cycle — capture learnings and recommendations
+User: /ai-dlc:operate    # Execute operational tasks (deployments, config, etc.)
+User: /ai-dlc:reflect    # Analyze the cycle — capture learnings and recommendations
 ```
 
 ## User Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/elaborate` | Mob elaboration - define intent, units, and criteria |
-| `/execute` | Run the autonomous execution loop |
-| `/operate` | Manage operational tasks for a completed intent |
-| `/reflect` | Analyze a completed cycle, capture learnings |
-| `/refine` | Amend intent or unit specs mid-execution |
-| `/resume` | Resume an intent when ephemeral state is lost |
-| `/setup` | Configure AI-DLC for the project (auto-detects VCS, CI/CD, providers) |
-| `/reset` | Abandon current unit and clear ephemeral state |
-| `/cleanup` | Remove orphaned AI-DLC worktrees |
+| `/ai-dlc:elaborate` | Mob elaboration - define intent, units, and criteria |
+| `/ai-dlc:execute` | Run the autonomous execution loop |
+| `/ai-dlc:operate` | Manage operational tasks for a completed intent |
+| `/ai-dlc:reflect` | Analyze a completed cycle, capture learnings |
+| `/ai-dlc:refine` | Amend intent or unit specs mid-execution |
+| `/ai-dlc:resume` | Resume an intent when ephemeral state is lost |
+| `/ai-dlc:setup` | Configure AI-DLC for the project (auto-detects VCS, CI/CD, providers) |
+| `/ai-dlc:reset` | Abandon current unit and clear ephemeral state |
+| `/ai-dlc:cleanup` | Remove orphaned AI-DLC worktrees |
 
 ## Conventions
 
@@ -230,7 +230,7 @@ Examples:
 
 ## Named Workflows
 
-Select a workflow during `/elaborate`:
+Select a workflow during `/ai-dlc:elaborate`:
 
 | Workflow | Description | Hats |
 |----------|-------------|------|
@@ -269,7 +269,7 @@ All hats follow the [Agent SOP format](https://github.com/strands-agents/agent-s
 | Experimenter | Test hypotheses systematically |
 | Analyst | Evaluate results and implement fix |
 
-> **Note:** Cross-cutting integration validation runs automatically after all units are merged (via the internal `/integrate` skill), not as a hat in the per-unit workflow. It verifies that units work together and intent-level success criteria are met.
+> **Note:** Cross-cutting integration validation runs automatically after all units are merged (via the internal `/ai-dlc:integrate` skill), not as a hat in the per-unit workflow. It verifies that units work together and intent-level success criteria are met.
 
 ## State Management
 
@@ -285,7 +285,7 @@ Persisted across sessions, branches, and team members:
 
 ### Ephemeral State (`.ai-dlc/{slug}/state/`)
 
-Session-scoped, cleared on `/reset`:
+Session-scoped, cleared on `/ai-dlc:reset`:
 
 | File | Purpose |
 |------|---------|
@@ -368,12 +368,12 @@ These internal skills provide AI-DLC knowledge to the agent (not user-invocable)
 
 | Problem | Solution |
 |---------|----------|
-| **Invalid iteration.json** | Run `/reset` to clear corrupted state |
-| **Stuck in wrong hat** | Edit `.ai-dlc/{slug}/state/iteration.json` directly or run `/reset` |
+| **Invalid iteration.json** | Run `/ai-dlc:reset` to clear corrupted state |
+| **Stuck in wrong hat** | Edit `.ai-dlc/{slug}/state/iteration.json` directly or run `/ai-dlc:reset` |
 | **Hook not injecting context** | Verify `jq` and `yq` (mikefarah/Go) are installed and in PATH |
 | **Missing hat instructions** | Check hat file exists in `.ai-dlc/hats/` or plugin's `hats/` |
-| **Orphaned ephemeral state** | Run `/reset` to clear, recommit intent if needed |
-| **Orphaned worktrees** | Run `/cleanup` to remove stale worktrees |
+| **Orphaned ephemeral state** | Run `/ai-dlc:reset` to clear, recommit intent if needed |
+| **Orphaned worktrees** | Run `/ai-dlc:cleanup` to remove stale worktrees |
 
 ### Manual State Inspection
 
@@ -384,7 +384,7 @@ cat .ai-dlc/{intent-slug}/state/iteration.json | jq .
 # View scratchpad
 cat .ai-dlc/{intent-slug}/state/scratchpad.md
 
-# Clear all ephemeral state (same as /reset)
+# Clear all ephemeral state (same as /ai-dlc:reset)
 rm -rf .ai-dlc/{intent-slug}/state/
 ```
 
@@ -394,7 +394,7 @@ If you `/clear` without running the stop hook:
 
 1. Your committed artifacts (`.ai-dlc/`) are safe
 2. Ephemeral state persists in `.ai-dlc/{slug}/state/`
-3. Just run `/execute` to continue
+3. Just run `/ai-dlc:execute` to continue
 
 ## Development
 

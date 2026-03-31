@@ -12,8 +12,8 @@ argument-hint: "[--output <dir>]"
 ## Synopsis
 
 ```
-/dashboard
-/dashboard --output ./reports/dashboard
+/ai-dlc:dashboard
+/ai-dlc:dashboard --output ./reports/dashboard
 ```
 
 ## Description
@@ -30,10 +30,10 @@ The dashboard renders all intents, units, DAG visualizations, completion criteri
 
 ### Usage
 
-Run `/dashboard` to generate the dashboard with default settings:
+Run `/ai-dlc:dashboard` to generate the dashboard with default settings:
 
 ```
-/dashboard
+/ai-dlc:dashboard
 ```
 
 This generates the site into `.ai-dlc/dashboard/` and reports the output path.
@@ -41,7 +41,7 @@ This generates the site into `.ai-dlc/dashboard/` and reports the output path.
 To specify a custom output directory:
 
 ```
-/dashboard --output ./my-reports/
+/ai-dlc:dashboard --output ./my-reports/
 ```
 
 Then open the generated `index.html` in any browser.
@@ -71,7 +71,7 @@ The review flow:
 
 ### Static Dashboard vs. Review Channel
 
-| Feature | `/dashboard` | Review Channel |
+| Feature | `/ai-dlc:dashboard` | Review Channel |
 |---------|-------------|----------------|
 | Purpose | Offline viewing & sharing | Interactive review during execution |
 | Output | Static HTML files | Live browser page |

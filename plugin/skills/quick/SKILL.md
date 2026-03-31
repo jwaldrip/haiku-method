@@ -22,7 +22,7 @@ Tasks that would take a human less than a few minutes:
 
 ## When NOT to Use
 
-Anything that needs planning, touches multiple subsystems, or involves architectural decisions. If you are unsure, tell the user and suggest `/elaborate` instead.
+Anything that needs planning, touches multiple subsystems, or involves architectural decisions. If you are unsure, tell the user and suggest `/ai-dlc:elaborate` instead.
 
 ---
 
@@ -33,9 +33,9 @@ Anything that needs planning, touches multiple subsystems, or involves architect
 The user invokes quick mode with an inline task description:
 
 ```
-/quick fix the typo in README.md
-/quick rename `oldVar` to `newVar` in src/utils.ts
-/quick add missing `os` import in lib/config.sh
+/ai-dlc:quick fix the typo in README.md
+/ai-dlc:quick rename `oldVar` to `newVar` in src/utils.ts
+/ai-dlc:quick add missing `os` import in lib/config.sh
 ```
 
 Extract the task description from the argument. If no argument was provided, ask the user what they need done (single question, not a multi-phase interview).
@@ -44,7 +44,7 @@ Extract the task description from the argument. If no argument was provided, ask
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /quick cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:quick cannot run in cowork mode."
   echo "Quick mode requires a full Claude Code CLI session with file system access."
   exit 1
 fi
@@ -58,7 +58,7 @@ Before executing, do a quick sanity check:
 
 1. **Read the relevant file(s)** mentioned in the task description.
 2. **Confirm the change is trivial** — if the task turns out to require multi-file architectural changes, new test infrastructure, or design decisions, STOP and tell the user:
-   > This task looks bigger than a quick fix. Consider using `/elaborate` for proper planning.
+   > This task looks bigger than a quick fix. Consider using `/ai-dlc:elaborate` for proper planning.
 3. If the task is genuinely trivial, proceed.
 
 ### Step 4: Execute the Change
@@ -119,4 +119,4 @@ Done. No follow-up phases, no elaboration artifacts, no state files.
 - **No state files.** Quick mode does NOT create `.ai-dlc/` directories, intent files, unit files, or any elaboration artifacts.
 - **No worktrees.** Work happens in the current working directory on the current branch.
 - **No subagents.** The current agent handles everything directly.
-- **Scope escape hatch.** If at any point during execution you realize the task is not trivial, stop and recommend `/elaborate`. Do not silently expand scope.
+- **Scope escape hatch.** If at any point during execution you realize the task is not trivial, stop and recommend `/ai-dlc:elaborate`. Do not silently expand scope.

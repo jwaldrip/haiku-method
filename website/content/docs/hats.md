@@ -15,7 +15,7 @@ The hat system prevents:
 - **Quality shortcuts**: Skipping review to "just ship it"
 - **Role confusion**: Trying to attack and defend code at the same time
 
-By explicitly switching hats, you maintain focus and ensure each phase gets proper attention. Domain research happens during Mob Elaboration (`/elaborate`), before execution begins.
+By explicitly switching hats, you maintain focus and ensure each phase gets proper attention. Domain research happens during Mob Elaboration (`/ai-dlc:elaborate`), before execution begins.
 
 ## Core Hats
 

@@ -530,11 +530,11 @@ export default function Home() {
 						className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
 					>
 						<ShortcutPill
-							cmd="/quick"
+							cmd="/ai-dlc:quick"
 							desc="Skip everything for tiny fixes -- typos, config changes, one-liners"
 						/>
 						<ShortcutPill
-							cmd="/autopilot"
+							cmd="/ai-dlc:autopilot"
 							desc="AI handles the whole cycle autonomously for well-understood features"
 						/>
 					</motion.div>
@@ -1057,7 +1057,7 @@ export default function Home() {
 						className="mb-2 text-gray-500 dark:text-gray-400"
 					>
 						Now the AI works. You typed{" "}
-						<code className="text-amber-500">/execute</code>. Three loops nest
+						<code className="text-amber-500">/ai-dlc:execute</code>. Three loops nest
 						inside each other, from big to small.
 					</motion.p>
 
@@ -1137,7 +1137,7 @@ export default function Home() {
 						</div>
 						<p className="text-xs text-gray-500 dark:text-gray-400">
 							The gates were detected from your repo tooling during{" "}
-							<code className="text-amber-500">/elaborate</code> and saved to{" "}
+							<code className="text-amber-500">/ai-dlc:elaborate</code> and saved to{" "}
 							<code className="text-amber-500">intent.md</code> frontmatter. The
 							harness reads them and runs each command synchronously —{" "}
 							<strong className="text-gray-700 dark:text-gray-300">
@@ -1195,7 +1195,7 @@ export default function Home() {
 						<code className="text-amber-500">enforce-iteration.sh</code> fires
 						when a session ends. It checks what work remains. If units are still
 						in progress, it tells the next session to call{" "}
-						<code className="text-amber-500">/execute</code> to continue. The AI
+						<code className="text-amber-500">/ai-dlc:execute</code> to continue. The AI
 						never &ldquo;forgets&rdquo; mid-task.
 					</ChatBubble>
 
@@ -1246,7 +1246,7 @@ export default function Home() {
 						</div>
 						<p className="mt-3">
 							If ephemeral state is lost,{" "}
-							<code className="text-amber-500">/resume</code> can reconstruct it
+							<code className="text-amber-500">/ai-dlc:resume</code> can reconstruct it
 							from the committed artifacts and git history.
 						</p>
 					</DeepDive>
@@ -1374,7 +1374,7 @@ export default function Home() {
 								{
 									name: "redirect-plan-mode.sh",
 									trigger: "Pre-tool-use",
-									desc: "Intercepts Claude's native plan mode and redirects to /elaborate.",
+									desc: "Intercepts Claude's native plan mode and redirects to /ai-dlc:elaborate.",
 								},
 								{
 									name: "subagent-hook.sh",
@@ -1640,7 +1640,7 @@ export default function Home() {
 
 					{/* Deep Dive: Integration */}
 					<DeepDive
-						title="Deep Dive: Integration Validation -- The 10 Steps of /integrate"
+						title="Deep Dive: Integration Validation -- The 10 Steps of /ai-dlc:integrate"
 						forceOpen={isRef}
 					>
 						<ol className="list-decimal space-y-1.5 pl-5">
@@ -1687,7 +1687,7 @@ export default function Home() {
 					{/* Before You Build */}
 					<ToolkitGroup title="Before You Build" color="violet">
 						<ToolkitCard
-							cmd="/setup"
+							cmd="/ai-dlc:setup"
 							tagline="Configure AI-DLC for your project"
 							color="violet"
 						>
@@ -1703,7 +1703,7 @@ export default function Home() {
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ideate"
+							cmd="/ai-dlc:ideate"
 							tagline="Surface improvement ideas from your codebase"
 							color="violet"
 						>
@@ -1714,7 +1714,7 @@ export default function Home() {
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/backlog"
+							cmd="/ai-dlc:backlog"
 							tagline="Parking lot for ideas not ready yet"
 							color="violet"
 						>
@@ -1727,7 +1727,7 @@ export default function Home() {
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/seed"
+							cmd="/ai-dlc:seed"
 							tagline="Plant ideas that surface at the right time"
 							color="violet"
 						>
@@ -1737,7 +1737,7 @@ export default function Home() {
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/autopilot"
+							cmd="/ai-dlc:autopilot"
 							tagline="Full autonomous lifecycle in one command"
 							color="violet"
 						>
@@ -1753,7 +1753,7 @@ export default function Home() {
 					{/* While You Build */}
 					<ToolkitGroup title="While You Build" color="amber">
 						<ToolkitCard
-							cmd="/elaborate"
+							cmd="/ai-dlc:elaborate"
 							tagline="Plan your work collaboratively"
 							color="amber"
 						>
@@ -1763,7 +1763,7 @@ export default function Home() {
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/execute"
+							cmd="/ai-dlc:execute"
 							tagline="Run the autonomous build loop"
 							color="amber"
 						>
@@ -1773,14 +1773,14 @@ export default function Home() {
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/refine"
+							cmd="/ai-dlc:refine"
 							tagline="Change specs mid-construction"
 							color="amber"
 						>
 							<p>Preserves frontmatter and state, re-queues affected units.</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/quick"
+							cmd="/ai-dlc:quick"
 							tagline="Skip everything for tiny fixes"
 							color="amber"
 						>
@@ -1794,7 +1794,7 @@ export default function Home() {
 					{/* When Things Go Sideways */}
 					<ToolkitGroup title="When Things Go Sideways" color="rose">
 						<ToolkitCard
-							cmd="/resume"
+							cmd="/ai-dlc:resume"
 							tagline="Pick up where you left off"
 							color="rose"
 						>
@@ -1804,14 +1804,14 @@ export default function Home() {
 								<li>Creates worktrees and restores state</li>
 							</ul>
 						</ToolkitCard>
-						<ToolkitCard cmd="/reset" tagline="Start fresh" color="rose">
+						<ToolkitCard cmd="/ai-dlc:reset" tagline="Start fresh" color="rose">
 							<ul className="list-disc pl-4">
 								<li>Clears all AI-DLC state</li>
 								<li>Preserves your git commits and branches</li>
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/cleanup"
+							cmd="/ai-dlc:cleanup"
 							tagline="Remove stale worktrees"
 							color="rose"
 						>
@@ -1825,7 +1825,7 @@ export default function Home() {
 					{/* After You Build */}
 					<ToolkitGroup title="After You Build" color="green">
 						<ToolkitCard
-							cmd="/reflect"
+							cmd="/ai-dlc:reflect"
 							tagline="Analyze what happened"
 							color="green"
 						>
@@ -1835,7 +1835,7 @@ export default function Home() {
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/operate"
+							cmd="/ai-dlc:operate"
 							tagline="Manage post-deployment operations"
 							color="green"
 						>
@@ -1844,7 +1844,7 @@ export default function Home() {
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/followup"
+							cmd="/ai-dlc:followup"
 							tagline="Iterate on a completed intent"
 							color="green"
 						>
@@ -1854,7 +1854,7 @@ export default function Home() {
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/compound"
+							cmd="/ai-dlc:compound"
 							tagline="Capture learnings from this session"
 							color="green"
 						>
@@ -1878,16 +1878,16 @@ export default function Home() {
 						</p>
 						<div className="flex flex-wrap gap-1.5">
 							{[
-								"/advance",
-								"/fail",
-								"/integrate",
-								"/elaborate-discover",
-								"/elaborate-wireframes",
-								"/elaborate-ticket-sync",
-								"/fundamentals",
-								"/completion-criteria",
-								"/backpressure",
-								"/blockers",
+								"/ai-dlc:advance",
+								"/ai-dlc:fail",
+								"/ai-dlc:integrate",
+								"/ai-dlc:elaborate-discover",
+								"/ai-dlc:elaborate-wireframes",
+								"/ai-dlc:elaborate-ticket-sync",
+								"/ai-dlc:fundamentals",
+								"/ai-dlc:completion-criteria",
+								"/ai-dlc:backpressure",
+								"/ai-dlc:blockers",
 							].map((skill) => (
 								<span
 									key={skill}

@@ -82,8 +82,8 @@ Add the plugin to your Claude Code settings file manually.
 After installation, verify the plugin is working:
 
 1. Start a new Claude Code session in your project
-2. Type `/elaborate` - you should see the elaboration flow start
-3. If `/elaborate` works, your installation is successful
+2. Type `/ai-dlc:elaborate` - you should see the elaboration flow start
+3. If `/ai-dlc:elaborate` works, your installation is successful
 
 If commands aren't recognized, restart your Claude Code session.
 
@@ -136,7 +136,7 @@ your-project/
   ...
 ```
 
-The directory is created automatically when you run `/elaborate` for the first time.
+The directory is created automatically when you run `/ai-dlc:elaborate` for the first time.
 
 ### Git Configuration
 
@@ -172,7 +172,7 @@ However, committing is recommended - it provides:
 
 ### Commands Not Recognized
 
-**Symptom:** `/elaborate` or `/execute` don't activate
+**Symptom:** `/ai-dlc:elaborate` or `/ai-dlc:execute` don't activate
 
 **Solutions:**
 1. Restart Claude Code session

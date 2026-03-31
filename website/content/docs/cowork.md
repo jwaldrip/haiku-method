@@ -10,7 +10,7 @@ Cowork mode lets you use AI-DLC when you're not inside a git repository — for 
 
 ## How It Works
 
-When you run `/elaborate` outside of a git repo, AI-DLC detects this and enters cowork mode:
+When you run `/ai-dlc:elaborate` outside of a git repo, AI-DLC detects this and enters cowork mode:
 
 1. **Get the repo URL** — AI-DLC asks which repository the work targets. If VCS MCP tools (e.g., GitHub MCP) are available, it offers discovered repos as options.
 2. **Clone the repo** — The repository is cloned to a temporary workspace.
@@ -28,7 +28,7 @@ In cowork mode, after elaboration writes `.ai-dlc/` artifacts and creates ticket
 
 ## Execution in Cowork
 
-The `/execute` skill handles cowork transparently:
+The `/ai-dlc:execute` skill handles cowork transparently:
 
 - Ensures remote tracking is configured for the intent branch
 - Pulls latest changes before starting each unit

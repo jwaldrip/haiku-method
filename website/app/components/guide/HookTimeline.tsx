@@ -62,7 +62,7 @@ const events: HookEvent[] = [
 	},
 	{
 		name: "\u2699\uFE0F redirect-plan-mode",
-		desc: '"Use /elaborate instead -- that\'s the AI-DLC way."',
+		desc: '"Use /ai-dlc:elaborate instead -- that\'s the AI-DLC way."',
 		type: "hook",
 	},
 	{
@@ -72,7 +72,7 @@ const events: HookEvent[] = [
 	},
 	{
 		name: "\u2699\uFE0F enforce-iteration",
-		desc: '"Work remains! Call /execute to continue." -- Ensures nothing falls through the cracks.',
+		desc: '"Work remains! Call /ai-dlc:execute to continue." -- Ensures nothing falls through the cracks.',
 		type: "hook",
 	},
 ]

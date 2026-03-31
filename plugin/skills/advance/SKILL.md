@@ -10,18 +10,18 @@ user-invocable: false
 ## Synopsis
 
 ```
-/advance
+/ai-dlc:advance
 ```
 
 ## Description
 
-**Internal command** - Called by the AI during `/execute`, not directly by users.
+**Internal command** - Called by the AI during `/ai-dlc:execute`, not directly by users.
 
 Advances to the next hat in the workflow sequence. For example, in the default workflow:
 - planner -> builder (plan ready, now implement)
 - builder -> reviewer (bolt complete, now review)
 
-**When at the last hat (reviewer)**, `/advance` handles completion automatically:
+**When at the last hat (reviewer)**, `/ai-dlc:advance` handles completion automatically:
 - If all units complete -> Mark intent as complete
 - If more units ready -> Loop back to builder for next unit
 - If blocked (no ready units) -> Alert user, human intervention required
@@ -43,7 +43,7 @@ Before advancing, check the hard gate for the current transition:
 
 **Gate architecture:**
 - **Structural gates** (PLAN_APPROVED, CRITERIA_MET) are checked here because they verify workflow state, not code quality
-- **Quality gates** (tests, lint, types, custom checks) are harness-enforced via `quality-gate.sh` on Stop/SubagentStop — the agent cannot reach `/advance` unless all gates passed
+- **Quality gates** (tests, lint, types, custom checks) are harness-enforced via `quality-gate.sh` on Stop/SubagentStop — the agent cannot reach `/ai-dlc:advance` unless all gates passed
 - This separation ensures: the harness handles enforcement, the advance skill handles workflow
 
 ```bash
@@ -64,7 +64,7 @@ case "$CURRENT_HAT" in
     ;;
   builder)
     # Quality gates are harness-enforced via the Stop/SubagentStop hook
-    # (quality-gate.sh). The builder cannot reach /advance unless all
+    # (quality-gate.sh). The builder cannot reach /ai-dlc:advance unless all
     # frontmatter-defined gates passed. No redundant check needed here.
     #
     # Visual gate check is still handled here because it prepares
@@ -85,7 +85,7 @@ case "$CURRENT_HAT" in
     ;;
   reviewer)
     # CRITERIA_MET gate: each criterion must have PASS with evidence
-    # This is verified by the reviewer hat itself — if the reviewer calls /advance,
+    # This is verified by the reviewer hat itself — if the reviewer calls /ai-dlc:advance,
     # it means criteria were evaluated. The structured completion marker is checked here.
     REVIEW_RESULT=$(dlc_state_load "$INTENT_DIR" "review-result.json" 2>/dev/null || echo "")
     if [ -n "$REVIEW_RESULT" ]; then
@@ -159,9 +159,9 @@ if [ -n "$TARGET_UNIT" ] && [ "$TARGET_UNIT" = "$CURRENT_UNIT" ]; then
   echo "The targeted unit has finished its workflow."
   echo ""
   echo "**Next steps:**"
-  echo "- Run \`/execute\` to continue with the next ready unit"
-  echo "- Run \`/execute <unit-name>\` to target another specific unit"
-  echo "- Run \`/advance\` if all units are complete"
+  echo "- Run \`/ai-dlc:execute\` to continue with the next ready unit"
+  echo "- Run \`/ai-dlc:execute <unit-name>\` to target another specific unit"
+  echo "- Run \`/ai-dlc:advance\` if all units are complete"
   exit 0
 fi
 ```
@@ -339,7 +339,7 @@ aidlc_record_intent_completed "${INTENT_SLUG}" "${UNIT_COUNT}"
 if (READY_COUNT > 0) {
   // MORE UNITS READY - Loop back to builder
   state.hat = workflow[2] || "builder";  // Reset to builder (index 2 in default workflow)
-  state.currentUnit = null;  // Will be set by /execute when it picks next unit
+  state.currentUnit = null;  // Will be set by /ai-dlc:execute when it picks next unit
   // dlc_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
   return `Unit completed. ${READY_COUNT} more unit(s) ready. Continuing execution...`;
 }
@@ -373,13 +373,13 @@ If `AGENT_TEAMS_ENABLED` is set and `READY_COUNT > 0` after completing a unit:
 
 This replaces the sequential "loop back to builder" behavior when Agent Teams is active. Instead of the lead picking up the next unit sequentially, newly unblocked units are spawned as parallel teammates immediately.
 
-**Without Agent Teams:** The existing behavior (reset hat to builder, let `/execute` pick next unit) continues unchanged.
+**Without Agent Teams:** The existing behavior (reset hat to builder, let `/ai-dlc:execute` pick next unit) continues unchanged.
 
 ### Step 2f: Integration Validation (When All Units Complete)
 
 When `ALL_COMPLETE` is true and `state.integratorComplete` is not true, run integration validation instead of marking the intent completed.
 
-**Integration is NOT a per-unit hat** — it does not appear in the workflow sequence. It runs once on the merged intent branch after all units pass their per-unit workflows. It is implemented as the internal `/integrate` skill (see `plugin/skills/integrate/SKILL.md`).
+**Integration is NOT a per-unit hat** — it does not appear in the workflow sequence. It runs once on the merged intent branch after all units pass their per-unit workflows. It is implemented as the internal `/ai-dlc:integrate` skill (see `plugin/skills/integrate/SKILL.md`).
 
 1. Set state to indicate integration is running:
 
@@ -395,7 +395,7 @@ Task({
   subagent_type: "general-purpose",
   description: `integrate: ${intentSlug}`,
   prompt: `
-    Run the /integrate skill for intent ${intentSlug}.
+    Run the /ai-dlc:integrate skill for intent ${intentSlug}.
 
     ## CRITICAL: Work on Intent Branch
     **Worktree path:** .ai-dlc/worktrees/${intentSlug}/
@@ -471,10 +471,10 @@ GLOBAL_FIRST_HAT=$(echo "$INTENT_WORKFLOW_HATS" | jq -r '.[0]')
 STATE=$(echo "$STATE" | dlc_json_set "hat" "${GLOBAL_FIRST_HAT}" | dlc_json_set "integratorComplete" "false")
 dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
-# Output: "Integration rejected. Re-queued units: {list}. Run /execute to continue."
+# Output: "Integration rejected. Re-queued units: {list}. Run /ai-dlc:execute to continue."
 ```
 
-The re-queued units will be picked up on the next `/execute` cycle through the normal DAG-based unit selection.
+The re-queued units will be picked up on the next `/ai-dlc:execute` cycle through the normal DAG-based unit selection.
 
 ### Step 3: Update State
 
@@ -491,7 +491,7 @@ if [ "$ITERATION" -ge "$MAX_ITERATIONS" ]; then
   echo "Execution has reached ${MAX_ITERATIONS} iterations without completing."
   echo "This likely indicates poorly specified criteria or a systematic issue."
   echo ""
-  echo "**Action required:** Review the intent and unit specs, then run \`/execute\` to resume."
+  echo "**Action required:** Review the intent and unit specs, then run \`/ai-dlc:execute\` to resume."
   STATE=$(echo "$STATE" | dlc_json_set "status" "blocked" | dlc_json_set "iteration" "$ITERATION")
   dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
   exit 0
@@ -516,7 +516,7 @@ Advanced to **{nextHat}** hat. Continuing execution...
 
 ### Step 5: Completion Summary (When All Units Done)
 
-When `/advance` completes the intent (all units done), output:
+When `/ai-dlc:advance` completes the intent (all units done), output:
 
 ```
 ## Intent Complete!
@@ -698,10 +698,10 @@ aidlc_record_delivery_review "${INTENT_SLUG}" "rejected" "${ISSUE_COUNT}"
 
 For each affected unit with HIGH findings:
 - Identify the unit slug from the affected file paths
-- Call `/fail` with the reason: "Pre-delivery review found issues: {description}"
+- Call `/ai-dlc:fail` with the reason: "Pre-delivery review found issues: {description}"
 - The fail mechanism will revert the unit's hat to builder and re-enter the build loop
 
-**After calling /fail, STOP.** Do not proceed to delivery. The execution loop will resume with the builder addressing the findings.
+**After calling /ai-dlc:fail, STOP.** Do not proceed to delivery. The execution loop will resume with the builder addressing the findings.
 
 **Gate on change strategy.** The delivery prompt only applies to intent-level strategy. With unit strategy, each unit already has its own PR.
 
@@ -739,7 +739,7 @@ git worktree prune
 All unit PRs have been created during execution. Review and merge them individually.
 
 To clean up:
-  /reset
+  /ai-dlc:reset
 ```
 
 **If intent strategy** (or hybrid with non-unit units): Ask the user how to deliver using `AskUserQuestion`:
@@ -846,7 +846,7 @@ To create PR manually:
   gh pr create --base ${DEFAULT_BRANCH} --head ai-dlc/{intent-slug}/main
 
 To clean up:
-  /reset
+  /ai-dlc:reset
 ```
 
 Clean up intent worktree since all work is committed and pushed:

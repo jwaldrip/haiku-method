@@ -374,8 +374,8 @@ Reference criteria to guide implementation:
 Verify each criterion is satisfied:
 1. Load criteria
 2. Check each one
-3. If all satisfied → `/advance`
-4. If any missing → `/fail` with specific feedback
+3. If all satisfied → `/ai-dlc:advance`
+4. If any missing → `/ai-dlc:fail` with specific feedback
 
 ## Summary
 

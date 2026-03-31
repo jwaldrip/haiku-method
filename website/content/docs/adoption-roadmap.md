@@ -31,7 +31,7 @@ Before starting Phase 1, ensure you have:
 **First session:**
 1. Install the AI-DLC plugin
 2. Create your first intent with 2-3 units
-3. Work through the first unit using `/elaborate` and `/execute`
+3. Work through the first unit using `/ai-dlc:elaborate` and `/ai-dlc:execute`
 4. Complete the full hat cycle
 
 **Subsequent sessions:**

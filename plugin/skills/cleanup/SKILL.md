@@ -10,7 +10,7 @@ disable-model-invocation: true
 ## Synopsis
 
 ```
-/cleanup
+/ai-dlc:cleanup
 ```
 
 ## Description
@@ -20,7 +20,7 @@ disable-model-invocation: true
 Scans `.ai-dlc/worktrees/` for worktree directories and removes any that are orphaned (the backing git worktree entry is stale or the directory is left over from a crashed session) or merged (the worktree's branch has already been merged into the default branch).
 
 This does not:
-- Clear AI-DLC state (use `/reset` for that)
+- Clear AI-DLC state (use `/ai-dlc:reset` for that)
 - Delete unmerged branches or commits
 - Affect active worktrees whose branches have not been merged
 
@@ -30,7 +30,7 @@ This does not:
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /cleanup cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:cleanup cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi

@@ -148,7 +148,7 @@ Different phases of work require different mindsets. AI-DLC uses "hats" to forma
 
 ### Default Workflow
 
-Elaboration (`/elaborate`) is a separate pre-execution phase. The execution workflow starts after elaboration is complete:
+Elaboration (`/ai-dlc:elaborate`) is a separate pre-execution phase. The execution workflow starts after elaboration is complete:
 
 ```
 planner → builder → reviewer
@@ -162,8 +162,8 @@ planner → builder → reviewer
 
 ### Hat Transitions
 
-- `/advance` - Move to next hat in workflow (handles completion at the last hat)
-- `/fail` - Return to previous hat (e.g., reviewer finds issues)
+- `/ai-dlc:advance` - Move to next hat in workflow (handles completion at the last hat)
+- `/ai-dlc:fail` - Return to previous hat (e.g., reviewer finds issues)
 
 ### Custom Workflows
 
@@ -207,9 +207,9 @@ AI-DLC uses file-based state persistence in `.ai-dlc/{slug}/state/`:
 | Key | Purpose | Written By |
 |-----|---------|------------|
 | `iteration.json` | Hat, iteration count, status | Commands |
-| `intent.md` | What we're building | /elaborate |
-| `completion-criteria.md` | How we know it's done | /elaborate |
-| `discovery.md` | Domain discovery findings | /elaborate |
+| `intent.md` | What we're building | /ai-dlc:elaborate |
+| `completion-criteria.md` | How we know it's done | /ai-dlc:elaborate |
+| `discovery.md` | Domain discovery findings | /ai-dlc:elaborate |
 | `current-plan.md` | Plan for this iteration | Planner hat |
 | `scratchpad.md` | Learnings and notes | AI during work |
 | `blockers.md` | What's blocking progress | AI when stuck |
@@ -227,12 +227,12 @@ AI-DLC uses Claude Code's native hook system:
 
 AI-DLC provides slash commands:
 
-- `/elaborate` - Start mob elaboration
-- `/execute` - Run autonomous execution loop
-- `/advance` - Next hat (internal)
-- `/fail` - Previous hat (internal)
-- `/resume` - Resume lost intent
-- `/reset` - Clear state
+- `/ai-dlc:elaborate` - Start mob elaboration
+- `/ai-dlc:execute` - Run autonomous execution loop
+- `/ai-dlc:advance` - Next hat (internal)
+- `/ai-dlc:fail` - Previous hat (internal)
+- `/ai-dlc:resume` - Resume lost intent
+- `/ai-dlc:reset` - Clear state
 
 ### CLI Commands
 

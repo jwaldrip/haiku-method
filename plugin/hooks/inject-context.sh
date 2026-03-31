@@ -183,10 +183,10 @@ if [ -z "$ITERATION_JSON" ]; then
     echo ""
     echo "**Project maturity:** greenfield"
     echo ""
-    echo "No active AI-DLC task. This looks like a new project — run \`/elaborate\` to start defining your first intent."
+    echo "No active AI-DLC task. This looks like a new project — run \`/ai-dlc:elaborate\` to start defining your first intent."
     echo ""
     if [ ! -f ".ai-dlc/settings.yml" ]; then
-      echo "> **First time?** Run \`/setup\` to configure AI-DLC for this project (auto-detects providers, VCS settings, etc.)"
+      echo "> **First time?** Run \`/ai-dlc:setup\` to configure AI-DLC for this project (auto-detects providers, VCS settings, etc.)"
       echo ""
     fi
     # Inject provider context
@@ -293,10 +293,10 @@ if [ -z "$ITERATION_JSON" ]; then
       echo ""
     fi
 
-    echo "**To resume:** \`/resume <slug>\` or \`/resume\` if only one"
+    echo "**To resume:** \`/ai-dlc:resume <slug>\` or \`/ai-dlc:resume\` if only one"
     echo ""
     if [ ! -f ".ai-dlc/settings.yml" ]; then
-      echo "> **Tip:** Run \`/setup\` to configure providers and VCS settings. This enables automatic ticket sync during elaboration."
+      echo "> **Tip:** Run \`/ai-dlc:setup\` to configure providers and VCS settings. This enables automatic ticket sync during elaboration."
       echo ""
     fi
     # Inject provider context for pre-elaboration awareness
@@ -308,7 +308,7 @@ if [ -z "$ITERATION_JSON" ]; then
       fi
     fi
   else
-    # No AI-DLC state and no resumable intents - show available workflows for /elaborate
+    # No AI-DLC state and no resumable intents - show available workflows for /ai-dlc:elaborate
     if [ -n "$AVAILABLE_WORKFLOWS" ]; then
       echo "## AI-DLC Available"
       echo ""
@@ -316,10 +316,10 @@ if [ -z "$ITERATION_JSON" ]; then
         echo "**Project maturity:** $PROJECT_MATURITY"
         echo ""
       fi
-      echo "No active AI-DLC task. Run \`/elaborate\` to start a new task."
+      echo "No active AI-DLC task. Run \`/ai-dlc:elaborate\` to start a new task."
       echo ""
       if [ ! -f ".ai-dlc/settings.yml" ]; then
-        echo "> **First time?** Run \`/setup\` to configure AI-DLC for this project (auto-detects providers, VCS settings, etc.)"
+        echo "> **First time?** Run \`/ai-dlc:setup\` to configure AI-DLC for this project (auto-detects providers, VCS settings, etc.)"
         echo ""
       fi
       # Inject provider context
@@ -340,7 +340,7 @@ fi
 
 # Validate JSON syntax
 if ! echo "$ITERATION_JSON" | dlc_json_validate; then
-  echo "Warning: Invalid iteration.json format. Run /reset to clear state." >&2
+  echo "Warning: Invalid iteration.json format. Run /ai-dlc:reset to clear state." >&2
   exit 0
 fi
 
@@ -420,7 +420,7 @@ WORKFLOW_HATS_STR=$(echo "$WORKFLOW_HATS" | tr -d '[]"' | sed 's/,/ → /g')
 if [ "$STATUS" = "complete" ] || [ "$STATUS" = "completed" ]; then
   echo "## AI-DLC: Task Complete"
   echo ""
-  echo "Previous task was completed. Run \`/reset\` to start a new task."
+  echo "Previous task was completed. Run \`/ai-dlc:reset\` to start a new task."
   exit 0
 fi
 
@@ -450,7 +450,7 @@ if [ -d "$LEARNINGS_DIR" ]; then
     echo ""
     echo "📚 **${LEARNING_COUNT} compound learnings available** in \`docs/solutions/\`."
     echo "The Planner hat will search these automatically before planning."
-    echo "Use \`/compound\` to capture new learnings."
+    echo "Use \`/ai-dlc:compound\` to capture new learnings."
   fi
 fi
 
@@ -487,10 +487,10 @@ if [ -n "$INTENT_DIR" ] && [ -f "${INTENT_DIR}/intent.md" ]; then
 fi
 
 # Load completion criteria from filesystem if exists
-if [ -n "$INTENT_DIR" ] && [ -f "${INTENT_DIR}/completion-criteria.md" ]; then
+if [ -n "$INTENT_DIR" ] && [ -f "${INTENT_DIR}/ai-dlc:completion-criteria.md" ]; then
   echo "### Completion Criteria"
   echo ""
-  cat "${INTENT_DIR}/completion-criteria.md"
+  cat "${INTENT_DIR}/ai-dlc:completion-criteria.md"
   echo ""
 fi
 
@@ -734,7 +734,7 @@ fi
 
 echo "---"
 echo ""
-echo "**Commands:** \`/execute\` (continue loop) | \`/construct\` (deprecated alias) | \`/reset\` (abandon task)"
+echo "**Commands:** \`/ai-dlc:execute\` (continue loop) | \`/ai-dlc:construct\` (deprecated alias) | \`/ai-dlc:reset\` (abandon task)"
 echo ""
 echo "> **No file changes?** If this hat's work is complete but no files were modified,"
-echo "> save findings to scratchpad and run \`/advance\` to continue."
+echo "> save findings to scratchpad and run \`/ai-dlc:advance\` to continue."

@@ -11,7 +11,7 @@ disable-model-invocation: true
 ## Synopsis
 
 ```
-/resume [intent-slug]
+/ai-dlc:resume [intent-slug]
 ```
 
 ## Description
@@ -26,9 +26,9 @@ This happens when:
 **User Flow:**
 ```
 SessionStart: "Resumable Intents Found: my-feature"
-User: /resume my-feature
+User: /ai-dlc:resume my-feature
 AI: Initialized state, continuing as builder...
-User: /execute
+User: /ai-dlc:execute
 ...continues work...
 ```
 
@@ -38,7 +38,7 @@ User: /execute
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /resume cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:resume cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi
@@ -81,7 +81,7 @@ done
 **Selection logic:**
 - 1 intent found -> auto-select
 - Multiple intents -> list them and prompt user to specify
-- 0 intents -> error, suggest `/elaborate`
+- 0 intents -> error, suggest `/ai-dlc:elaborate`
 
 ### Step 2: Load Intent Metadata
 
@@ -167,8 +167,8 @@ If `AGENT_TEAMS_ENABLED` is set:
    - Note: Active teammates may need to be re-spawned if they were shut down
 
 2. **Team does not exist**:
-   - Save `teamName` to `iteration.json` (for `/execute` to create it)
-   - Note in output: "Team will be created when `/execute` runs"
+   - Save `teamName` to `iteration.json` (for `/ai-dlc:execute` to create it)
+   - Note in output: "Team will be created when `/ai-dlc:execute` runs"
 
 **Without Agent Teams:** Skip this step. No team management needed.
 
@@ -189,7 +189,7 @@ If `AGENT_TEAMS_ENABLED` is set:
 
 **Summary:** {completed}/{total} units completed
 
-**Next:** Run `/execute` to continue the execution loop.
+**Next:** Run `/ai-dlc:execute` to continue the execution loop.
 
 Note: All AI-DLC work happens in the worktree at .ai-dlc/worktrees/{slug}/
 ```
@@ -226,7 +226,7 @@ reason: "{why session ended: context_limit | user_stop | bolt_complete}"
 {Decisions made, approaches tried and abandoned, key learnings from this session}
 ```
 
-**On resume:** `/resume` reads `handoff.md` (if it exists) to restore context before starting the next bolt. This is more structured than relying on state files alone — it captures the narrative of where things stand.
+**On resume:** `/ai-dlc:resume` reads `handoff.md` (if it exists) to restore context before starting the next bolt. This is more structured than relying on state files alone — it captures the narrative of where things stand.
 
 After reading handoff.md on resume, rename it to `handoff-{date}.md` to archive it.
 
@@ -235,7 +235,7 @@ After reading handoff.md on resume, rename it to `handoff-{date}.md` to archive 
 ### Single Intent (Auto-Select)
 
 ```
-User: /resume
+User: /ai-dlc:resume
 AI: Found 1 resumable intent: han-team-platform
 
 ## AI-DLC Intent Resumed
@@ -255,16 +255,16 @@ AI: Found 1 resumable intent: han-team-platform
 
 **Summary:** 1/3 units completed
 
-**Next:** Run `/execute` to continue the execution loop.
+**Next:** Run `/ai-dlc:execute` to continue the execution loop.
 ```
 
 ### Multiple Intents (Requires Selection)
 
 ```
-User: /resume
+User: /ai-dlc:resume
 AI: Found multiple resumable intents:
 - han-team-platform (default workflow, 1/3 completed)
 - api-refactor (tdd workflow, 0/5 completed)
 
-Please specify: `/resume han-team-platform` or `/resume api-refactor`
+Please specify: `/ai-dlc:resume han-team-platform` or `/ai-dlc:resume api-refactor`
 ```

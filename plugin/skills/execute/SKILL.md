@@ -11,7 +11,7 @@ argument-hint: "[intent-slug] [unit-name]"
 ## Synopsis
 
 ```
-/execute [intent-slug] [unit-name]
+/ai-dlc:execute [intent-slug] [unit-name]
 ```
 
 ## Description
@@ -19,22 +19,22 @@ argument-hint: "[intent-slug] [unit-name]"
 **User-facing command** - Continue the AI-DLC autonomous execution loop.
 
 **Two modes:**
-- `/execute` — DAG-driven, behavior depends on `change_strategy`
-- `/execute unit-01-backend` — target a specific unit (precheck deps first)
-- `/execute my-feature unit-01-backend` — with explicit intent slug
+- `/ai-dlc:execute` — DAG-driven, behavior depends on `change_strategy`
+- `/ai-dlc:execute unit-01-backend` — target a specific unit (precheck deps first)
+- `/ai-dlc:execute my-feature unit-01-backend` — with explicit intent slug
 
 This command resumes work from the current hat and runs until:
-- All units complete (`/advance` completes the intent automatically)
+- All units complete (`/ai-dlc:advance` completes the intent automatically)
 - User intervention needed (all units blocked)
-- Session exhausted (Stop hook instructs agent to call `/execute`)
+- Session exhausted (Stop hook instructs agent to call `/ai-dlc:execute`)
 
 **User Flow:**
 ```
-User: /elaborate           # Once - define intent, criteria, and workflow
-User: /execute             # Kicks off autonomous loop
+User: /ai-dlc:elaborate           # Once - define intent, criteria, and workflow
+User: /ai-dlc:execute             # Kicks off autonomous loop
 ...AI works autonomously across all units...
 ...session exhausts, Stop hook fires...
-Agent: /execute            # Agent continues (subagents have clean context)
+Agent: /ai-dlc:execute            # Agent continues (subagents have clean context)
 ...repeat until all units complete...
 AI: Intent complete! [summary]
 ```
@@ -44,7 +44,7 @@ AI: Intent complete! [summary]
 - Subagents have clean context - No `/clear` needed between iterations
 - User intervention - Only required when ALL units are blocked
 - State preserved - Progress saved in `.ai-dlc/{slug}/state/` between sessions
-- Clean context recommended - Run `/clear` before `/execute` if prior conversation exists
+- Clean context recommended - Run `/clear` before `/ai-dlc:execute` if prior conversation exists
 
 **CRITICAL: No Questions During Execution**
 
@@ -63,7 +63,7 @@ If you encounter ambiguity:
 
 If truly blocked (cannot proceed without user input):
 1. Document the blocker clearly in `dlc_state_save "$INTENT_DIR" "blockers.md"`
-2. Stop the loop naturally (don't call /advance)
+2. Stop the loop naturally (don't call /ai-dlc:advance)
 3. The Stop hook will alert the user that human intervention is required
 
 ## Implementation
@@ -72,14 +72,14 @@ If truly blocked (cannot proceed without user input):
 
 Before starting the execution loop, check that the context window is reasonably clear. A full context window means the orchestrator can't manage the build loop effectively.
 
-**Check:** If this is the START of a conversation (no prior messages beyond system prompts and the /execute invocation), proceed directly.
+**Check:** If this is the START of a conversation (no prior messages beyond system prompts and the /ai-dlc:execute invocation), proceed directly.
 
 **Check:** If there is significant prior conversation context (e.g., elaboration discussion, debugging, etc.), recommend clearing first:
 
 ```
 ⚠️ Your context window has significant prior content. The execution loop works best with a clean context.
 
-Run `/clear` then `/execute` to start fresh. Your progress is saved in state files — nothing will be lost.
+Run `/clear` then `/ai-dlc:execute` to start fresh. Your progress is saved in state files — nothing will be lost.
 ```
 
 If the user explicitly says to continue anyway, proceed — but note that the execution loop may hit context limits sooner and need more session restarts.
@@ -138,7 +138,7 @@ if ! verify_gate "TESTS_PASS"; then
 fi
 ```
 
-Gates are checked by the `/advance` skill. If a gate fails, advance is blocked and the agent must fix the issue before retrying.
+Gates are checked by the `/ai-dlc:advance` skill. If a gate fails, advance is blocked and the agent must fix the issue before retrying.
 
 **An agent MUST NEVER skip a hard gate.** Hard gates exist to prevent the most common workflow failures:
 - Reviewing code that doesn't compile
@@ -151,12 +151,12 @@ Execution requires full CLI capabilities (file editing, worktrees, test executio
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /execute cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:execute cannot run in cowork mode."
   echo "Execution requires a full Claude Code CLI session with file system access."
   echo ""
   echo "To continue:"
   echo "  1. Open Claude Code in your project directory"
-  echo "  2. Run /execute"
+  echo "  2. Run /ai-dlc:execute"
   exit 1
 fi
 ```
@@ -185,7 +185,7 @@ done < <(discover_branch_intents true)
 if [ ${#ACTIVE_INTENTS[@]} -eq 0 ]; then
   echo "No active AI-DLC intent found."
   echo ""
-  echo "Run /elaborate to start a new task, or /resume <slug> if you know the intent slug."
+  echo "Run /ai-dlc:elaborate to start a new task, or /ai-dlc:resume <slug> if you know the intent slug."
   exit 0
 fi
 
@@ -200,7 +200,7 @@ elif [ ${#ACTIVE_INTENTS[@]} -gt 1 ]; then
     echo "- **$slug** (${ACTIVE_INTENTS[$slug]})"
   done
   echo ""
-  echo "Use /execute <slug> to specify which intent to execute."
+  echo "Use /ai-dlc:execute <slug> to specify which intent to execute."
   exit 0
 fi
 
@@ -235,15 +235,15 @@ cd "$INTENT_WORKTREE"
 
 ### Step 0a: Parse Unit Target
 
-If arguments were provided to `/execute`, disambiguate them:
+If arguments were provided to `/ai-dlc:execute`, disambiguate them:
 
 ```bash
-# Arguments: /execute [arg1] [arg2]
+# Arguments: /ai-dlc:execute [arg1] [arg2]
 # Disambiguation:
 #   - If arg starts with "unit-" or matches a unit file in INTENT_DIR: treat as unit target
 #   - Otherwise: treat as intent slug
-#   - /execute my-feature unit-01-backend → intent=my-feature, unit=unit-01-backend
-#   - /execute unit-01-backend → intent=(auto-detected), unit=unit-01-backend
+#   - /ai-dlc:execute my-feature unit-01-backend → intent=my-feature, unit=unit-01-backend
+#   - /ai-dlc:execute unit-01-backend → intent=(auto-detected), unit=unit-01-backend
 
 TARGET_UNIT=""
 INTENT_DIR=".ai-dlc/${INTENT_SLUG}"
@@ -354,7 +354,7 @@ if [ -n "$TICKETING_TYPE" ]; then
     echo "> **WARNING: Ticketing provider '${TICKETING_TYPE}' is configured but some ticket fields are empty:**"
     echo -e "$MISSING"
     echo ">"
-    echo "> Consider running \`/elaborate\` to sync tickets, or populate fields manually."
+    echo "> Consider running \`/ai-dlc:elaborate\` to sync tickets, or populate fields manually."
     echo ""
   fi
 fi
@@ -373,8 +373,8 @@ If `INTENT_SLUG` is empty (no intent exists at all):
 ```
 No AI-DLC state found.
 
-If you have existing intent artifacts in .ai-dlc/, run /resume to continue.
-Otherwise, run /elaborate to start a new task.
+If you have existing intent artifacts in .ai-dlc/, run /ai-dlc:resume to continue.
+Otherwise, run /ai-dlc:elaborate to start a new task.
 ```
 
 If `INTENT_SLUG` exists but `STATE` is empty (first execution run — elaboration wrote artifacts but no iteration state):
@@ -404,7 +404,7 @@ dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
 If status is "completed":
 ```
-Task already complete! Run /reset to start a new task.
+Task already complete! Run /ai-dlc:reset to start a new task.
 ```
 
 **Persist or clear targetUnit in state:**
@@ -471,7 +471,7 @@ CHANGE_STRATEGY=$(dlc_frontmatter_get "git.change_strategy" "$INTENT_DIR/intent.
 # Pure unit strategy always uses Sequential path (subagent delegation, no team orchestration).
 # Hybrid strategy (intent-level "intent" + some units overriding to "unit") keeps Teams enabled —
 # the intent-level strategy drives orchestration. Per-unit overrides are resolved at merge time
-# by /advance, not at spawn time.
+# by /ai-dlc:advance, not at spawn time.
 if [ "$CHANGE_STRATEGY" = "unit" ]; then
   AGENT_TEAMS_ENABLED=""
 fi
@@ -946,7 +946,7 @@ When all units complete:
 
 #### 5a. Run Integration Validation
 
-Before shutting down the team, run the `/integrate` skill as a teammate on the **intent worktree** (not a unit worktree). Integration is implemented as an internal skill (see `plugin/skills/integrate/SKILL.md`), not a hat.
+Before shutting down the team, run the `/ai-dlc:integrate` skill as a teammate on the **intent worktree** (not a unit worktree). Integration is implemented as an internal skill (see `plugin/skills/integrate/SKILL.md`), not a hat.
 
 ```bash
 # Check if integration has already passed
@@ -993,7 +993,7 @@ Task({
   team_name: `ai-dlc-${intentSlug}`,
 
   prompt: `
-    Run the /integrate skill for intent ${intentSlug}.
+    Run the /ai-dlc:integrate skill for intent ${intentSlug}.
 
     ## CRITICAL: Work on Intent Branch
     **Worktree path:** .ai-dlc/worktrees/${intentSlug}/
@@ -1071,7 +1071,7 @@ fi
 
 **If a next pass exists:** Do NOT mark intent complete. Instead:
 1. Update `active_pass` in intent.md frontmatter to the next pass
-2. Notify the user: "The **{active_pass}** pass is complete. The next pass is **{next_pass}**. Run `/elaborate` to define {next_pass} units using the artifacts from the {active_pass} pass."
+2. Notify the user: "The **{active_pass}** pass is complete. The next pass is **{next_pass}**. Run `/ai-dlc:elaborate` to define {next_pass} units using the artifacts from the {active_pass} pass."
 3. Save state with `status=pass_transition`
 4. Stop execution — the user will re-elaborate for the next pass
 
@@ -1100,7 +1100,7 @@ UNIT_COUNT=$(ls "$INTENT_DIR"/unit-*.md 2>/dev/null | wc -l | tr -d ' ')
 aidlc_record_intent_completed "${INTENT_SLUG}" "${UNIT_COUNT}"
 ```
 
-4. Output completion summary (same as current Step 5 format from `/advance`)
+4. Output completion summary (same as current Step 5 format from `/ai-dlc:advance`)
 
 #### 5c. Delivery Prompt
 
@@ -1201,10 +1201,10 @@ aidlc_record_delivery_review "${INTENT_SLUG}" "rejected" "${ISSUE_COUNT}"
 
 For each affected unit with HIGH findings:
 - Identify the unit slug from the affected file paths
-- Call `/fail` with the reason: "Pre-delivery review found issues: {description}"
+- Call `/ai-dlc:fail` with the reason: "Pre-delivery review found issues: {description}"
 - The fail mechanism will revert the unit's hat to builder and re-enter the build loop
 
-**After calling /fail, STOP.** Do not proceed to delivery. The execution loop will resume with the builder addressing the findings.
+**After calling /ai-dlc:fail, STOP.** Do not proceed to delivery. The execution loop will resume with the builder addressing the findings.
 
 **Gate on change strategy.** The delivery prompt only applies to intent-level strategy, where all unit work merges into a single intent branch that needs delivery. With unit strategy, each unit already has its own PR — there's nothing to deliver as a whole.
 
@@ -1231,7 +1231,7 @@ done
 All unit PRs have been created during execution. Review and merge them individually.
 
 To clean up:
-  /reset
+  /ai-dlc:reset
 ```
 
 **If intent strategy** (or hybrid with non-unit units): Ask the user how to deliver using `AskUserQuestion`:
@@ -1321,7 +1321,7 @@ To create PR manually:
   gh pr create --base ${DEFAULT_BRANCH} --head ai-dlc/{intent-slug}/main
 
 To clean up:
-  /reset
+  /ai-dlc:reset
 ```
 
 ### Per-Unit Hat Tracking
@@ -1413,7 +1413,7 @@ git add "$UNIT_FILE"
 git commit -m "status: mark $(basename "$UNIT_FILE" .md) as in_progress"
 ```
 
-**Track current unit in iteration state** so `/advance` knows which unit to mark completed:
+**Track current unit in iteration state** so `/ai-dlc:advance` knows which unit to mark completed:
 
 ```bash
 # Update currentUnit in state, e.g., "unit-01-core-backend"
@@ -1488,24 +1488,24 @@ The subagent automatically receives AI-DLC context (hat instructions, intent, wo
 #### Step 4: Handle Subagent Result
 
 Based on the subagent's response:
-- **Success/Complete**: Call `/advance` to move to next role (or complete intent if all done)
-- **Issues found** (reviewer): Call `/fail` to return to builder
+- **Success/Complete**: Call `/ai-dlc:advance` to move to next role (or complete intent if all done)
+- **Issues found** (reviewer): Call `/ai-dlc:fail` to return to builder
 - **Blocked**: Document and stop loop for user intervention
 
-When `/advance` marks the intent complete (all units done + integration passed), proceed to Step 5.
+When `/ai-dlc:advance` marks the intent complete (all units done + integration passed), proceed to Step 5.
 
-**Note:** Integration validation is handled by `/advance` (Step 2e). When all units complete, `/advance` automatically runs the `/integrate` skill before marking the intent complete. If integration rejects, `/advance` re-queues units and the execution loop continues.
+**Note:** Integration validation is handled by `/ai-dlc:advance` (Step 2e). When all units complete, `/ai-dlc:advance` automatically runs the `/ai-dlc:integrate` skill before marking the intent complete. If integration rejects, `/ai-dlc:advance` re-queues units and the execution loop continues.
 
 #### Step 5: Loop Behavior and Delivery
 
 The execution loop is **fully autonomous**. It continues until:
-1. **Complete** - All units done, `/advance` marks intent complete (after integration passes)
+1. **Complete** - All units done, `/ai-dlc:advance` marks intent complete (after integration passes)
 2. **All units blocked** - No forward progress possible, human must intervene
-3. **Session exhausted** - Stop hook fires, instructs agent to call `/execute`
+3. **Session exhausted** - Stop hook fires, instructs agent to call `/ai-dlc:execute`
 4. **Targeted unit done** - When `targetUnit` is set, stop after that unit's workflow completes (do NOT auto-continue to next unit)
 
 **CRITICAL:** When `targetUnit` is NOT set, the agent MUST auto-continue between units. Do NOT stop after each unit.
 
-**Targeted unit exception:** When `targetUnit` IS set, stop after the targeted unit's hat cycle completes. `/advance` handles clearing the `targetUnit` and outputting next-step guidance.
+**Targeted unit exception:** When `targetUnit` IS set, stop after the targeted unit's hat cycle completes. `/ai-dlc:advance` handles clearing the `targetUnit` and outputting next-step guidance.
 
 When the intent is marked complete, present the completion summary and delivery prompt (same as advance/SKILL.md Step 5 — ask user to open PR/MR or handle manually).

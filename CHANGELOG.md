@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Autonomous elaboration mode: `/elaborate` now runs non-interactively when invoked from `/autopilot`, skipping clarification questions, auto-approving domain models/units/wireframes, and only pausing on genuine ambiguity
-- Visual review & intent dashboard: browser-based review UI, `ask_user_visual_question` MCP tool, `/dashboard` skill, `@ai-dlc/shared` parser library, static dashboard generator
+- Autonomous elaboration mode: `/ai-dlc:elaborate` now runs non-interactively when invoked from `/ai-dlc:autopilot`, skipping clarification questions, auto-approving domain models/units/wireframes, and only pausing on genuine ambiguity
+- Visual review & intent dashboard: browser-based review UI, `ask_user_visual_question` MCP tool, `/ai-dlc:dashboard` skill, `@ai-dlc/shared` parser library, static dashboard generator
 - `visual_review` opt-in setting in `settings.yml` (default: `false`) gates all visual review tooling
 - MCP channel server (`claude/channel`) with `open_review`, `get_review_status`, and `ask_user_visual_question` tools
 - Elaboration wiring: 4 review boundaries use visual review with `AskUserQuestion` fallback
@@ -341,15 +341,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add /autopilot skill for full autonomous feature lifecycle ([77b1e24](../../commit/77b1e24))
+- add /ai-dlc:autopilot skill for full autonomous feature lifecycle ([77b1e24](../../commit/77b1e24))
 
 ### Fixed
 
-- use /construct instead of /execute for build phase ([33d4df2](../../commit/33d4df2))
+- use /ai-dlc:construct instead of /ai-dlc:execute for build phase ([33d4df2](../../commit/33d4df2))
 
 ### Changed
 
-- make /execute primary, /construct a deprecated alias ([d75c7e4](../../commit/d75c7e4))
+- make /ai-dlc:execute primary, /ai-dlc:construct a deprecated alias ([d75c7e4](../../commit/d75c7e4))
 
 ### Other
 
@@ -642,7 +642,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add /compound skill for capturing structured learnings ([b39fe58](../../commit/b39fe58))
+- add /ai-dlc:compound skill for capturing structured learnings ([b39fe58](../../commit/b39fe58))
 
 ### Other
 
@@ -662,7 +662,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add /pressure-testing skill for hat TDD ([df9d69c](../../commit/df9d69c))
+- add /ai-dlc:pressure-testing skill for hat TDD ([df9d69c](../../commit/df9d69c))
 
 ### Other
 
@@ -762,7 +762,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add /seed skill for forward-looking ideas with trigger conditions ([ecbb857](../../commit/ecbb857))
+- add /ai-dlc:seed skill for forward-looking ideas with trigger conditions ([ecbb857](../../commit/ecbb857))
 
 ### Other
 
@@ -830,7 +830,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add /quick mode for trivial tasks that skip full elaboration ([823e0e2](../../commit/823e0e2))
+- add /ai-dlc:quick mode for trivial tasks that skip full elaboration ([823e0e2](../../commit/823e0e2))
 
 ### Other
 
@@ -860,7 +860,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add /backlog skill for parking lot ideas ([4809022](../../commit/4809022))
+- add /ai-dlc:backlog skill for parking lot ideas ([4809022](../../commit/4809022))
 
 ### Other
 
@@ -870,7 +870,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add /ideate skill for adversarially-filtered improvement ideas ([522eefb](../../commit/522eefb))
+- add /ai-dlc:ideate skill for adversarially-filtered improvement ideas ([522eefb](../../commit/522eefb))
 
 ### Other
 
@@ -1004,7 +1004,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- rework /followup to create linked iteration intents ([0723438](../../commit/0723438))
+- rework /ai-dlc:followup to create linked iteration intents ([0723438](../../commit/0723438))
 
 ### Other
 
@@ -1118,16 +1118,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add H•AI•K•U workspace integration and enhanced reflection ([ed90396](../../commit/ed90396))
 - add H•AI•K•U references, rename Construction to Execution, add Operation/Reflection docs ([6fc0097](../../commit/6fc0097))
 - integrate AI-DLC as H•AI•K•U software development profile ([f5fe76d](../../commit/f5fe76d))
-- implement reflection phase with /reflect skill and enriched reflector hat ([f2d7cc0](../../commit/f2d7cc0))
+- implement reflection phase with /ai-dlc:reflect skill and enriched reflector hat ([f2d7cc0](../../commit/f2d7cc0))
 - build H•AI•K•U website for haikumethod.ai ([c2e7a6a](../../commit/c2e7a6a))
-- implement operation phase with /operate skill and enriched hats ([acee292](../../commit/acee292))
+- implement operation phase with /ai-dlc:operate skill and enriched hats ([acee292](../../commit/acee292))
 - implement H•AI•K•U core plugin with 4-phase lifecycle ([aae495f](../../commit/aae495f))
 - write H•AI•K•U methodology paper ([e4c2792](../../commit/e4c2792))
 - establish H•AI•K•U foundation - manifesto, brand identity, repo structure ([84d393e](../../commit/84d393e))
 
 ### Other
 
-- Merge methodology-evolution: H•AI•K•U integration, /execute, /operate, /reflect ([f12fdcd](../../commit/f12fdcd))
+- Merge methodology-evolution: H•AI•K•U integration, /ai-dlc:execute, /ai-dlc:operate, /ai-dlc:reflect ([f12fdcd](../../commit/f12fdcd))
 - Move H•AI•K•U content to dedicated repo (TheBushidoCollective/haiku-method) ([71b32a6](../../commit/71b32a6))
 - Merge unit-04-reflection-phase into intent branch ([123a048](../../commit/123a048))
 - Merge unit-07-haiku-website into intent branch ([2ecf732](../../commit/2ecf732))
@@ -1264,13 +1264,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- block /reset, /refine, /setup, /resume in cowork mode ([988f066](../../commit/988f066))
+- block /ai-dlc:reset, /ai-dlc:refine, /ai-dlc:setup, /ai-dlc:resume in cowork mode ([988f066](../../commit/988f066))
 
 ## [1.11.0] - 2026-02-25
 
 ### Added
 
-- block /construct in cowork mode ([93d6075](../../commit/93d6075))
+- block /ai-dlc:construct in cowork mode ([93d6075](../../commit/93d6075))
 
 ## [1.10.0] - 2026-02-25
 
@@ -1337,13 +1337,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- add NFR prompts, cross-cutting concerns, integrator hat, delivery prompts, and /refine skill ([4e448dd](../../commit/4e448dd))
+- add NFR prompts, cross-cutting concerns, integrator hat, delivery prompts, and /ai-dlc:refine skill ([4e448dd](../../commit/4e448dd))
 
 ## [1.5.0] - 2026-02-20
 
 ### Added
 
-- add /setup skill and enforce ticket creation during elaboration ([7bdcbbe](../../commit/7bdcbbe))
+- add /ai-dlc:setup skill and enforce ticket creation during elaboration ([7bdcbbe](../../commit/7bdcbbe))
 
 ## [1.4.5] - 2026-02-20
 
@@ -1427,7 +1427,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - add automatic version bump and changelog pipeline ([86ad4eb](../../commit/86ad4eb))
-- make Agent Teams the primary execution model for /construct ([6d9b811](../../commit/6d9b811))
+- make Agent Teams the primary execution model for /ai-dlc:construct ([6d9b811](../../commit/6d9b811))
 - add Agent Teams support with intent-level modes and dynamic hat discovery ([0f25cd4](../../commit/0f25cd4))
 - use han wrap-subagent-context for PreToolUse injection ([c1e7e9b](../../commit/c1e7e9b))
 - fix scroll spy, theme toggle, and remove trailing slashes ([343b5e2](../../commit/343b5e2))

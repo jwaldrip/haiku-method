@@ -26,7 +26,7 @@ For AI-DLC, this means a builder teammate working on the backend can message the
 
 ## How It Works
 
-When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is enabled, the `/execute` loop operates as a team:
+When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is enabled, the `/ai-dlc:execute` loop operates as a team:
 
 1. The **lead session** reads the DAG of units and their dependencies
 2. For each ready unit, the lead **spawns a teammate** in that unit's git worktree
@@ -42,7 +42,7 @@ To make Agent Teams work cleanly with AI-DLC, we moved the operating mode from i
 
 Previously, each hat carried its own mode. A builder defaulted to OHOTL, a reviewer to HITL. This scattered autonomy decisions across hat definitions and made it impossible to give a consistent permission model to teammates.
 
-Now you choose your mode once during `/elaborate`. That single decision controls the permission model of every teammate spawned during construction:
+Now you choose your mode once during `/ai-dlc:elaborate`. That single decision controls the permission model of every teammate spawned during construction:
 
 | AI-DLC Mode | Agent Teams Mode | What Happens |
 |---|---|---|
@@ -77,7 +77,7 @@ description: Implements code to satisfy completion criteria using backpressure a
 ---
 ```
 
-During `/elaborate`, the system discovers available hats dynamically by reading all hat files rather than referencing a hardcoded table. Drop a new hat file into the `hats/` directory with proper frontmatter and it becomes available for workflows immediately.
+During `/ai-dlc:elaborate`, the system discovers available hats dynamically by reading all hat files rather than referencing a hardcoded table. Drop a new hat file into the `hats/` directory with proper frontmatter and it becomes available for workflows immediately.
 
 All thirteen built-in hats now describe themselves:
 
@@ -108,7 +108,7 @@ adversarial:
 
 ## The Elaboration Flow
 
-The `/elaborate` command now asks three questions that shape the entire construction loop:
+The `/ai-dlc:elaborate` command now asks three questions that shape the entire construction loop:
 
 1. **What are you building?** Define the intent and completion criteria
 2. **What workflow fits?** Choose from dynamically discovered workflows and hats
@@ -135,7 +135,7 @@ Install or update the AI-DLC plugin:
 /plugin install ai-dlc@thebushidocollective-ai-dlc --scope project
 ```
 
-Then run `/elaborate` to define an intent with a mode, and `/execute` to start the team.
+Then run `/ai-dlc:elaborate` to define an intent with a mode, and `/ai-dlc:execute` to start the team.
 
 The changes are backwards-compatible. Without Agent Teams enabled, the construction loop uses subagents as before. Existing intents without a `mode` field default to OHOTL.
 
