@@ -704,6 +704,14 @@ discover_branch_intents() {
   local include_remote="${1:-false}"
   local seen_slugs=""
 
+  # Helper: check if main has this intent marked as completed
+  _intent_completed_on_main() {
+    local slug="$1"
+    local main_status
+    main_status=$(git show "main:.ai-dlc/$slug/intent.md" 2>/dev/null | _yaml_get_simple "status" "") || return 1
+    [ "$main_status" = "completed" ]
+  }
+
   # 1. Check existing worktrees (highest priority)
   # Parse git worktree list --porcelain to find ai-dlc/*/main branches
   while IFS= read -r line; do
@@ -720,6 +728,8 @@ discover_branch_intents() {
         local intent_status
         intent_status=$(echo "$intent_content" | _yaml_get_simple "status" "active")
         [ "$intent_status" != "active" ] && continue
+        # Cross-check: main may have marked this completed after the branch diverged
+        _intent_completed_on_main "$slug" && continue
         local workflow
         workflow=$(echo "$intent_content" | _yaml_get_simple "workflow" "default")
         echo "$slug|$workflow|worktree|$branch"
@@ -749,6 +759,8 @@ discover_branch_intents() {
     local intent_status
     intent_status=$(echo "$intent_content" | _yaml_get_simple "status" "active")
     [ "$intent_status" != "active" ] && continue
+    # Cross-check: main may have marked this completed after the branch diverged
+    _intent_completed_on_main "$slug" && continue
     local workflow
     workflow=$(echo "$intent_content" | _yaml_get_simple "workflow" "default")
     echo "$slug|$workflow|local|$branch"
@@ -775,6 +787,8 @@ discover_branch_intents() {
       local intent_status
       intent_status=$(echo "$intent_content" | _yaml_get_simple "status" "active")
       [ "$intent_status" != "active" ] && continue
+      # Cross-check: main may have marked this completed after the branch diverged
+      _intent_completed_on_main "$slug" && continue
       local workflow
       workflow=$(echo "$intent_content" | _yaml_get_simple "workflow" "default")
       echo "$slug|$workflow|remote|$branch"
