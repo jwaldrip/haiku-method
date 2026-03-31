@@ -29,7 +29,9 @@ export function IterationLoop({
 				className="w-full h-16 overflow-visible"
 				viewBox="0 0 100 60"
 				preserveAspectRatio="none"
+				aria-hidden="true"
 			>
+				<title>Iteration loop arrow</title>
 				<defs>
 					<marker
 						id="arrowhead"

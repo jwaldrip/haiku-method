@@ -14,7 +14,6 @@ import {
 	FlowNode,
 	FuelGauge,
 	GateCards,
-	QualityGateLifecycle,
 	HatArrow,
 	HatCard,
 	HatExplainer,
@@ -26,6 +25,7 @@ import {
 	NestedLoopsViz,
 	Pipeline,
 	ProgressBar,
+	QualityGateLifecycle,
 	SectionNav,
 	SpecComparison,
 	Tollbooth,
@@ -193,10 +193,28 @@ export default function Home() {
 									The Hatted Agents
 								</h3>
 								<p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-									When it&rsquo;s time to build, Claude spawns fresh specialist agents — each wearing a different &ldquo;hat&rdquo; that defines their role. A hat is a set of injected instructions that tells the agent how to behave, what gates to pass, and when to hand off.
+									When it&rsquo;s time to build, Claude spawns fresh specialist
+									agents — each wearing a different &ldquo;hat&rdquo; that
+									defines their role. A hat is a set of injected instructions
+									that tells the agent how to behave, what gates to pass, and
+									when to hand off.
 								</p>
 								<div className="mt-3 flex flex-wrap gap-2">
-									{["Planner", "Builder", "Reviewer", "Designer", "Red Team", "Blue Team", "Test Writer", "Implementer", "Refactorer", "Observer", "Hypothesizer", "Experimenter", "Analyst"].map((hat) => (
+									{[
+										"Planner",
+										"Builder",
+										"Reviewer",
+										"Designer",
+										"Red Team",
+										"Blue Team",
+										"Test Writer",
+										"Implementer",
+										"Refactorer",
+										"Observer",
+										"Hypothesizer",
+										"Experimenter",
+										"Analyst",
+									].map((hat) => (
 										<span
 											key={hat}
 											className="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
@@ -215,6 +233,7 @@ export default function Home() {
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"
+									aria-hidden="true"
 								>
 									<path
 										strokeLinecap="round"
@@ -228,151 +247,151 @@ export default function Home() {
 							<div className="mt-5 border-t border-gray-200 pt-5 dark:border-gray-700">
 								<HatExplainer />
 
-						{/* Workflow groups */}
-						<WorkflowGroup
-							name="Default Workflow"
-							badge="most common"
-							bgClass="bg-amber-500/5 dark:bg-amber-500/5"
-							labelColor="text-amber-400"
-							borderColor="border-l-amber-400"
-							hats={[
-								{
-									icon: "\u{1F4CB}",
-									name: "Planner",
-									desc: "Reads the criteria, checks for blockers, creates a tactical plan for this iteration.",
-								},
-								{
-									icon: "\u{1F528}",
-									name: "Builder",
-									desc: "Implements code incrementally, runs quality gates after every change, fixes what breaks.",
-								},
-								{
-									icon: "\u{1F50D}",
-									name: "Reviewer",
-									desc: "Verifies every success criterion with evidence, checks code quality, approves or sends back.",
-								},
-							]}
-						/>
+								{/* Workflow groups */}
+								<WorkflowGroup
+									name="Default Workflow"
+									badge="most common"
+									bgClass="bg-amber-500/5 dark:bg-amber-500/5"
+									labelColor="text-amber-400"
+									borderColor="border-l-amber-400"
+									hats={[
+										{
+											icon: "\u{1F4CB}",
+											name: "Planner",
+											desc: "Reads the criteria, checks for blockers, creates a tactical plan for this iteration.",
+										},
+										{
+											icon: "\u{1F528}",
+											name: "Builder",
+											desc: "Implements code incrementally, runs quality gates after every change, fixes what breaks.",
+										},
+										{
+											icon: "\u{1F50D}",
+											name: "Reviewer",
+											desc: "Verifies every success criterion with evidence, checks code quality, approves or sends back.",
+										},
+									]}
+								/>
 
-						<WorkflowGroup
-							name="Adversarial Workflow"
-							badge="security-focused"
-							bgClass="bg-rose-500/5 dark:bg-rose-500/5"
-							labelColor="text-rose-500"
-							borderColor="border-l-rose-500"
-							hats={[
-								{
-									icon: "\u{1F4CB}",
-									name: "Planner",
-									desc: "Reads the criteria, checks for blockers, creates a tactical plan.",
-								},
-								{
-									icon: "\u{1F528}",
-									name: "Builder",
-									desc: "Implements code incrementally, runs quality gates.",
-								},
-								{
-									icon: "\u2694\uFE0F",
-									name: "Red Team",
-									desc: "Attacks the code: tests for injection, auth bypass, data exposure.",
-								},
-								{
-									icon: "\u{1F6E1}\uFE0F",
-									name: "Blue Team",
-									desc: "Fixes what Red Team found: patches root causes, adds security tests.",
-								},
-								{
-									icon: "\u{1F50D}",
-									name: "Reviewer",
-									desc: "Verifies every success criterion with evidence.",
-								},
-							]}
-						/>
+								<WorkflowGroup
+									name="Adversarial Workflow"
+									badge="security-focused"
+									bgClass="bg-rose-500/5 dark:bg-rose-500/5"
+									labelColor="text-rose-500"
+									borderColor="border-l-rose-500"
+									hats={[
+										{
+											icon: "\u{1F4CB}",
+											name: "Planner",
+											desc: "Reads the criteria, checks for blockers, creates a tactical plan.",
+										},
+										{
+											icon: "\u{1F528}",
+											name: "Builder",
+											desc: "Implements code incrementally, runs quality gates.",
+										},
+										{
+											icon: "\u2694\uFE0F",
+											name: "Red Team",
+											desc: "Attacks the code: tests for injection, auth bypass, data exposure.",
+										},
+										{
+											icon: "\u{1F6E1}\uFE0F",
+											name: "Blue Team",
+											desc: "Fixes what Red Team found: patches root causes, adds security tests.",
+										},
+										{
+											icon: "\u{1F50D}",
+											name: "Reviewer",
+											desc: "Verifies every success criterion with evidence.",
+										},
+									]}
+								/>
 
-						<WorkflowGroup
-							name="TDD Workflow"
-							badge="test-driven"
-							bgClass="bg-cyan-500/5 dark:bg-cyan-500/5"
-							labelColor="text-cyan-400"
-							borderColor="border-l-cyan-400"
-							hats={[
-								{
-									icon: "\u270D\uFE0F",
-									name: "Test Writer",
-									desc: "Writes ONE failing test for ONE behavior. The test MUST fail.",
-								},
-								{
-									icon: "\u2699\uFE0F",
-									name: "Implementer",
-									desc: "Writes the minimum code to make the test pass. Nothing more.",
-								},
-								{
-									icon: "\u{1F9F9}",
-									name: "Refactorer",
-									desc: "Cleans up the code without changing behavior. Runs tests after every change.",
-								},
-								{
-									icon: "\u{1F50D}",
-									name: "Reviewer",
-									desc: "Verifies every success criterion with evidence.",
-								},
-							]}
-						/>
+								<WorkflowGroup
+									name="TDD Workflow"
+									badge="test-driven"
+									bgClass="bg-cyan-500/5 dark:bg-cyan-500/5"
+									labelColor="text-cyan-400"
+									borderColor="border-l-cyan-400"
+									hats={[
+										{
+											icon: "\u270D\uFE0F",
+											name: "Test Writer",
+											desc: "Writes ONE failing test for ONE behavior. The test MUST fail.",
+										},
+										{
+											icon: "\u2699\uFE0F",
+											name: "Implementer",
+											desc: "Writes the minimum code to make the test pass. Nothing more.",
+										},
+										{
+											icon: "\u{1F9F9}",
+											name: "Refactorer",
+											desc: "Cleans up the code without changing behavior. Runs tests after every change.",
+										},
+										{
+											icon: "\u{1F50D}",
+											name: "Reviewer",
+											desc: "Verifies every success criterion with evidence.",
+										},
+									]}
+								/>
 
-						<WorkflowGroup
-							name="Design Workflow"
-							badge="UI/UX"
-							bgClass="bg-violet-500/5 dark:bg-violet-500/5"
-							labelColor="text-violet-500"
-							borderColor="border-l-violet-500"
-							hats={[
-								{
-									icon: "\u{1F4CB}",
-									name: "Planner",
-									desc: "Reads the criteria, checks for blockers, creates a tactical plan.",
-								},
-								{
-									icon: "\u{1F3A8}",
-									name: "Designer",
-									desc: "Explores design options, presents 2-3 alternatives, creates specs.",
-								},
-								{
-									icon: "\u{1F50D}",
-									name: "Reviewer",
-									desc: "Verifies every success criterion with evidence.",
-								},
-							]}
-						/>
+								<WorkflowGroup
+									name="Design Workflow"
+									badge="UI/UX"
+									bgClass="bg-violet-500/5 dark:bg-violet-500/5"
+									labelColor="text-violet-500"
+									borderColor="border-l-violet-500"
+									hats={[
+										{
+											icon: "\u{1F4CB}",
+											name: "Planner",
+											desc: "Reads the criteria, checks for blockers, creates a tactical plan.",
+										},
+										{
+											icon: "\u{1F3A8}",
+											name: "Designer",
+											desc: "Explores design options, presents 2-3 alternatives, creates specs.",
+										},
+										{
+											icon: "\u{1F50D}",
+											name: "Reviewer",
+											desc: "Verifies every success criterion with evidence.",
+										},
+									]}
+								/>
 
-						<WorkflowGroup
-							name="Hypothesis Workflow"
-							badge="debugging"
-							bgClass="bg-green-500/5 dark:bg-green-500/5"
-							labelColor="text-green-500"
-							borderColor="border-l-green-500"
-							hats={[
-								{
-									icon: "\u{1F441}\uFE0F",
-									name: "Observer",
-									desc: "Reproduces the bug, captures errors, logs, timeline. Reports facts only.",
-								},
-								{
-									icon: "\u{1F4A1}",
-									name: "Hypothesizer",
-									desc: "Generates 3+ theories about the cause.",
-								},
-								{
-									icon: "\u{1F9EA}",
-									name: "Experimenter",
-									desc: "Tests hypotheses one at a time. Isolates variables.",
-								},
-								{
-									icon: "\u{1F4CA}",
-									name: "Analyst",
-									desc: "Confirms root cause, designs minimal fix, adds regression test.",
-								},
-							]}
-						/>
+								<WorkflowGroup
+									name="Hypothesis Workflow"
+									badge="debugging"
+									bgClass="bg-green-500/5 dark:bg-green-500/5"
+									labelColor="text-green-500"
+									borderColor="border-l-green-500"
+									hats={[
+										{
+											icon: "\u{1F441}\uFE0F",
+											name: "Observer",
+											desc: "Reproduces the bug, captures errors, logs, timeline. Reports facts only.",
+										},
+										{
+											icon: "\u{1F4A1}",
+											name: "Hypothesizer",
+											desc: "Generates 3+ theories about the cause.",
+										},
+										{
+											icon: "\u{1F9EA}",
+											name: "Experimenter",
+											desc: "Tests hypotheses one at a time. Isolates variables.",
+										},
+										{
+											icon: "\u{1F4CA}",
+											name: "Analyst",
+											desc: "Confirms root cause, designs minimal fix, adds regression test.",
+										},
+									]}
+								/>
 							</div>
 						</details>
 					</motion.div>
@@ -1057,8 +1076,8 @@ export default function Home() {
 						className="mb-2 text-gray-500 dark:text-gray-400"
 					>
 						Now the AI works. You typed{" "}
-						<code className="text-amber-500">/ai-dlc:execute</code>. Three loops nest
-						inside each other, from big to small.
+						<code className="text-amber-500">/ai-dlc:execute</code>. Three loops
+						nest inside each other, from big to small.
 					</motion.p>
 
 					<NestedLoopsViz />
@@ -1120,7 +1139,8 @@ export default function Home() {
 						className="mb-2 text-gray-500 dark:text-gray-400"
 					>
 						Inside each unit, the AI cycles through hats. Each hat has one job.
-						Quality gates stand between them — every time the Builder finishes a session, it must pass the gates before stopping.
+						Quality gates stand between them — every time the Builder finishes a
+						session, it must pass the gates before stopping.
 					</motion.p>
 
 					<HatRotation />
@@ -1137,13 +1157,15 @@ export default function Home() {
 						</div>
 						<p className="text-xs text-gray-500 dark:text-gray-400">
 							The gates were detected from your repo tooling during{" "}
-							<code className="text-amber-500">/ai-dlc:elaborate</code> and saved to{" "}
-							<code className="text-amber-500">intent.md</code> frontmatter. The
-							harness reads them and runs each command synchronously —{" "}
+							<code className="text-amber-500">/ai-dlc:elaborate</code> and
+							saved to <code className="text-amber-500">intent.md</code>{" "}
+							frontmatter. The harness reads them and runs each command
+							synchronously —{" "}
 							<strong className="text-gray-700 dark:text-gray-300">
 								the agent literally cannot stop until all pass.
 							</strong>{" "}
-							Builders can add unit-specific gates but cannot remove existing ones.
+							Builders can add unit-specific gates but cannot remove existing
+							ones.
 						</p>
 					</motion.div>
 
@@ -1195,8 +1217,8 @@ export default function Home() {
 						<code className="text-amber-500">enforce-iteration.sh</code> fires
 						when a session ends. It checks what work remains. If units are still
 						in progress, it tells the next session to call{" "}
-						<code className="text-amber-500">/ai-dlc:execute</code> to continue. The AI
-						never &ldquo;forgets&rdquo; mid-task.
+						<code className="text-amber-500">/ai-dlc:execute</code> to continue.
+						The AI never &ldquo;forgets&rdquo; mid-task.
 					</ChatBubble>
 
 					{/* Deep Dive: State Management */}
@@ -1246,8 +1268,8 @@ export default function Home() {
 						</div>
 						<p className="mt-3">
 							If ephemeral state is lost,{" "}
-							<code className="text-amber-500">/ai-dlc:resume</code> can reconstruct it
-							from the committed artifacts and git history.
+							<code className="text-amber-500">/ai-dlc:resume</code> can
+							reconstruct it from the committed artifacts and git history.
 						</p>
 					</DeepDive>
 
@@ -1304,8 +1326,9 @@ export default function Home() {
 						{...fadeIn}
 						className="mb-2 text-gray-500 dark:text-gray-400"
 					>
-						Every time the AI tries to stop, it must pass through a gate. Quality
-						gates are harness-enforced — defined in frontmatter, run by hooks, no exceptions.
+						Every time the AI tries to stop, it must pass through a gate.
+						Quality gates are harness-enforced — defined in frontmatter, run by
+						hooks, no exceptions.
 					</motion.p>
 
 					<Tollbooth />
@@ -1321,8 +1344,8 @@ export default function Home() {
 						{...fadeIn}
 						className="mb-3 text-sm text-gray-500 dark:text-gray-400"
 					>
-						Quality gates aren&apos;t hardcoded. They&apos;re discovered from your
-						repo, written into version-controlled frontmatter, and enforced
+						Quality gates aren&apos;t hardcoded. They&apos;re discovered from
+						your repo, written into version-controlled frontmatter, and enforced
 						mechanically by the harness — all without any manual configuration.
 					</motion.p>
 
@@ -1332,7 +1355,8 @@ export default function Home() {
 						{...fadeIn}
 						className="mt-6 mb-2 text-gray-700 dark:text-gray-300"
 					>
-						Three hard gates stand between hats. The harness enforces them mechanically — the agent cannot bypass them:
+						Three hard gates stand between hats. The harness enforces them
+						mechanically — the agent cannot bypass them:
 					</motion.p>
 
 					<GateCards />
@@ -1362,7 +1386,8 @@ export default function Home() {
 					>
 						<p className="mb-3">
 							Eight hooks (plus one support script) form the automated safety
-							system. Each fires at a specific point in the Claude Code lifecycle.
+							system. Each fires at a specific point in the Claude Code
+							lifecycle.
 						</p>
 						<div className="space-y-2">
 							{[
@@ -1519,9 +1544,7 @@ export default function Home() {
 
 						{/* Stage 3: Operations */}
 						<FinishStage num={3} numColor="bg-amber-500/15 text-amber-400">
-							<h3 className="text-lg font-bold text-amber-400">
-								Operations
-							</h3>
+							<h3 className="text-lg font-bold text-amber-400">Operations</h3>
 							<p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
 								The code is deployed. Now it needs to be <em>operated</em>.
 							</p>
@@ -1537,11 +1560,13 @@ export default function Home() {
 										</div>
 										<div className="border-b border-gray-200 pb-1 dark:border-gray-700">
 											<strong className="text-amber-400">Reactive:</strong>{" "}
-											Alert handler for auth failure spike -- triggers investigation playbook
+											Alert handler for auth failure spike -- triggers
+											investigation playbook
 										</div>
 										<div>
-											<strong className="text-amber-400">Runbook:</strong>{" "}
-											OAuth provider rotation -- step-by-step credential rotation procedure
+											<strong className="text-amber-400">Runbook:</strong> OAuth
+											provider rotation -- step-by-step credential rotation
+											procedure
 										</div>
 									</div>
 								</ChatBubble>

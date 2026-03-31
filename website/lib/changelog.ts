@@ -57,9 +57,9 @@ export function getChangelog(): ChangelogEntry[] {
 		const date = match[2]
 
 		// Get the content between this version heading and the next (or EOF)
-		const startIndex = match.index! + match[0].length
+		const startIndex = (match.index ?? 0) + match[0].length
 		const endIndex =
-			i + 1 < matches.length ? matches[i + 1].index! : fileContents.length
+			i + 1 < matches.length ? (matches[i + 1].index ?? 0) : fileContents.length
 		const sectionContent = fileContents.slice(startIndex, endIndex)
 
 		// Parse subsections (### Added, ### Fixed, ### Changed, ### Other)
@@ -71,10 +71,10 @@ export function getChangelog(): ChangelogEntry[] {
 			const sectionMatch = sectionMatches[j]
 			const type = sectionMatch[1].trim()
 
-			const sectionStart = sectionMatch.index! + sectionMatch[0].length
+			const sectionStart = (sectionMatch.index ?? 0) + sectionMatch[0].length
 			const sectionEnd =
 				j + 1 < sectionMatches.length
-					? sectionMatches[j + 1].index!
+					? (sectionMatches[j + 1].index ?? 0)
 					: sectionContent.length
 			const itemsContent = sectionContent.slice(sectionStart, sectionEnd)
 

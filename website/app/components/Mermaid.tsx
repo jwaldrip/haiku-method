@@ -209,9 +209,9 @@ export function Mermaid({ chart }: MermaidProps) {
 
 				// Darken light fills
 				const elementsWithFill = svgElement.querySelectorAll("[style*='fill']")
-				elementsWithFill.forEach((el) => {
+				for (const el of elementsWithFill) {
 					const style = el.getAttribute("style")
-					if (!style) return
+					if (!style) continue
 
 					const fillMatch = style.match(/fill:\s*(#[0-9a-fA-F]{6})/)
 					if (fillMatch) {
@@ -224,11 +224,11 @@ export function Mermaid({ chart }: MermaidProps) {
 							)
 						}
 					}
-				})
+				}
 
 				// Also check fill attributes directly
 				const elementsWithFillAttr = svgElement.querySelectorAll("[fill]")
-				elementsWithFillAttr.forEach((el) => {
+				for (const el of elementsWithFillAttr) {
 					const fill = el.getAttribute("fill")
 					if (fill?.startsWith("#") && fill.length === 7) {
 						const darkenedColor = darkenColorForDarkMode(fill)
@@ -236,13 +236,13 @@ export function Mermaid({ chart }: MermaidProps) {
 							el.setAttribute("fill", darkenedColor)
 						}
 					}
-				})
+				}
 
 				// Fix stroke colors
 				const elementsWithStroke = svgElement.querySelectorAll(
 					"[stroke], [style*='stroke']",
 				)
-				elementsWithStroke.forEach((el) => {
+				for (const el of elementsWithStroke) {
 					const stroke = el.getAttribute("stroke")
 					if (stroke) {
 						const lowerStroke = stroke.toLowerCase()
@@ -263,20 +263,20 @@ export function Mermaid({ chart }: MermaidProps) {
 							el.setAttribute("stroke", lineColor)
 						}
 					}
-				})
+				}
 
 				// Ensure cluster/subgraph titles are visible
 				const clusterLabels = svgElement.querySelectorAll(
 					".cluster-label, .cluster text, [class*='cluster'] text",
 				)
-				clusterLabels.forEach((el) => {
+				for (const el of clusterLabels) {
 					el.setAttribute("fill", "#f3f4f6")
-				})
+				}
 			}
 
 			// Add colored backgrounds to edge labels
 			const edgeLabels = svgElement.querySelectorAll(".edgeLabel")
-			edgeLabels.forEach((labelGroup) => {
+			for (const labelGroup of edgeLabels) {
 				const textElement = labelGroup.querySelector("text")
 				if (!textElement || !(textElement instanceof SVGTextElement)) return
 
@@ -319,7 +319,7 @@ export function Mermaid({ chart }: MermaidProps) {
 						console.error("Error adding label background:", err)
 					}
 				}
-			})
+			}
 		})
 	}, [svg, isDark])
 

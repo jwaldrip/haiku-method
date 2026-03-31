@@ -60,7 +60,7 @@ export function HatNode({
 				className={`
 					w-16 h-16 rounded-full flex items-center justify-center text-3xl
 					bg-white dark:bg-gray-800 shadow-md
-					${isActive ? "ring-2 ring-offset-2 " + hat.color.border : ""}
+					${isActive ? `ring-2 ring-offset-2 ${hat.color.border}` : ""}
 				`}
 				animate={{
 					rotate: isActive ? [0, -5, 5, -5, 0] : 0,
@@ -93,6 +93,7 @@ export function HatNode({
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
+						aria-hidden="true"
 					>
 						<path
 							strokeLinecap="round"

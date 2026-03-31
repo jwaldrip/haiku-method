@@ -65,6 +65,7 @@ export function DiagramNode({
 	const shadowOpacity = isSelected || isFocused ? 0.25 : 0.1
 
 	return (
+		// biome-ignore lint/a11y/useSemanticElements: SVG <g> elements cannot be replaced with semantic HTML
 		<g
 			role="button"
 			tabIndex={0}

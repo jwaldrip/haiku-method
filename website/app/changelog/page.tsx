@@ -54,9 +54,9 @@ function renderChangelogItem(item: string): ReactNode[] {
 	const pattern = /\[([^\]]+)\]\(([^)]+)\)|(?<!\w)#(\d+)\b/g
 	let lastIndex = 0
 	let keyIndex = 0
-	let match: RegExpExecArray | null
+	let match: RegExpExecArray | null = pattern.exec(item)
 
-	while ((match = pattern.exec(item)) !== null) {
+	while (match !== null) {
 		// Add text before the match
 		if (match.index > lastIndex) {
 			nodes.push(item.slice(lastIndex, match.index))
@@ -95,6 +95,7 @@ function renderChangelogItem(item: string): ReactNode[] {
 		}
 
 		lastIndex = match.index + match[0].length
+		match = pattern.exec(item)
 	}
 
 	// Add remaining text
@@ -140,12 +141,14 @@ export default function ChangelogPage() {
 								>
 									v{entry.version}
 								</a>
+								{/* biome-ignore lint/a11y/useAnchorContent: aria-label provides accessible content */}
 								<a
 									href={`${GITHUB_REPO}/releases/tag/v${entry.version}`}
 									className="inline-flex items-center text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400"
 									target="_blank"
 									rel="noopener noreferrer"
 									title={`View v${entry.version} on GitHub`}
+									aria-label={`View v${entry.version} on GitHub`}
 								>
 									<svg
 										className="h-4 w-4"
@@ -173,6 +176,7 @@ export default function ChangelogPage() {
 											<ul className="mt-2 space-y-1">
 												{section.items.map((item, index) => (
 													<li
+														// biome-ignore lint/suspicious/noArrayIndexKey: changelog items have no stable unique ID
 														key={index}
 														className="flex gap-2 text-gray-700 dark:text-gray-300"
 													>
@@ -190,8 +194,7 @@ export default function ChangelogPage() {
 								</p>
 							)}
 
-							{entry !==
-								entries[entries.length - 1] && (
+							{entry !== entries[entries.length - 1] && (
 								<div className="mt-8 border-b border-gray-200 dark:border-gray-800" />
 							)}
 						</section>

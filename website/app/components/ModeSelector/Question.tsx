@@ -29,6 +29,7 @@ export function Question({
 					const isSelected = selectedAnswer === index
 					return (
 						<button
+							// biome-ignore lint/suspicious/noArrayIndexKey: options have no stable ID
 							key={index}
 							type="button"
 							onClick={() => onSelect(index)}

@@ -47,6 +47,7 @@ export function WorkflowVisualizer() {
 	}, [isPlaying, totalSteps, activeWorkflow])
 
 	// Reset when workflow changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when activeWorkflowId changes
 	useEffect(() => {
 		setCurrentStep(0)
 		setIsPlaying(false)

@@ -27,6 +27,7 @@ export function Header() {
 	}, [])
 
 	// Close menu when route changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run on pathname change
 	useEffect(() => {
 		setOpenCategory(null)
 		setMobileMenuOpen(false)
@@ -64,7 +65,10 @@ export function Header() {
 		if (item.href === "/") {
 			return pathname === "/"
 		}
-		return pathname === item.href || pathname.startsWith(item.href.replace(/\/$/, ""))
+		return (
+			pathname === item.href ||
+			pathname.startsWith(item.href.replace(/\/$/, ""))
+		)
 	}
 
 	const isActiveCategory = (category: (typeof navigation)[0]) => {
@@ -99,9 +103,15 @@ export function Header() {
 						{primaryNavItems.map((item) => {
 							const isActive = isActivePrimaryItem(item)
 							// Only "Docs" gets a mega menu dropdown; other items are plain links
-							const megaCategory = item.title === "Docs"
-								? { title: "Docs", href: "/docs/", sections: navigation.flatMap(c => c.sections), featured: navigation[0].featured }
-								: null
+							const megaCategory =
+								item.title === "Docs"
+									? {
+											title: "Docs",
+											href: "/docs/",
+											sections: navigation.flatMap((c) => c.sections),
+											featured: navigation[0].featured,
+										}
+									: null
 
 							if (megaCategory) {
 								// Render as mega menu trigger
@@ -161,6 +171,7 @@ export function Header() {
 						})}
 
 						<div className="ml-2 flex items-center gap-2 border-l border-gray-200 pl-4 dark:border-gray-700">
+							{/* biome-ignore lint/a11y/useAnchorContent: aria-label provides accessible content */}
 							<a
 								href="https://github.com/thebushidocollective/ai-dlc"
 								target="_blank"

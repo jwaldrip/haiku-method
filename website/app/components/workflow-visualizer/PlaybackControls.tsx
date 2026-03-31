@@ -33,6 +33,7 @@ export function PlaybackControls({
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
+					aria-hidden="true"
 				>
 					<path
 						strokeLinecap="round"
@@ -56,6 +57,7 @@ export function PlaybackControls({
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
+					aria-hidden="true"
 				>
 					<path
 						strokeLinecap="round"
@@ -74,11 +76,21 @@ export function PlaybackControls({
 				aria-label={isPlaying ? "Pause" : "Play"}
 			>
 				{isPlaying ? (
-					<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+					<svg
+						className="w-6 h-6"
+						fill="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
 						<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
 					</svg>
 				) : (
-					<svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+					<svg
+						className="w-6 h-6"
+						fill="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
 						<path d="M8 5v14l11-7z" />
 					</svg>
 				)}
@@ -97,6 +109,7 @@ export function PlaybackControls({
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
+					aria-hidden="true"
 				>
 					<path
 						strokeLinecap="round"

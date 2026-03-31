@@ -26,6 +26,7 @@ export function OrganizationJsonLd({
 	return (
 		<script
 			type="application/ld+json"
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD requires dangerouslySetInnerHTML
 			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
 		/>
 	)
@@ -89,6 +90,7 @@ export function ArticleJsonLd({
 	return (
 		<script
 			type="application/ld+json"
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD requires dangerouslySetInnerHTML
 			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
 		/>
 	)
@@ -146,6 +148,7 @@ export function SoftwareApplicationJsonLd({
 	return (
 		<script
 			type="application/ld+json"
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD requires dangerouslySetInnerHTML
 			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
 		/>
 	)
@@ -185,6 +188,7 @@ export function WebSiteJsonLd({
 	return (
 		<script
 			type="application/ld+json"
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD requires dangerouslySetInnerHTML
 			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
 		/>
 	)
@@ -212,6 +216,7 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
 	return (
 		<script
 			type="application/ld+json"
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD requires dangerouslySetInnerHTML
 			dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
 		/>
 	)

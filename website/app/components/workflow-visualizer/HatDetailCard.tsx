@@ -64,7 +64,9 @@ export function HatDetailCard({ hat, step }: HatDetailCardProps) {
 												fill="none"
 												viewBox="0 0 24 24"
 												stroke="currentColor"
+												aria-hidden="true"
 											>
+												<title>Bullet</title>
 												<path
 													strokeLinecap="round"
 													strokeLinejoin="round"

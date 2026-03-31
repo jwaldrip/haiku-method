@@ -68,6 +68,7 @@ export function ModeExplanation({
 						<div className="space-y-2">
 							{alignedFactors.map((factor, index) => (
 								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: factors have no stable ID
 									key={index}
 									className="flex items-start gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-950/20"
 								>
@@ -112,6 +113,7 @@ export function ModeExplanation({
 						<div className="space-y-2">
 							{opposingFactors.map((factor, index) => (
 								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: factors have no stable ID
 									key={index}
 									className="flex items-start gap-3 rounded-lg bg-amber-50 p-3 dark:bg-amber-950/20"
 								>
