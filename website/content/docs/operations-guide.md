@@ -37,13 +37,13 @@ Rotate API keys and database credentials monthly.
 **2. Run the operation:**
 
 ```
-/operate my-intent rotate-secrets
+/ai-dlc:operate my-intent rotate-secrets
 ```
 
 **3. Check status:**
 
 ```
-/operate my-intent --status
+/ai-dlc:operate my-intent --status
 ```
 
 ## Defining Operations
@@ -91,7 +91,7 @@ frequency: quarterly
 
 **Agent-owned** operations have companion scripts (`.ts`, `.py`, `.go`, or `.sh`) that AI executes autonomously. The Markdown body describes what the script does.
 
-**Human-owned** operations use a checklist in the Markdown body. When invoked via `/operate`, AI presents the checklist and tracks completion, but humans perform the actual work.
+**Human-owned** operations use a checklist in the Markdown body. When invoked via `/ai-dlc:operate`, AI presents the checklist and tracks completion, but humans perform the actual work.
 
 ```markdown
 ---
@@ -113,7 +113,7 @@ frequency: monthly
 ### List All Operations
 
 ```
-/operate
+/ai-dlc:operate
 ```
 
 Shows all operations across all intents with their type, owner, and status.
@@ -121,7 +121,7 @@ Shows all operations across all intents with their type, owner, and status.
 ### View Intent Operations
 
 ```
-/operate my-intent
+/ai-dlc:operate my-intent
 ```
 
 Displays a status table for one intent:
@@ -139,7 +139,7 @@ Displays a status table for one intent:
 ### Execute a Specific Operation
 
 ```
-/operate my-intent rotate-secrets
+/ai-dlc:operate my-intent rotate-secrets
 ```
 
 For agent-owned operations, this runs the companion script and reports the result. For human-owned operations, it displays the checklist for the human to work through.
@@ -147,7 +147,7 @@ For agent-owned operations, this runs the companion script and reports the resul
 ### Check Health
 
 ```
-/operate my-intent --status
+/ai-dlc:operate my-intent --status
 ```
 
 Shows detailed status including last run time, exit codes, and deployment state.
@@ -157,7 +157,7 @@ Shows detailed status including last run time, exit codes, and deployment state.
 Use `--deploy` to generate platform-specific manifests from operation specs:
 
 ```
-/operate my-intent --deploy k8s-cronjob
+/ai-dlc:operate my-intent --deploy k8s-cronjob
 ```
 
 ### Supported Targets
@@ -213,7 +213,7 @@ Operations are not an afterthought — they are part of the construction workflo
 Remove deployments while preserving the operation specs:
 
 ```
-/operate my-intent --teardown
+/ai-dlc:operate my-intent --teardown
 ```
 
 This sets the operation status to `torn-down` and removes generated deployment manifests. The spec files remain in the repository, so operations can be redeployed later.

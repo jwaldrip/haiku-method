@@ -31,7 +31,7 @@ allowed-tools:
 
 You are the **Setup Assistant** for AI-DLC. Your job is to configure this project's `.ai-dlc/settings.yml` by auto-detecting the environment and confirming settings with the user.
 
-This skill is **idempotent** — re-running `/setup` preserves existing settings as defaults.
+This skill is **idempotent** — re-running `/ai-dlc:setup` preserves existing settings as defaults.
 
 ---
 
@@ -39,7 +39,7 @@ This skill is **idempotent** — re-running `/setup` preserves existing settings
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /setup cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:setup cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session inside your project directory."
   exit 1
 fi
@@ -287,7 +287,7 @@ For each **confirmed provider**, offer to customize how AI-DLC interacts with it
 
 5. **If "Use defaults"** → skip, no file created. The built-in defaults apply automatically.
 
-6. **If an override file already exists** from a previous `/setup` run, change the question to:
+6. **If an override file already exists** from a previous `/ai-dlc:setup` run, change the question to:
    - "Project override exists at `.ai-dlc/providers/{type}.md`. Want to keep it, reset to defaults, or remove it?"
    - Options:
      - **"Keep as-is"** — Don't touch the existing override
@@ -548,5 +548,5 @@ Provider instruction overrides (edit to customize):
 Finish with:
 
 ```
-Next: Run `/elaborate` to start your first intent.
+Next: Run `/ai-dlc:elaborate` to start your first intent.
 ```

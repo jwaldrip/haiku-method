@@ -64,7 +64,7 @@ Each provider entry has three fields:
 
 ### During Elaboration
 
-When you run `/elaborate`, AI-DLC uses providers to enrich the process:
+When you run `/ai-dlc:elaborate`, AI-DLC uses providers to enrich the process:
 
 1. **Spec provider** — Searches for existing requirements, PRDs, and design docs related to your intent
 2. **Design provider** — Pulls relevant mockups and component specs

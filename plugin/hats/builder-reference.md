@@ -188,7 +188,7 @@ Operation deployment manifests follow a two-phase workflow:
 
 1. **Build time (Builder hat):** The builder creates template/stub manifests in `.ai-dlc/{intent}/operations/deploy/` using type-specific filenames (`{name}.cronjob.yaml`, `{name}.deployment.yaml`, `{name}.workflow.yaml`, `{name}.compose.yaml`, `{name}.service`/`.timer`). These templates are the validation target for the OPERATIONS_READY gate — they must exist and pass structural validation for the gate to pass.
 
-2. **Deploy time (`/operate --deploy`):** The operate skill regenerates production-ready manifests in the same `operations/deploy/` location, replacing the builder templates with fully resolved manifests that incorporate stack config, registry paths, and runtime parameters.
+2. **Deploy time (`/ai-dlc:operate --deploy`):** The operate skill regenerates production-ready manifests in the same `operations/deploy/` location, replacing the builder templates with fully resolved manifests that incorporate stack config, registry paths, and runtime parameters.
 
 **Manifest format by target:**
 

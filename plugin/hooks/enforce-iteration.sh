@@ -5,7 +5,7 @@
 #
 # This hook fires when a session ends. It determines the appropriate action:
 # 1. **Work remains** (units ready or in progress):
-#    - Instruct agent to call `/execute` to continue
+#    - Instruct agent to call `/ai-dlc:execute` to continue
 #    - Subagents have CLEAN CONTEXT - no need for /clear
 # 2. **All complete** (no pending units):
 #    - Intent is done, no action needed
@@ -31,7 +31,7 @@ INTENT_DIR=$(dlc_find_active_intent)
 ITERATION_JSON=""
 [ -n "$INTENT_DIR" ] && ITERATION_JSON=$(dlc_state_load "$INTENT_DIR" "iteration.json")
 
-# Unit-branch sessions (teammates or subagents) should NOT be told to /execute
+# Unit-branch sessions (teammates or subagents) should NOT be told to /ai-dlc:execute
 # The orchestrator on the intent branch manages the execution loop
 if [ "$IS_UNIT_BRANCH" = "true" ]; then
   echo "## AI-DLC: Unit Session Ending"
@@ -81,7 +81,7 @@ if [ "$MAX_ITERATIONS" -gt 0 ] && [ "$CURRENT_ITERATION" -ge "$MAX_ITERATIONS" ]
   echo "**Options:**"
   echo "1. Review progress and decide if work is complete"
   echo "2. Increase limit: edit \`.ai-dlc/{intent-slug}/state/iteration.json\` and set maxIterations"
-  echo "3. Reset iteration count: \`/reset\` and start fresh"
+  echo "3. Reset iteration count: \`/ai-dlc:reset\` and start fresh"
   echo ""
   echo "Progress preserved in \`.ai-dlc/{intent-slug}/state/\`."
   exit 0
@@ -157,9 +157,9 @@ elif [ "$READY_COUNT" -gt 0 ] || [ "$IN_PROGRESS_COUNT" -gt 0 ]; then
   echo "### ACTION REQUIRED"
   echo ""
   if [ -n "$TARGET_UNIT" ]; then
-    echo "Call \`/execute ${INTENT_SLUG} ${TARGET_UNIT}\` to continue targeted execution."
+    echo "Call \`/ai-dlc:execute ${INTENT_SLUG} ${TARGET_UNIT}\` to continue targeted execution."
   else
-    echo "Call \`/execute\` to continue the autonomous loop."
+    echo "Call \`/ai-dlc:execute\` to continue the autonomous loop."
   fi
   echo ""
   echo "**Note:** Subagents have clean context. No \`/clear\` needed."
@@ -175,7 +175,7 @@ else
   echo "**User action required:**"
   echo "1. Review blockers: read \`.ai-dlc/${INTENT_SLUG}/state/blockers.md\`"
   echo "2. Unblock units or resolve dependencies"
-  echo "3. Run \`/execute\` to resume"
+  echo "3. Run \`/ai-dlc:execute\` to resume"
   echo ""
 fi
 

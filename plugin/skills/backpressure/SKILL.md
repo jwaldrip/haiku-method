@@ -429,7 +429,7 @@ Over time, the AI preemptively checks design references and matches them during 
 
 ### Hook Pass Rates
 
-Use Claude Code's built-in metrics and session analysis (via `/reflect`) to track these indicators.
+Use Claude Code's built-in metrics and session analysis (via `/ai-dlc:reflect`) to track these indicators.
 
 Good indicators:
 - First-attempt pass rate increasing over time

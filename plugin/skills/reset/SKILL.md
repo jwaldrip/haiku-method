@@ -10,7 +10,7 @@ disable-model-invocation: true
 ## Synopsis
 
 ```
-/reset
+/ai-dlc:reset
 ```
 
 ## Description
@@ -35,7 +35,7 @@ The work you did is preserved in git. Only the AI-DLC workflow state and worktre
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /reset cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:reset cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi
@@ -128,7 +128,7 @@ AI-DLC state cleared.
 All iteration data, intent, criteria, and notes have been removed.
 Worktrees cleaned up.
 
-To start a new task, run `/elaborate`.
+To start a new task, run `/ai-dlc:elaborate`.
 ```
 
 ## What Gets Cleared

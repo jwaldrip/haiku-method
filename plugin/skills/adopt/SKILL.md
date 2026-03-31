@@ -1,5 +1,5 @@
 ---
-description: Reverse-engineer an existing feature into AI-DLC intent artifacts for /operate and /followup
+description: Reverse-engineer an existing feature into AI-DLC intent artifacts for /ai-dlc:operate and /ai-dlc:followup
 user-invocable: true
 argument-hint: "[feature-description]"
 allowed-tools:
@@ -22,16 +22,16 @@ allowed-tools:
 ## Synopsis
 
 ```
-/adopt [feature-description]
+/ai-dlc:adopt [feature-description]
 ```
 
 ## Description
 
-**User-facing command** - Adopt an existing, already-built feature into the AI-DLC artifact system. Instead of building something new (like `/elaborate`), this skill analyzes code that already exists and produces `intent.md`, `unit-NN-*.md`, `discovery.md`, and `operations/` files that describe it retroactively.
+**User-facing command** - Adopt an existing, already-built feature into the AI-DLC artifact system. Instead of building something new (like `/ai-dlc:elaborate`), this skill analyzes code that already exists and produces `intent.md`, `unit-NN-*.md`, `discovery.md`, and `operations/` files that describe it retroactively.
 
 This addresses scenarios where:
-- A feature was built before AI-DLC was adopted and now needs operational management via `/operate`
-- A feature needs a follow-up iteration via `/followup` but has no intent artifacts to iterate on
+- A feature was built before AI-DLC was adopted and now needs operational management via `/ai-dlc:operate`
+- A feature needs a follow-up iteration via `/ai-dlc:followup` but has no intent artifacts to iterate on
 - The team wants to document an existing system's architecture in a structured, machine-readable format
 - A complex feature needs to be understood by new team members through its AI-DLC artifacts
 
@@ -39,7 +39,7 @@ This addresses scenarios where:
 - An `intent.md` with `status: completed` describing the problem, solution, and domain model
 - One or more `unit-NN-*.md` files with `status: completed` reconstructing the logical work units
 - A `discovery.md` with exploration findings about the codebase
-- Optional `operations/` directory with operation spec files for `/operate`
+- Optional `operations/` directory with operation spec files for `/ai-dlc:operate`
 
 **What this does NOT do:**
 - Modify any existing code
@@ -47,11 +47,11 @@ This addresses scenarios where:
 - Run tests or builds
 - Deploy anything
 
-**Key behavior:** All generated artifacts have `status: completed` since the feature already exists. The adopted intent is fully compatible with `/followup` (to iterate on it) and `/operate` (to manage its operations).
+**Key behavior:** All generated artifacts have `status: completed` since the feature already exists. The adopted intent is fully compatible with `/ai-dlc:followup` (to iterate on it) and `/ai-dlc:operate` (to manage its operations).
 
 **User Flow:**
 ```
-User: /adopt
+User: /ai-dlc:adopt
 AI: What existing feature would you like to adopt into AI-DLC?
 User: The authentication system — it's in src/auth/ and was built over the last few months
 AI: I'll explore the codebase to understand the auth system...
@@ -64,7 +64,7 @@ AI: Updated. Here are the reconstructed success criteria from your tests...
     [presents criteria with test file references]
 User: Looks good
 AI: Artifacts written to .ai-dlc/auth-system/. What would you like to do next?
-    1. Run /operate auth-system
+    1. Run /ai-dlc:operate auth-system
     2. Open PR for review
     3. Show file paths
 ```
@@ -77,7 +77,7 @@ AI: Artifacts written to .ai-dlc/auth-system/. What would you like to do next?
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /adopt cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:adopt cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi
@@ -90,7 +90,7 @@ If `CLAUDE_CODE_IS_COWORK=1`, stop immediately. Do NOT proceed.
 ```bash
 IN_REPO=$(git rev-parse --git-dir 2>/dev/null && echo "true" || echo "false")
 if [ "$IN_REPO" != "true" ]; then
-  echo "ERROR: /adopt must be run inside a git repository."
+  echo "ERROR: /ai-dlc:adopt must be run inside a git repository."
   exit 1
 fi
 ```
@@ -707,10 +707,10 @@ status: completed
 
 ## Context
 {Background, constraints, and decisions from the adoption process.
-Note that this intent was created via /adopt to retroactively document
+Note that this intent was created via /ai-dlc:adopt to retroactively document
 an existing feature.}
 
-Adopted on {ISO date} via `/adopt`.
+Adopted on {ISO date} via `/ai-dlc:adopt`.
 ```
 
 Use `dlc_frontmatter_set` to ensure frontmatter is correctly written:
@@ -789,7 +789,7 @@ status: completed
 
 # Discovery Log: {Intent Title}
 
-Exploration findings from /adopt reverse-engineering process.
+Exploration findings from /ai-dlc:adopt reverse-engineering process.
 
 ## Module Map
 {Synthesized code path analysis from Subagent 1}
@@ -862,7 +862,7 @@ OPEOF
     cat > "$SCRIPT_FILE" <<SCRIPTEOF
 #!/usr/bin/env ${OP_RUNTIME}
 # Companion script for operation: ${OP_NAME}
-# Generated by /adopt — fill in implementation from codebase analysis
+# Generated by /ai-dlc:adopt — fill in implementation from codebase analysis
 SCRIPTEOF
   fi
 done
@@ -930,8 +930,8 @@ dlc_state_save "$INTENT_DIR" "adopt-metadata.json" "{
 | ... | ... |
 
 This intent is now compatible with:
-- `/followup {slug}` — to iterate on this feature
-- `/operate {slug}` — to manage its operational tasks
+- `/ai-dlc:followup {slug}` — to iterate on this feature
+- `/ai-dlc:operate {slug}` — to manage its operational tasks
 ```
 
 ### Offer Next Steps
@@ -942,7 +942,7 @@ This intent is now compatible with:
     "question": "What would you like to do next?",
     "header": "Next Steps",
     "options": [
-      {"label": "Run /operate", "description": "Manage operational tasks for {slug}"},
+      {"label": "Run /ai-dlc:operate", "description": "Manage operational tasks for {slug}"},
       {"label": "Open PR", "description": "Create a pull request with the adoption artifacts for review"},
       {"label": "Show file paths", "description": "Just show me the file paths — I'll take it from here"}
     ],
@@ -953,7 +953,7 @@ This intent is now compatible with:
 
 Execute the chosen option:
 
-- **Run /operate**: Invoke `/operate {slug}` via the Skill tool
+- **Run /ai-dlc:operate**: Invoke `/ai-dlc:operate {slug}` via the Skill tool
 - **Open PR**: The adoption artifacts are already committed to the `$ADOPT_BRANCH` branch (created in Phase 6). Push and open a PR against the default branch:
 
   ```bash
@@ -966,7 +966,7 @@ Execute the chosen option:
     --body "$(cat <<EOF
   ## Adoption: ${INTENT_TITLE}
 
-  Reverse-engineered from existing codebase via \`/adopt\`.
+  Reverse-engineered from existing codebase via \`/ai-dlc:adopt\`.
 
   **Slug:** \`${SLUG}\`
   **Units:** ${UNIT_COUNT}
@@ -979,7 +979,7 @@ Execute the chosen option:
   $([ "${OP_COUNT}" -gt 0 ] && echo "- \`.ai-dlc/${SLUG}/operations/\` (${OP_COUNT} files)")
 
   ---
-  *Generated by \`/adopt\`. Run \`/followup ${SLUG}\` or \`/operate ${SLUG}\` after merge.*
+  *Generated by \`/ai-dlc:adopt\`. Run \`/ai-dlc:followup ${SLUG}\` or \`/ai-dlc:operate ${SLUG}\` after merge.*
   EOF
   )"
   ```
@@ -990,7 +990,7 @@ Execute the chosen option:
 ### Adopting an Authentication System
 
 ```
-User: /adopt authentication system
+User: /ai-dlc:adopt authentication system
 AI: I'll explore the codebase to understand the authentication system.
 
     Where does this feature live in the codebase?
@@ -1058,7 +1058,7 @@ AI: .ai-dlc/authentication-system/intent.md
 ### Adopting a Feature with Operations
 
 ```
-User: /adopt billing pipeline
+User: /ai-dlc:adopt billing pipeline
 AI: Where does this feature live?
 User: src/billing/, and there are cron jobs in scripts/billing/
 
@@ -1078,6 +1078,6 @@ AI: Artifacts written to .ai-dlc/billing-pipeline/.
     Includes 3 operation specs in .ai-dlc/billing-pipeline/operations/.
 
     What would you like to do next?
-User: Run /operate
-AI: [Invokes /operate billing-pipeline]
+User: Run /ai-dlc:operate
+AI: [Invokes /ai-dlc:operate billing-pipeline]
 ```

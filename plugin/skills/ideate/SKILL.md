@@ -12,7 +12,7 @@ argument-hint: "[area]"
 ## Synopsis
 
 ```
-/ideate [area]
+/ai-dlc:ideate [area]
 ```
 
 ## Description
@@ -169,7 +169,7 @@ If no area was specified and the codebase is large, append a suggestion:
 ```markdown
 ---
 
-**Tip:** Run `/ideate {area}` to deep-dive into a specific area for more targeted ideas.
+**Tip:** Run `/ai-dlc:ideate {area}` to deep-dive into a specific area for more targeted ideas.
 ```
 
 ### Step 6: Offer Next Steps
@@ -179,8 +179,8 @@ After presenting results, offer:
 ```markdown
 ### Next Steps
 
-- **Elaborate**: Pick an idea and run `/elaborate` to plan it as an AI-DLC intent
-- **Deep-dive**: Run `/ideate {sub-area}` to explore a specific area further
+- **Elaborate**: Pick an idea and run `/ai-dlc:elaborate` to plan it as an AI-DLC intent
+- **Deep-dive**: Run `/ai-dlc:ideate {sub-area}` to explore a specific area further
 - **Discard**: If none of these resonate, that's a valid outcome — the adversarial filter may have been too lenient
 ```
 

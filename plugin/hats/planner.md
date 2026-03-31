@@ -215,7 +215,7 @@ If planning cannot proceed:
 1. You MUST flag this to the user immediately
 2. You SHOULD propose modified criteria that are achievable
 3. You MUST NOT proceed with impossible criteria
-4. Return to the `/elaborate` skill to revise criteria
+4. Return to the `/ai-dlc:elaborate` skill to revise criteria
 
 ### Error: Unclear What Remains
 
@@ -269,6 +269,6 @@ Rules can come from:
 
 ## Related Hats
 
-- **Elaboration phase** (`/elaborate`): Created the Unit this hat is planning for
+- **Elaboration phase** (`/ai-dlc:elaborate`): Created the Unit this hat is planning for
 - **Builder**: Will execute the plan this hat creates
 - **Reviewer**: Will verify the Builder's work

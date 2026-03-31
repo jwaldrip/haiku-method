@@ -11,7 +11,7 @@ disable-model-invocation: true
 ## Synopsis
 
 ```
-/reflect [intent-slug]
+/ai-dlc:reflect [intent-slug]
 ```
 
 ## Description
@@ -44,7 +44,7 @@ INTENT_SLUG="${1:-$(basename "$(find .ai-dlc -maxdepth 2 -name 'intent.md' -exec
 If no intent slug found:
 ```
 No AI-DLC intent found.
-Run /elaborate to start a new task, or provide an intent slug: /reflect my-intent
+Run /ai-dlc:elaborate to start a new task, or provide an intent slug: /ai-dlc:reflect my-intent
 ```
 
 ### Step 1: Load Intent and Unit Data
@@ -64,7 +64,7 @@ If `intent.md` does not exist:
 ```
 No intent found at .ai-dlc/{intent-slug}/intent.md
 
-Run /elaborate to create a new intent.
+Run /ai-dlc:elaborate to create a new intent.
 ```
 
 ### Step 2: Gather Execution Metrics
@@ -410,7 +410,7 @@ git tag "ai-dlc/${INTENT_SLUG}/v${CURRENT_VERSION}" 2>/dev/null || true
 **New intent:** .ai-dlc/{intent-slug}/
 
 The new intent has been seeded with learnings from the reflection.
-Run `/elaborate` to begin the next iteration with pre-loaded context.
+Run `/ai-dlc:elaborate` to begin the next iteration with pre-loaded context.
 ```
 
 ### Step 7c: Close Path

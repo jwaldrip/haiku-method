@@ -37,13 +37,13 @@ AI-DLC and Anthropic's harnesses occupy the same design space. The concepts map 
 | File-based inter-agent communication | Intent specs, unit specs, operational plans as file artifacts |
 | Generator-evaluator feedback loops | Operation, review, fail/advance cycle (bolts) |
 | External evaluation driving quality | Backpressure hooks, completion criteria, Stop gates |
-| Context resets with structured handoffs | `/resume` skill that reconstructs ephemeral state from file artifacts |
+| Context resets with structured handoffs | `/ai-dlc:resume` skill that reconstructs ephemeral state from file artifacts |
 | "Every component encodes an assumption" | Each hat and phase encodes a guardrail |
 | Harness complexity should decrease with model capability | Regular reassessment of which scaffolding remains necessary |
 
 The vocabulary differs. The architecture rhymes.
 
-AI-DLC's hats are Anthropic's specialized agent roles. Both systems assign distinct responsibilities — planning, generating, evaluating — to separate modes of operation rather than letting a single undifferentiated agent try to do everything at once. AI-DLC's file artifacts (intent specs, unit specs, scratchpads, iteration state) are the same pattern as Anthropic's file-based inter-agent communication: persistent, structured state that survives context boundaries and enables handoffs. The bolt cycle — operate, review, fail or advance — is a generator-evaluator feedback loop with explicit human-visible transitions. And `/resume`, which reconstructs ephemeral session state entirely from file artifacts, is a context reset with a structured handoff.
+AI-DLC's hats are Anthropic's specialized agent roles. Both systems assign distinct responsibilities — planning, generating, evaluating — to separate modes of operation rather than letting a single undifferentiated agent try to do everything at once. AI-DLC's file artifacts (intent specs, unit specs, scratchpads, iteration state) are the same pattern as Anthropic's file-based inter-agent communication: persistent, structured state that survives context boundaries and enables handoffs. The bolt cycle — operate, review, fail or advance — is a generator-evaluator feedback loop with explicit human-visible transitions. And `/ai-dlc:resume`, which reconstructs ephemeral session state entirely from file artifacts, is a context reset with a structured handoff.
 
 The alignment is not coincidental. These are convergent solutions to the same underlying problem: models cannot sustain complex work across long contexts without external structure.
 
@@ -57,7 +57,7 @@ The harnesses described in Anthropic's post are autonomous agent-to-agent loops.
 
 AI-DLC centers human judgment.
 
-The human wears hats alongside the AI, approves transitions between phases, and can `/refine` a specification mid-construction or `/fail` a review to send work back. Three operating modes — HITL (human in the loop), OHOTL (observer, human on the loop), and AHOTL (autonomous, human off the loop) — let teams dial autonomy up or down per intent. The harness *supports* full autonomy but does not *assume* it.
+The human wears hats alongside the AI, approves transitions between phases, and can `/ai-dlc:refine` a specification mid-construction or `/ai-dlc:fail` a review to send work back. Three operating modes — HITL (human in the loop), OHOTL (observer, human on the loop), and AHOTL (autonomous, human off the loop) — let teams dial autonomy up or down per intent. The harness *supports* full autonomy but does not *assume* it.
 
 This is a deliberate design choice. As we argued in [Dark Factories and the Loop](/blog/dark-factories-and-the-loop), the dark factory is a knob you turn, not a system you build. Some work deserves full autonomy. Some work deserves close oversight. The same harness should support both without architectural changes. A security-sensitive authentication flow and a routine dependency upgrade should not require different tools — just a different setting on the same tool.
 
@@ -81,7 +81,7 @@ Domain specificity buys you deterministic quality gates. Generic harnesses have 
 
 Anthropic's harnesses use the Claude Agent SDK to orchestrate separate agent processes. Each agent is a distinct subprocess with its own context window, coordinated by the harness through file-based communication. The harness is a separate orchestration layer that manages agents externally.
 
-AI-DLC uses Claude Code's plugin system — skills, hooks, and CLAUDE.md rules — to shape behavior *within* a single Claude Code session. Skills provide structured commands (`/elaborate`, `/resume`, `/refine`). Hooks enforce backpressure at tool-call boundaries. CLAUDE.md rules inject context and constraints that persist across the session. When Agent Teams is enabled, the plugin spawns independent teammates, but the orchestration still flows through plugin primitives rather than a separate SDK layer.
+AI-DLC uses Claude Code's plugin system — skills, hooks, and CLAUDE.md rules — to shape behavior *within* a single Claude Code session. Skills provide structured commands (`/ai-dlc:elaborate`, `/ai-dlc:resume`, `/ai-dlc:refine`). Hooks enforce backpressure at tool-call boundaries. CLAUDE.md rules inject context and constraints that persist across the session. When Agent Teams is enabled, the plugin spawns independent teammates, but the orchestration still flows through plugin primitives rather than a separate SDK layer.
 
 This means the harness *is* the development environment. There is no separate system to install, configure, or maintain. You install a plugin and your Claude Code session gains structured workflows, quality gates, and context management. The harness lives where the work happens.
 

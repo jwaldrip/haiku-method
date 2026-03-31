@@ -13,7 +13,7 @@ Complete these steps before beginning your first intent:
 ### Environment Setup
 - [ ] Claude Code installed and working
 - [ ] AI-DLC plugin installed (`/plugin marketplace add thebushidocollective/ai-dlc` then `/plugin install ai-dlc@thebushidocollective-ai-dlc --scope project`)
-- [ ] Verified plugin is active (commands like `/elaborate` are recognized)
+- [ ] Verified plugin is active (commands like `/ai-dlc:elaborate` are recognized)
 
 ### Project Selection
 - [ ] Chosen a real project (not a toy project)
@@ -30,10 +30,10 @@ Complete these steps before beginning your first intent:
 
 ## Phase 1: Elaboration
 
-Use `/elaborate` to define your intent collaboratively with Claude.
+Use `/ai-dlc:elaborate` to define your intent collaboratively with Claude.
 
 ### Start Elaboration
-- [ ] Run `/elaborate`
+- [ ] Run `/ai-dlc:elaborate`
 - [ ] Describe what you want to build in 2-3 sentences
 
 ### Define the Intent
@@ -76,10 +76,10 @@ Use `/elaborate` to define your intent collaboratively with Claude.
 
 ## Phase 2: First Unit
 
-Work through your first unit using `/execute`.
+Work through your first unit using `/ai-dlc:execute`.
 
 ### Start Execution
-- [ ] Run `/execute`
+- [ ] Run `/ai-dlc:execute`
 - [ ] Verify Claude loaded the correct unit
 
 ### Planner Hat
@@ -137,7 +137,7 @@ Continue with remaining units.
 
 ### For Each Remaining Unit
 
-- [ ] Run `/execute` to load next unit
+- [ ] Run `/ai-dlc:execute` to load next unit
 - [ ] Review any dependencies are satisfied
 - [ ] Complete Planner → Builder → Reviewer cycle
 - [ ] Commit with unit reference
@@ -146,7 +146,7 @@ Continue with remaining units.
 ### Between Units
 
 - [ ] Check if context is getting heavy
-- [ ] `/clear` if needed, then `/execute` to continue
+- [ ] `/clear` if needed, then `/ai-dlc:execute` to continue
 - [ ] Verify committed artifacts reflect current state
 
 ### Handling Blockers
@@ -214,7 +214,7 @@ Answer these questions honestly:
 
 **Tooling:**
 - [ ] Any friction with the commands?
-- [ ] Did `/clear` + `/execute` work smoothly?
+- [ ] Did `/clear` + `/ai-dlc:execute` work smoothly?
 - [ ] Were artifacts helpful?
 
 ### Metrics to Note
@@ -239,8 +239,8 @@ Based on this experience:
 ### Commands
 | Command | When to Use |
 |---------|-------------|
-| `/elaborate` | Start new intent |
-| `/execute` | Continue/start unit work |
+| `/ai-dlc:elaborate` | Start new intent |
+| `/ai-dlc:execute` | Continue/start unit work |
 | `/researcher` | Need more understanding |
 | `/planner` | Need to redesign approach |
 | `/builder` | Ready to implement |

@@ -12,7 +12,7 @@ argument-hint: "[hat-name]"
 ## Synopsis
 
 ```
-/pressure-testing [hat-name]
+/ai-dlc:pressure-testing [hat-name]
 ```
 
 ## Description
@@ -311,6 +311,6 @@ Present the results:
 {List of anti-rationalization rows added, if any}
 
 ### Next Steps
-- Run `/pressure-testing {hat-name}` again with a different scenario
+- Run `/ai-dlc:pressure-testing {hat-name}` again with a different scenario
 - Test other hats: {list of untested hats}
 ```

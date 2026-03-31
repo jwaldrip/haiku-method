@@ -55,17 +55,17 @@ Then you'll write these as files in `.ai-dlc/{intent-slug}/` for the execution p
 
 ---
 
-## Autonomous Mode (invoked from `/autopilot`)
+## Autonomous Mode (invoked from `/ai-dlc:autopilot`)
 
-When elaboration is invoked from `/autopilot`, it runs in **autonomous mode**. The feature description has already been provided by the user. The goal is to produce a complete, high-quality spec with **minimal or zero user interaction** — make reasonable decisions instead of asking questions.
+When elaboration is invoked from `/ai-dlc:autopilot`, it runs in **autonomous mode**. The feature description has already been provided by the user. The goal is to produce a complete, high-quality spec with **minimal or zero user interaction** — make reasonable decisions instead of asking questions.
 
-**How to detect:** If the conversation context shows that `/autopilot` invoked this skill, you are in autonomous mode. Do not ask the user to confirm this — just operate accordingly.
+**How to detect:** If the conversation context shows that `/ai-dlc:autopilot` invoked this skill, you are in autonomous mode. Do not ask the user to confirm this — just operate accordingly.
 
 **Autonomous defaults per phase:**
 
 | Phase | Interactive behavior | Autonomous behavior |
 |---|---|---|
-| **1 (Gather Intent)** | Ask "What do you want to build?" | Use the feature description from `/autopilot`. Do NOT ask. |
+| **1 (Gather Intent)** | Ask "What do you want to build?" | Use the feature description from `/ai-dlc:autopilot`. Do NOT ask. |
 | **2 (Clarify Requirements)** | Ask 2-4 clarification questions | **Skip entirely.** Infer requirements from the feature description and domain discovery. The description from autopilot is assumed to be sufficient for well-understood features. |
 | **2 (Deployment/Ops)** | Ask deployment target, monitoring, ops questions | **Skip.** Default to "Existing infrastructure" / "Use existing monitoring" / "Standard ops". If the codebase has no deployment surface, skip as usual. |
 | **2.5 (Domain Model validation)** | Ask user to confirm domain model accuracy | **Auto-approve.** Log the domain model for reference but do not ask. Discovery is still mandatory — only the confirmation prompt is skipped. |
@@ -150,8 +150,8 @@ If the user invoked this with a slug argument:
 
 1. Check if `.ai-dlc/{slug}/intent.md` exists
 2. If it exists, check the intent and unit statuses:
-   - **Skip if intent status is `completed`**: Tell the user "Intent `{slug}` is already completed. Run `/elaborate` without a slug to start a new intent." Then stop.
-   - **Skip if ANY unit has status `in_progress` or `completed`**: Execution has already started — elaboration would conflict with in-flight work. Tell the user "Intent `{slug}` already has units in progress or completed. Use `/resume {slug}` to continue execution or `/execute` to resume the build loop." Then stop.
+   - **Skip if intent status is `completed`**: Tell the user "Intent `{slug}` is already completed. Run `/ai-dlc:elaborate` without a slug to start a new intent." Then stop.
+   - **Skip if ANY unit has status `in_progress` or `completed`**: Execution has already started — elaboration would conflict with in-flight work. Tell the user "Intent `{slug}` already has units in progress or completed. Use `/ai-dlc:resume {slug}` to continue execution or `/ai-dlc:execute` to resume the build loop." Then stop.
    - **Only proceed if ALL units have `status: pending`** (no work has begun yet):
 3. If all units are pending — **assume the user wants to modify the existing intent**:
    - Read ALL files in `.ai-dlc/{slug}/` directory
@@ -181,7 +181,7 @@ If the user invoked this with a slug argument:
          {"label": "Modify intent", "description": "Review and update the intent definition"},
          {"label": "Modify units", "description": "Adjust the unit breakdown"},
          {"label": "Start fresh", "description": "Delete and re-elaborate from scratch"},
-         {"label": "Looks good", "description": "Proceed to /execute as-is"}
+         {"label": "Looks good", "description": "Proceed to /ai-dlc:execute as-is"}
        ],
        "multiSelect": false
      }]
@@ -191,7 +191,7 @@ If the user invoked this with a slug argument:
    - **Modify intent**: Jump to Phase 4 (Success Criteria) with current values pre-filled
    - **Modify units**: Jump to Phase 5 (Decompose) with current units shown
    - **Start fresh**: Delete `.ai-dlc/{slug}/` and proceed to Phase 1
-   - **Looks good**: Tell them to run `/execute` to begin
+   - **Looks good**: Tell them to run `/ai-dlc:execute` to begin
 
 If no slug provided, or the intent doesn't exist, proceed to Phase 1.
 
@@ -305,7 +305,7 @@ dlc_state_save "$INTENT_DIR" "previous-intent-context" "{JSON summary of previou
 ```
 
 **When `iterates_on` is set, the following phases are modified:**
-- **Phase 1**: Skip the "What do you want to build?" question — the intent scaffold already has a Problem/Solution from `/followup`. Instead, present the existing description and ask if the user wants to refine it.
+- **Phase 1**: Skip the "What do you want to build?" question — the intent scaffold already has a Problem/Solution from `/ai-dlc:followup`. Instead, present the existing description and ask if the user wants to refine it.
 - **Phase 2**: Use previous intent context to ask more targeted clarifying questions. Focus on what's *different* from the previous intent, not re-establishing the full domain.
 - **Phase 2.5**: Shorten or skip domain discovery — the previous intent already explored the domain. Focus discovery on *new* areas or changes only.
 - **Phase 5**: Reference previous units to understand what exists. Suggest units that modify, extend, or fix what was previously built.
@@ -314,7 +314,7 @@ dlc_state_save "$INTENT_DIR" "previous-intent-context" "{JSON summary of previou
 
 ## Phase 1: Gather Intent
 
-**If `iterates_on` is set:** The intent was created by `/followup` and already has a Problem/Solution section. Present the existing description to the user and ask if they want to refine it:
+**If `iterates_on` is set:** The intent was created by `/ai-dlc:followup` and already has a Problem/Solution section. Present the existing description to the user and ask if they want to refine it:
 
 ```json
 {
@@ -1375,7 +1375,7 @@ git:
 announcements: []  # e.g., [changelog, release-notes, social-posts, blog-draft]
 passes: []  # Optional: [design, product, dev] — omit or leave empty for single-pass (default dev)
 active_pass: ""  # Current pass being worked on (auto-managed by construct)
-iterates_on: ""  # Slug of the previous intent this iterates on (set by /followup, leave empty for new intents)
+iterates_on: ""  # Slug of the previous intent this iterates on (set by /ai-dlc:followup, leave empty for new intents)
 created: {ISO date}
 status: active
 epic: ""  # Ticketing provider epic key (auto-populated if ticketing provider configured)
@@ -1786,7 +1786,7 @@ Use `AskUserQuestion`:
 
 The intent slug is derived from the `.ai-dlc/{intent-slug}/` directory path — no separate state save is needed.
 
-**Note:** Do NOT save `iteration.json` here. Execution state (hat, iteration count, workflow, status) is initialized by `/execute` when the build loop starts. Elaboration only writes the spec artifacts.
+**Note:** Do NOT save `iteration.json` here. Execution state (hat, iteration count, workflow, status) is initialized by `/ai-dlc:execute` when the build loop starts. Elaboration only writes the spec artifacts.
 
 ### 5. Commit any remaining artifacts on intent branch:
 
@@ -2373,7 +2373,7 @@ Tell the user:
 
 ```
 To start the autonomous build loop:
-  /execute
+  /ai-dlc:execute
 
 The execution phase will iterate through each unit, using quality gates
 (tests, types, lint) as backpressure until all success criteria are met.
@@ -2426,7 +2426,7 @@ ${SUCCESS_CRITERIA_SECTION}
 ${UNIT_BREAKDOWN}
 
 ---
-*This is an AI-DLC spec review PR. Approve and run \`/execute\` to begin the autonomous build loop.*
+*This is an AI-DLC spec review PR. Approve and run \`/ai-dlc:execute\` to begin the autonomous build loop.*
 EOF
 )"
 ```
@@ -2451,7 +2451,7 @@ git worktree prune
 Spec PR created: {PR_URL}
 
 Review the spec with your team. When approved, a developer can run:
-  /execute
+  /ai-dlc:execute
 ```
 
 ### If local folder (cowork — no question needed):
@@ -2469,7 +2469,7 @@ These are ready to commit. From your project directory, run:
   git add .ai-dlc/{intent-slug}/
   git commit -m "elaborate: define intent and units for {intent-slug}"
 
-Then a developer can run `/execute` in Claude Code to start the build loop.
+Then a developer can run `/ai-dlc:execute` in Claude Code to start the build loop.
 ```
 
 ### If Download as zip (cowork):
@@ -2491,5 +2491,5 @@ Spec packaged: {ZIP_PATH}
 To use this spec:
 1. Unzip into the project root (preserves the .ai-dlc/{intent-slug}/ structure)
 2. Commit the files
-3. Run /execute in Claude Code to start the build loop
+3. Run /ai-dlc:execute in Claude Code to start the build loop
 ```

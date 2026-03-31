@@ -19,7 +19,7 @@ allowed-tools:
 ## Synopsis
 
 ```
-/followup [previous-intent-slug]
+/ai-dlc:followup [previous-intent-slug]
 ```
 
 ## Description
@@ -34,13 +34,13 @@ This addresses scenarios where:
 
 **User Flow:**
 ```
-User: /followup
+User: /ai-dlc:followup
 AI: Found intents: my-feature, api-refactor. Which is this a follow-up to?
 User: my-feature
 AI: What does this follow-up address?
 User: "MR reviewer asked me to add error handling to the API endpoint"
 AI: Created new intent fix-api-error-handling (iterates_on: my-feature).
-    Transitioning to /elaborate...
+    Transitioning to /ai-dlc:elaborate...
 ```
 
 **What this does NOT do:**
@@ -56,7 +56,7 @@ AI: Created new intent fix-api-error-handling (iterates_on: my-feature).
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /followup cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:followup cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi
@@ -110,7 +110,7 @@ git show "ai-dlc/${slug}/main:.ai-dlc/${slug}/intent.md" 2>/dev/null
 - If slug was provided as argument: validate it exists and proceed
 - 1 intent found: auto-select
 - Multiple intents found: present them via `AskUserQuestion`
-- 0 intents found: error, suggest `/elaborate` to start fresh
+- 0 intents found: error, suggest `/ai-dlc:elaborate` to start fresh
 
 ```json
 {
@@ -267,7 +267,7 @@ aidlc_record_followup_created "${INTENT_SLUG}" "${PREVIOUS_SLUG}"
 
 ### Step 5: Transition to Elaboration
 
-After creating the intent scaffold, invoke `/elaborate {new-slug}` to let the user flesh out the new intent. The elaborate skill will detect the `iterates_on` field and automatically load context from the previous intent.
+After creating the intent scaffold, invoke `/ai-dlc:elaborate {new-slug}` to let the user flesh out the new intent. The elaborate skill will detect the `iterates_on` field and automatically load context from the previous intent.
 
 ```markdown
 ## Follow-Up Intent Created
@@ -283,7 +283,7 @@ Transitioning to elaboration to flesh out the details...
 Then invoke the elaborate skill:
 
 ```
-/elaborate {new-slug}
+/ai-dlc:elaborate {new-slug}
 ```
 
 The elaborate skill will:
@@ -297,7 +297,7 @@ The elaborate skill will:
 ### Follow-Up After Review Feedback
 
 ```
-User: /followup
+User: /ai-dlc:followup
 AI: Found intents:
   - auth-system (completed, 4/4 units done)
   - api-refactor (active, 2/5 units done)
@@ -330,7 +330,7 @@ AI: ## Follow-Up Intent Created
 ### Follow-Up for Bug Fix
 
 ```
-User: /followup auth-system
+User: /ai-dlc:followup auth-system
 AI: Loaded previous intent: Auth System Overhaul (completed)
     What does this follow-up address?
 

@@ -13,7 +13,7 @@ You are refining an AI-DLC intent or unit specification mid-execution. Your job 
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /refine cannot run in cowork mode."
+  echo "ERROR: /ai-dlc:refine cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi
@@ -36,12 +36,12 @@ INTENT_DIR=".ai-dlc/${INTENT_SLUG}"
 
 If no state exists:
 ```
-No AI-DLC state found. Run /elaborate to start a new task.
+No AI-DLC state found. Run /ai-dlc:elaborate to start a new task.
 ```
 
 If status is "completed":
 ```
-Intent is already complete. Run /elaborate to start a new task.
+Intent is already complete. Run /ai-dlc:elaborate to start a new task.
 ```
 
 ---
@@ -244,5 +244,5 @@ Re-queued units: {list of re-queued units}
 Unaffected units: {list of units that stay completed}
 
 To resume the build loop:
-  /execute
+  /ai-dlc:execute
 ```

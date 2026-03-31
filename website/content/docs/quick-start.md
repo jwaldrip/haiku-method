@@ -25,15 +25,15 @@ AI-DLC uses just two main commands:
 
 | Command | What it does |
 |---------|--------------|
-| `/elaborate` | Define what you're building and how you'll know it's done |
-| `/execute` | Start the autonomous execution loop |
+| `/ai-dlc:elaborate` | Define what you're building and how you'll know it's done |
+| `/ai-dlc:execute` | Start the autonomous execution loop |
 
 ## Your First Feature
 
 ### Step 1: Elaborate
 
 ```
-/elaborate
+/ai-dlc:elaborate
 ```
 
 The AI guides you through:
@@ -43,18 +43,18 @@ The AI guides you through:
 
 Example session:
 ```
-User: /elaborate
+User: /ai-dlc:elaborate
 AI: What do you want to build?
 User: Add user authentication with email/password
 AI: [Asks clarifying questions via interactive prompts]
 AI: Here are the success criteria I captured...
-AI: Elaboration complete! Run /execute to start.
+AI: Elaboration complete! Run /ai-dlc:execute to start.
 ```
 
 ### Step 2: Execute
 
 ```
-/execute
+/ai-dlc:execute
 ```
 
 The AI now works autonomously:
@@ -72,7 +72,7 @@ If the session runs long, the AI will suggest clearing context:
 ```
 AI: "Context getting full. Run /clear to continue."
 User: /clear
-User: /execute
+User: /ai-dlc:execute
 ```
 
 Your progress is preserved - the AI picks up where it left off.
@@ -81,20 +81,20 @@ Your progress is preserved - the AI picks up where it left off.
 
 | Command | Purpose |
 |---------|---------|
-| `/resume [slug]` | Resume an existing intent after a break |
-| `/reset` | Abandon current work and start fresh |
+| `/ai-dlc:resume [slug]` | Resume an existing intent after a break |
+| `/ai-dlc:reset` | Abandon current work and start fresh |
 | `/methodology [question]` | Ask questions about AI-DLC |
 
 ## Example: Complete Workflow
 
 ```
-User: /elaborate
+User: /ai-dlc:elaborate
 AI: What do you want to build?
 User: Add a dark mode toggle to the settings page
 AI: [Guides through requirements and criteria]
 AI: Elaboration complete!
 
-User: /execute
+User: /ai-dlc:execute
 AI: [Works autonomously through planner → builder → reviewer]
 AI: Intent complete! All criteria satisfied.
 
@@ -104,7 +104,7 @@ AI: [Creates PR with summary of changes]
 
 ## After Construction
 
-Once your intent is complete, manage ongoing operational tasks with `/operate`. Define scheduled jobs, reactive handlers, and human review processes as spec files in `.ai-dlc/{intent}/operations/`. See the [Operations Guide](/docs/operations-guide/) for details.
+Once your intent is complete, manage ongoing operational tasks with `/ai-dlc:operate`. Define scheduled jobs, reactive handlers, and human review processes as spec files in `.ai-dlc/{intent}/operations/`. See the [Operations Guide](/docs/operations-guide/) for details.
 
 ## Next Steps
 

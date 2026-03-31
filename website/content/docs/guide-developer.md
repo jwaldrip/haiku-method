@@ -16,8 +16,8 @@ This guide covers the day-to-day workflow of using AI-DLC. It assumes you've com
    - Review any blockers from previous sessions
 
 2. **Load context**
-   - Run `/execute` if continuing existing work
-   - Run `/elaborate` if starting new work
+   - Run `/ai-dlc:execute` if continuing existing work
+   - Run `/ai-dlc:elaborate` if starting new work
 
 3. **Announce your hat**
    - Explicitly state which hat you're wearing
@@ -52,7 +52,7 @@ This guide covers the day-to-day workflow of using AI-DLC. It assumes you've com
 You left off mid-unit or a colleague handed you an intent.
 
 ```
-/execute
+/ai-dlc:execute
 ```
 
 This loads the intent and current unit state. Review what's been done:
@@ -68,7 +68,7 @@ Then continue from where work stopped.
 You have a new task with no existing intent.
 
 ```
-/elaborate
+/ai-dlc:elaborate
 ```
 
 This enters Elaborator mode to define the intent collaboratively:
@@ -92,7 +92,7 @@ Solution:
 /clear
 ```
 
-Then `/execute` to reload from committed state. The hat system ensures your progress is captured in files, not just context.
+Then `/ai-dlc:execute` to reload from committed state. The hat system ensures your progress is captured in files, not just context.
 
 ### Getting Stuck
 

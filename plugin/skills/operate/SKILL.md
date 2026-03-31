@@ -11,12 +11,12 @@ disable-model-invocation: true
 ## Synopsis
 
 ```
-/operate                                    # List all operations across all intents
-/operate {intent}                           # Show status table for intent's operations
-/operate {intent} {operation}               # Execute or display a specific operation
-/operate {intent} --deploy [target]         # Generate deployment manifests
-/operate {intent} --status                  # Show last-run timestamps and health
-/operate {intent} --teardown               # Remove deployments (preserves specs)
+/ai-dlc:operate                                    # List all operations across all intents
+/ai-dlc:operate {intent}                           # Show status table for intent's operations
+/ai-dlc:operate {intent} {operation}               # Execute or display a specific operation
+/ai-dlc:operate {intent} --deploy [target]         # Generate deployment manifests
+/ai-dlc:operate {intent} --status                  # Show last-run timestamps and health
+/ai-dlc:operate {intent} --teardown               # Remove deployments (preserves specs)
 ```
 
 ## Description
@@ -51,7 +51,7 @@ Markdown body: description, runbook, or checklist (for human-owned operations).
 
 **Companion files** (for agent-owned operations):
 - `{name}.ts` / `{name}.py` / `{name}.sh` — executable script matching the runtime
-- `deploy/{name}.{type}.yaml` — deployment manifest, written to `operations/deploy/` by `/operate --deploy`
+- `deploy/{name}.{type}.yaml` — deployment manifest, written to `operations/deploy/` by `/ai-dlc:operate --deploy`
 
 **Human-owned operations** have no companion script. The `.md` body contains the checklist.
 
@@ -140,7 +140,7 @@ fi
 If a flag is set but no `INTENT_SLUG` is provided, display:
 ```
 Error: --deploy, --status, and --teardown require an intent slug.
-Usage: /operate {intent} --deploy [target]
+Usage: /ai-dlc:operate {intent} --deploy [target]
 ```
 
 ### Step 1: List All Operations
@@ -201,7 +201,7 @@ LEGACY_FILE="$INTENT_DIR/operations.md"
 1. Verify `$INTENT_DIR` exists. If not:
    ```
    Error: Intent directory not found: .ai-dlc/{intent-slug}/
-   Run /operate to list all intents with operations.
+   Run /ai-dlc:operate to list all intents with operations.
    ```
 
 2. **Check for legacy format.** If `$LEGACY_FILE` exists AND `$OPS_DIR` does not exist, go to **Step 8** (Legacy Compatibility).
@@ -244,7 +244,7 @@ Display the full status table:
 
 ### Step 3: Ad-Hoc Execute — Determine Owner
 
-When invoked as `/operate {intent} {operation}`:
+When invoked as `/ai-dlc:operate {intent} {operation}`:
 
 1. Locate the operation spec file:
    ```bash
@@ -255,7 +255,7 @@ When invoked as `/operate {intent} {operation}`:
 2. If no matching operation found:
    ```
    Error: Operation not found: {operation-name}
-   Run /operate {intent} to see available operations.
+   Run /ai-dlc:operate {intent} to see available operations.
    ```
 
 3. Read the owner:
@@ -404,7 +404,7 @@ For `owner: human` operations:
 
 ### Step 5: Deploy Mode
 
-When invoked as `/operate {intent} --deploy [target]`:
+When invoked as `/ai-dlc:operate {intent} --deploy [target]`:
 
 1. **Load stack configuration:**
    ```bash
@@ -429,7 +429,7 @@ When invoked as `/operate {intent} --deploy [target]`:
    TYPE=$(dlc_frontmatter_get "type" "$op_file")
    ```
 
-   If `$DEPLOY_TARGET` was explicitly provided (e.g., `/operate myapp --deploy github-actions`), use that for all operations. Otherwise derive from stack config using the `has_stack_provider` helper:
+   If `$DEPLOY_TARGET` was explicitly provided (e.g., `/ai-dlc:operate myapp --deploy github-actions`), use that for all operations. Otherwise derive from stack config using the `has_stack_provider` helper:
 
    ```bash
    # Determine from stack config using has_stack_provider helper
@@ -602,7 +602,7 @@ When invoked as `/operate {intent} --deploy [target]`:
 
 ### Step 6: Status Mode
 
-When invoked as `/operate {intent} --status`:
+When invoked as `/ai-dlc:operate {intent} --status`:
 
 1. **Load status data:**
    ```bash
@@ -717,7 +717,7 @@ When invoked as `/operate {intent} --status`:
 
    If no operations have status data:
    ```
-   No operation status data found. Run /operate {intent} {operation} to execute
+   No operation status data found. Run /ai-dlc:operate {intent} {operation} to execute
    operations and begin tracking status.
    ```
 
@@ -725,7 +725,7 @@ When invoked as `/operate {intent} --status`:
 
 ### Step 7: Teardown Mode
 
-When invoked as `/operate {intent} --teardown`:
+When invoked as `/ai-dlc:operate {intent} --teardown`:
 
 1. **Confirm with the user before proceeding.** Teardown is destructive:
    ```markdown
@@ -811,7 +811,7 @@ If `.ai-dlc/{intent}/operations.md` exists but `.ai-dlc/{intent}/operations/` di
    ```markdown
    > **Warning:** Legacy `operations.md` format detected.
    > The per-file format in `.ai-dlc/{intent}/operations/` is now preferred.
-   > Run `/operate {intent} --migrate` to convert automatically. *(coming soon)*
+   > Run `/ai-dlc:operate {intent} --migrate` to convert automatically. *(coming soon)*
    ```
 
 2. **Parse the legacy format.** Read `operations.md` and extract sections:

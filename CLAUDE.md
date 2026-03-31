@@ -42,11 +42,11 @@ When modifying any component, check if other components need corresponding updat
 | Pass | Iteration Through Passes | `passes:`/`active_pass:` in intent, `pass:` in unit | elaborate (Phase 5.95), execute (Step 5c), dag.sh |
 | Completion Criteria | Throughout | criteria in unit frontmatter, hard-gated | elaborate, execute, advance |
 | Backpressure | Principles section | Quality gates in builder/reviewer hats | builder.md, reviewer.md |
-| Operating Modes | HITL/OHOTL/AHOTL section | interactive=HITL, /execute=OHOTL, /autopilot=AHOTL | execute, autopilot |
+| Operating Modes | HITL/OHOTL/AHOTL section | interactive=HITL, /ai-dlc:execute=OHOTL, /ai-dlc:autopilot=AHOTL | execute, autopilot |
 | Workflows | Named Workflows section | plugin/workflows.yml, 5 named workflows | workflows.yml, hats/*.md |
-| Hard Gates | Construction phase | exit code enforcement in /advance | advance/SKILL.md |
+| Hard Gates | Construction phase | exit code enforcement in /ai-dlc:advance | advance/SKILL.md |
 | Providers | Memory Providers section | plugin/schemas/providers/*.json, plugin/providers/*.md | config.sh, hats |
-| Operations | Operations phase | /operate skill | operate/SKILL.md |
+| Operations | Operations phase | /ai-dlc:operate skill | operate/SKILL.md |
 
 ## AI-DLC Terminology (CRITICAL)
 

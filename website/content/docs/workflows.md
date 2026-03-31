@@ -12,7 +12,7 @@ A workflow is a named sequence of hats. Each workflow defines:
 - Which hats are used
 - The order of transitions
 
-Workflows are selected during `/elaborate` and can be customized per project. Individual units within an intent can also override the intent-level workflow.
+Workflows are selected during `/ai-dlc:elaborate` and can be customized per project. Individual units within an intent can also override the intent-level workflow.
 
 > **Note on operating modes:** The HITL (Human-in-the-Loop) and OHOTL (Over-the-Horizon) modes listed below are recommendations for how you might interact with each hat. The plugin does not enforce a specific mode per hat -- you choose how much oversight to apply.
 
@@ -33,11 +33,11 @@ Planner → Builder → Reviewer
 ### Flow
 
 ```
-/elaborate
+/ai-dlc:elaborate
     ↓
 Define intent, criteria, units, and workflow
     ↓
-/execute
+/ai-dlc:execute
     ↓
 Planner (HITL): Plan how to build it
     ↓
@@ -48,7 +48,7 @@ Reviewer (HITL): Verify it's done
 Next unit or intent complete
 ```
 
-> **Where did Elaborator go?** Elaboration is not a hat in the execution workflow. It happens before execution starts, via the `/elaborate` command. By the time `/execute` runs, the intent and its units are already defined.
+> **Where did Elaborator go?** Elaboration is not a hat in the execution workflow. It happens before execution starts, via the `/ai-dlc:elaborate` command. By the time `/ai-dlc:execute` runs, the intent and its units are already defined.
 
 ### When to Use
 
@@ -62,11 +62,11 @@ Next unit or intent complete
 **Intent:** Add user profile editing
 
 ```
-/elaborate: "What fields should users edit?"
+/ai-dlc:elaborate: "What fields should users edit?"
 You: "Name, email, avatar image"
 (Intent and units are now defined)
 
-/execute kicks off:
+/ai-dlc:execute kicks off:
 
 Planner: "I'll add an /api/profile endpoint, a ProfileForm
 component, and image upload with size validation."
@@ -96,9 +96,9 @@ Planner → Builder → Red Team → Blue Team → Reviewer
 ### Flow
 
 ```
-/elaborate (select adversarial workflow)
+/ai-dlc:elaborate (select adversarial workflow)
     ↓
-/execute
+/ai-dlc:execute
     ↓
 Planner (HITL): Plan the feature
     ↓
@@ -168,9 +168,9 @@ Planner → Designer → Reviewer
 ### Flow
 
 ```
-/elaborate (select design workflow)
+/ai-dlc:elaborate (select design workflow)
     ↓
-/execute
+/ai-dlc:execute
     ↓
 Planner (HITL): Define what needs to be designed
     ↓
@@ -231,9 +231,9 @@ Observer → Hypothesizer → Experimenter → Analyst
 ### Flow
 
 ```
-/elaborate (select hypothesis workflow)
+/ai-dlc:elaborate (select hypothesis workflow)
     ↓
-/execute
+/ai-dlc:execute
     ↓
 Observer (OHOTL): Collect symptoms, logs, traces
     ↓
@@ -306,9 +306,9 @@ Test Writer → Implementer → Refactorer → Reviewer
 ### Flow
 
 ```
-/elaborate (select tdd workflow)
+/ai-dlc:elaborate (select tdd workflow)
     ↓
-/execute
+/ai-dlc:execute
     ↓
 Test Writer (OHOTL): Write tests that fail
     ↓
@@ -390,7 +390,7 @@ workflow: default
 Build the API endpoints for analytics data...
 ```
 
-When `/execute` processes each unit, it resolves the unit's workflow independently:
+When `/ai-dlc:execute` processes each unit, it resolves the unit's workflow independently:
 1. If the unit has a `workflow:` field, that workflow is used
 2. If not, the intent-level workflow applies
 
@@ -398,7 +398,7 @@ This means a single intent can have some units flowing through Planner → Desig
 
 ## Operation and Reflection
 
-Operation and reflection are not workflow selections -- they are separate lifecycle phases that run after construction completes. Use `/operate` to enter the Operation phase and `/reflect` to enter the Reflection phase. These phases have their own hat sequences and are invoked independently of whichever workflow was used during execution. See the [Operations Guide](/docs/operations-guide/) for details on defining and managing operational tasks.
+Operation and reflection are not workflow selections -- they are separate lifecycle phases that run after construction completes. Use `/ai-dlc:operate` to enter the Operation phase and `/ai-dlc:reflect` to enter the Reflection phase. These phases have their own hat sequences and are invoked independently of whichever workflow was used during execution. See the [Operations Guide](/docs/operations-guide/) for details on defining and managing operational tasks.
 
 ## Custom Workflows
 
