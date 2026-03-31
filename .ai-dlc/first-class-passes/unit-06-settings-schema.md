@@ -1,6 +1,6 @@
 ---
-status: pending
-last_updated: ""
+status: in_progress
+last_updated: "2026-03-31T19:19:59Z"
 depends_on: [unit-01-pass-definitions]
 branch: ai-dlc/first-class-passes/06-settings-schema
 discipline: backend
@@ -9,6 +9,7 @@ workflow: ""
 ticket: ""
 design_ref: ""
 views: []
+hat: planner
 ---
 
 # unit-06-settings-schema
