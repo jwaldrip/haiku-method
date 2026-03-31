@@ -175,7 +175,7 @@ You MUST follow these rules. They exist because agents systematically under-repo
 
 If you catch yourself doing any of the following, STOP and re-run the relevant pass:
 
-- Completing a pass in under 30 seconds of reasoning without finding anything
+- Completing a pass without examining any specific cross-references between files (e.g., checking fewer than 3 specific claims against discovery.md or cross-unit references)
 - Describing a finding but then talking yourself out of reporting it
 - Writing a finding and then immediately downgrading its confidence without new evidence
 - Skipping a pass because "it doesn't seem relevant to this intent"

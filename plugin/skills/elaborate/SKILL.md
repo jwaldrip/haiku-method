@@ -1953,17 +1953,14 @@ Read `.ai-dlc/${INTENT_SLUG}/.briefs/elaborate-adversarial-review-results.md`.
 Parse the findings YAML from the results body. For each finding, auto-apply when ALL of these conditions are met:
 
 1. `confidence: high`
-2. `fix_type` is one of: `add_dependency`, `add_criterion`, or `spec_edit` (mechanical only)
-3. `fix_type` is NOT `remove_unit` or `manual`
+2. `fix_type` is one of: `add_dependency` or `add_criterion`
+3. `fix_type` is NOT `spec_edit`, `remove_unit`, `reorder`, or `manual`
 
-**NEVER auto-apply `remove_unit` or `manual` fix types regardless of confidence level.**
-
-**Definition of mechanical `spec_edit`:** fixing a typo in a field name, correcting a file path, aligning a quoted reference to its source text. Non-mechanical edits (rewriting descriptions, restructuring sections) are NOT auto-applied — present those to the user instead.
+**NEVER auto-apply `spec_edit`, `remove_unit`, `reorder`, or `manual` fix types regardless of confidence level.** The `spec_edit` type covers too wide a range of changes (from typo fixes to section rewrites) for safe auto-application — always present these to the user. The `reorder` type changes execution order and must be user-approved.
 
 For each auto-applied fix:
 - `add_dependency`: edit the target unit's frontmatter `depends_on` field
 - `add_criterion`: append the criterion to the target unit's success criteria list
-- `spec_edit` (mechanical): edit the specific section/field in the target file
 
 Track which findings were auto-applied.
 
