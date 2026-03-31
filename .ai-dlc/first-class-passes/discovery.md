@@ -146,3 +146,140 @@ Config.sh `load_provider_instructions()` (lines 374-412) uses a three-tier merge
 
 Each tier appends; nothing is replaced. This is closest to the desired hat/pass augmentation pattern.
 
+## Architecture Decision: Pass Definition Files
+
+### Proposed Structure
+
+Create `plugin/passes/*.md` files with YAML frontmatter + markdown instructions:
+
+```markdown
+---
+name: "Design"
+description: "Visual and interaction design pass"
+available_workflows: [design, default]
+default_workflow: design
+---
+
+# Design Pass Instructions
+
+When working in the design pass, focus on...
+{instructions that get injected into hat context}
+```
+
+### File Location Resolution
+
+Same pattern as providers (three-tier merge):
+
+1. **Plugin built-in**: `plugin/passes/{pass-name}.md` (canonical, always loaded)
+2. **Project augmentation**: `.ai-dlc/passes/{pass-name}.md` (appends to matching built-in)
+3. **Project custom**: `.ai-dlc/passes/{new-name}.md` (new pass not in plugin)
+
+Built-in pass definitions to create:
+- `plugin/passes/design.md` -- design pass instructions
+- `plugin/passes/product.md` -- product pass instructions
+- `plugin/passes/dev.md` -- dev pass instructions (implicit default)
+
+### Frontmatter Schema
+
+```yaml
+name: string          # Display name
+description: string   # Short description
+available_workflows:  # Workflows allowed in this pass
+  - design
+  - default
+default_workflow: string  # Fallback workflow for units in this pass
+```
+
+### Injection Point
+
+The pass definition instructions should be injected into hat context during construction (SessionStart and SubagentPrompt hooks):
+
+1. Read `active_pass` from intent.md frontmatter
+2. Load the pass definition (plugin + project augmentation)
+3. Inject the pass instructions as a new section after hat instructions
+
+This means modifying `inject-context.sh` and `subagent-context.sh` to:
+- After loading hat instructions, check for active_pass
+- If active_pass is set, load the pass definition
+- Inject pass instructions as a `### Active Pass Context` section
+
+### Workflow Constraint Enforcement
+
+Currently `workflow-guard.sh` and the elaborate skill don't consider pass constraints. The implementation should:
+
+1. During elaboration: when assigning workflows to units, check the active pass's `available_workflows`
+2. During execution: `workflow-guard.sh` should verify the unit's workflow is allowed for the active pass
+3. Fallback: if a unit requests a workflow not in the pass's list, use `default_workflow`
+
+### Settings Schema Change
+
+Current `default_passes` in `settings.schema.json`:
+```json
+"default_passes": {
+  "type": "array",
+  "items": { "type": "string", "enum": ["design", "product", "dev"] }
+}
+```
+
+Should change to:
+```json
+"default_passes": {
+  "type": "array",
+  "items": { "type": "string" },
+  "default": []
+}
+```
+
+Any string is valid as long as a matching pass definition file exists (plugin or project level). Validation happens at runtime, not at schema level.
+
+## Architecture Decision: Hat Augmentation Pattern
+
+### Current vs. Proposed
+
+**Current:** Project file replaces plugin file.
+```
+.ai-dlc/hats/builder.md  →  replaces  →  plugin/hats/builder.md
+```
+
+**Proposed:** Plugin file is always loaded. Project file with same name appends.
+```
+plugin/hats/builder.md     →  always loaded (canonical)
+.ai-dlc/hats/builder.md   →  appended after (augmentation)
+.ai-dlc/hats/my-custom.md →  standalone custom hat (no plugin equivalent)
+```
+
+### Implementation in inject-context.sh
+
+Replace the current if/elif with:
+
+```bash
+# Always load plugin hat first (canonical)
+HAT_CONTENT=""
+PLUGIN_HAT="${PLUGIN_ROOT}/hats/${HAT}.md"
+PROJECT_HAT=".ai-dlc/hats/${HAT}.md"
+
+if [ -f "$PLUGIN_HAT" ]; then
+  HAT_CONTENT=$(cat "$PLUGIN_HAT" | sed '1,/^---$/d' | sed '1,/^---$/d')
+  NAME=$(dlc_frontmatter_get "name" "$PLUGIN_HAT")
+  DESC=$(dlc_frontmatter_get "description" "$PLUGIN_HAT")
+fi
+
+# Append project augmentation (if exists and plugin hat exists)
+if [ -f "$PROJECT_HAT" ] && [ -f "$PLUGIN_HAT" ]; then
+  PROJECT_INSTRUCTIONS=$(cat "$PROJECT_HAT" | sed '1,/^---$/d' | sed '1,/^---$/d')
+  HAT_CONTENT="${HAT_CONTENT}
+
+### Project Augmentation
+${PROJECT_INSTRUCTIONS}"
+elif [ -f "$PROJECT_HAT" ] && [ ! -f "$PLUGIN_HAT" ]; then
+  # Custom hat (no plugin equivalent)
+  HAT_CONTENT=$(cat "$PROJECT_HAT" | sed '1,/^---$/d' | sed '1,/^---$/d')
+  NAME=$(dlc_frontmatter_get "name" "$PROJECT_HAT")
+  DESC=$(dlc_frontmatter_get "description" "$PROJECT_HAT")
+fi
+```
+
+### Same Change in subagent-context.sh
+
+The same pattern must be applied in `subagent-context.sh` lines 186-214.
+
