@@ -1,8 +1,8 @@
 ---
-status: pending
-last_updated: ""
+status: in_progress
+last_updated: "2026-03-31T05:22:51Z"
 depends_on:
-  - unit-01-quick-skill-rewrite  # Routing text references /quick [workflow] syntax — ship after the feature exists
+  - unit-01-quick-skill-rewrite # Routing text references /quick [workflow] syntax — ship after the feature exists
 branch: ai-dlc/quick-mode-workflows/02-intelligent-routing
 discipline: backend
 pass: ""
@@ -10,6 +10,7 @@ workflow: ""
 ticket: ""
 design_ref: ""
 views: []
+hat: planner
 ---
 
 # unit-02-intelligent-routing
