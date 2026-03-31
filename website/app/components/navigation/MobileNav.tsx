@@ -36,6 +36,7 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
 			<div
 				className="fixed inset-0 bg-black/50 backdrop-blur-sm"
 				onClick={onClose}
+				onKeyDown={onClose}
 				aria-hidden="true"
 			/>
 

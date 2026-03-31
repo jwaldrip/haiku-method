@@ -33,6 +33,7 @@ export function Footer() {
 						</p>
 						{/* Social links */}
 						<div className="mt-4 flex gap-3">
+							{/* biome-ignore lint/a11y/useAnchorContent: aria-label provides accessible content */}
 							<a
 								href="https://github.com/thebushidocollective/ai-dlc"
 								target="_blank"

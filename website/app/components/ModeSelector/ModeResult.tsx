@@ -142,7 +142,11 @@ export function ModeResult({
 				</h3>
 				<ul className="space-y-2">
 					{info.useWhen.map((item, index) => (
-						<li key={index} className="flex items-start gap-3">
+						<li
+							// biome-ignore lint/suspicious/noArrayIndexKey: list items have no stable ID
+							key={index}
+							className="flex items-start gap-3"
+						>
 							<svg
 								className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400"
 								fill="none"

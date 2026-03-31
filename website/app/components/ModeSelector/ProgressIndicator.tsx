@@ -25,6 +25,7 @@ export function ProgressIndicator({ current, total }: ProgressIndicatorProps) {
 			<div className="mt-2 flex justify-between">
 				{Array.from({ length: total }, (_, i) => (
 					<div
+						// biome-ignore lint/suspicious/noArrayIndexKey: static array with fixed length
 						key={i}
 						className={`h-2 w-2 rounded-full transition-colors ${
 							i < current
