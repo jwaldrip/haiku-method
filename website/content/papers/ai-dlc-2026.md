@@ -1379,6 +1379,8 @@ Completion Criteria:
 
 **Parallel execution:** unit-01-data-collection and unit-03-api start immediately (no dependencies). unit-02-model waits for unit-01-data-collection. unit-04-frontend waits for both unit-02-model and unit-03-api (fan-in point).
 
+**Adversarial Spec Review:** Before handing off to execution, the elaboration workflow runs an adversarial review of the intent and unit specs. A dedicated subagent — isolated from the elaboration conversation for objectivity — challenges the specs across seven categories: contradictions between units, hidden complexity, unvalidated assumptions, dependency ordering errors, scope creep, completeness gaps, and boundary violations. High-confidence mechanical fixes (adding missing dependencies, appending criteria) are applied automatically; all other findings are presented to the team for decision. This catches spec-level issues that are far cheaper to fix before execution begins.
+
 **AI recommends Bolt modes:**
 
 | Unit | Recommended Mode | Rationale |

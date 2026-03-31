@@ -77,6 +77,7 @@ This enters Elaborator mode to define the intent collaboratively:
 2. Answer Claude's clarifying questions
 3. Review proposed units and criteria
 4. Approve or refine the structure
+5. Adversarial review challenges the specs for contradictions, hidden complexity, and gaps before execution begins
 
 ### Context Getting Heavy
 
