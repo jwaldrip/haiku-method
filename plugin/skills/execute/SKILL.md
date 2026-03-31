@@ -898,7 +898,7 @@ e. For each newly ready unit, spawn at `workflow[0]` (first hat):
 FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
 ```
 
-Then follow the same spawn logic from Step 3 (load hat instructions, select agent type, spawn teammate with hat instructions in prompt).
+Then follow the same spawn logic from Step 3 (use `load_hat_instructions` from `hat.sh` for augmented hat resolution, select agent type, spawn teammate with hat instructions in prompt).
 
 #### Teammate Reports Issues (Any Hat)
 
