@@ -379,7 +379,7 @@ This replaces the sequential "loop back to builder" behavior when Agent Teams is
 
 When `ALL_COMPLETE` is true and `state.integratorComplete` is not true, run integration validation instead of marking the intent completed.
 
-**Integration is NOT a per-unit hat** — it does not appear in the workflow sequence. It runs once on the merged intent branch after all units pass their per-unit workflows. It is implemented as the internal `/ai-dlc:integrate` skill (see `plugin/skills/integrate/SKILL.md`).
+**Integration is NOT a per-unit hat** — it does not appear in the workflow sequence. It runs once on the merged intent branch after all units pass their per-unit workflows. It is implemented as the internal `/ai-dlc:integrate` skill (see `plugin/skills/execute/subskills/integrate/SKILL.md`).
 
 1. Set state to indicate integration is running:
 
