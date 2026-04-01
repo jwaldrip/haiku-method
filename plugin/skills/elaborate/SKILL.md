@@ -110,6 +110,32 @@ Before any elaboration, verify the working environment:
    PROJECT_MATURITY=$(detect_project_maturity)
    ```
    Values: `greenfield` (brand new, 0-3 commits or minimal source files), `early` (some code but still small), `established` (mature codebase). This value gates Phase 2.5 exploration behavior.
+1c. **Check for project setup**: If `.ai-dlc/settings.yml` does not exist, the project has not been configured yet. Run `/ai-dlc:setup` first so that providers, delivery strategy, announcements, and other project-level settings are established before elaboration begins.
+   ```bash
+   if [ ! -f ".ai-dlc/settings.yml" ]; then
+     echo "No .ai-dlc/settings.yml found. Running /ai-dlc:setup first..."
+   fi
+   ```
+   If the file is missing, invoke the setup skill:
+   ```
+   Skill("ai-dlc:setup")
+   ```
+   After setup completes, continue with elaboration. The settings file now exists and all subsequent phases can read from it.
+
+   **In autonomous mode:** If settings.yml is missing during autopilot, use all defaults without running setup — create a minimal settings file with sensible defaults instead of blocking:
+   ```bash
+   mkdir -p .ai-dlc
+   cat > .ai-dlc/settings.yml << 'SETTINGS_EOF'
+   git:
+     change_strategy: intent
+     default_branch: auto
+     auto_merge: true
+   default_announcements: [changelog]
+   SETTINGS_EOF
+   git add .ai-dlc/settings.yml
+   git commit -m "ai-dlc: initialize default settings"
+   ```
+
 2. If **not cowork** (`IS_COWORK` is empty) **and in a repo** (`IN_REPO` is `true`): proceed to Phase 0 (Existing Intent Check) below.
 3. If **cowork** (`IS_COWORK=1`) **or not in a repo**:
    a. **Ask how to access the project**:
