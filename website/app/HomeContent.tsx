@@ -373,7 +373,7 @@ export default function HomeContent({
 										{
 											icon: "\u{1F3A8}",
 											name: "Designer",
-											desc: "Explores design options, presents 2-3 alternatives, creates specs.",
+											desc: "Guided by the project's design direction and blueprint. Produces wireframes, tokens, and component specs -- not production code.",
 										},
 										{
 											icon: "\u{1F50D}",
@@ -841,6 +841,21 @@ export default function HomeContent({
 							</ul>
 						</DeepDive>
 
+						{/* Design direction callout for greenfield projects */}
+						<motion.div
+							{...fadeIn}
+							className="rounded-lg border border-violet-200 bg-violet-50/30 px-4 py-3 dark:border-violet-800/50 dark:bg-violet-950/10"
+						>
+							<p className="text-xs text-gray-600 dark:text-gray-300">
+								<strong className="text-violet-500">New projects only:</strong>{" "}
+								A visual design direction picker guides you through choosing
+								an aesthetic -- Brutalist, Editorial, Dense, or Playful --
+								with tunable parameters. The selection produces a design
+								blueprint that shapes every wireframe and UI component
+								downstream.
+							</p>
+						</motion.div>
+
 						{/* Deep Dive: Greenfield Design Direction */}
 						<DeepDive
 							title="Deep Dive: Greenfield Projects -- Choosing a Design Direction"
@@ -1262,6 +1277,17 @@ export default function HomeContent({
 							</p>
 						</div>
 					</motion.div>
+
+					<motion.p
+						{...fadeIn}
+						className="mt-4 text-xs text-gray-500 dark:text-gray-400"
+					>
+						When a <strong className="text-violet-500">design pass</strong> is
+						active, the same rotation applies -- but the Builder becomes a
+						Designer. Instead of production code, it produces wireframes,
+						design tokens, and component specs. The design blueprint from
+						elaboration feeds into every artifact.
+					</motion.p>
 
 					{/* Inner Loop */}
 					<motion.h3
