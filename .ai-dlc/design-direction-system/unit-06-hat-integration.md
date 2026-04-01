@@ -1,6 +1,6 @@
 ---
-status: in_progress
-last_updated: "2026-04-01T13:05:57Z"
+status: completed
+last_updated: "2026-04-01T13:11:14Z"
 depends_on: [unit-01-knowledge-infrastructure]
 branch: ai-dlc/design-direction-system/06-hat-integration
 discipline: backend
@@ -9,7 +9,7 @@ workflow: ""
 ticket: ""
 design_ref: ""
 views: []
-hat: planner
+hat: ""
 ---
 
 # unit-06-hat-integration
