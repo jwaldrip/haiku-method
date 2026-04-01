@@ -329,11 +329,13 @@ dlc_run_visual_comparison() {
   local gate_result
   gate_result=$(dlc_detect_visual_gate --unit-file "$unit_file" --changed-files "$changed_files")
 
-  if [ "$gate_result" = "VISUAL_GATE=false" ]; then
-    echo "ai-dlc: visual-comparison: visual gate inactive — skipping" >&2
-    echo "VISUAL_GATE=false"
-    return 0
-  fi
+  case "$gate_result" in
+    VISUAL_GATE=false*)
+      echo "ai-dlc: visual-comparison: visual gate inactive — skipping" >&2
+      echo "VISUAL_GATE=false"
+      return 0
+      ;;
+  esac
 
   echo "ai-dlc: visual-comparison: visual gate active" >&2
 
