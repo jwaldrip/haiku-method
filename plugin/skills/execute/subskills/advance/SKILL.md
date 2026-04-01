@@ -168,7 +168,23 @@ if [ -n "$TARGET_UNIT" ] && [ "$TARGET_UNIT" = "$CURRENT_UNIT" ]; then
   # Clear targetUnit from state
   STATE=$(echo "$STATE" | dlc_json_set "targetUnit" "")
   dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+```
 
+Clean up the targeted unit's team agents before exiting (if Agent Teams are enabled):
+
+```bash
+  AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
+```
+
+If `AGENT_TEAMS_ENABLED` is set, delete the team to release all agent resources:
+
+```javascript
+  // Note: If no active team exists (e.g., prior run crashed before TeamCreate), TeamDelete
+  // is a no-op. No manual error handling is needed; proceed normally.
+  TeamDelete()
+```
+
+```bash
   echo "## Targeted Unit Complete: ${CURRENT_UNIT}"
   echo ""
   echo "The targeted unit has finished its workflow."
@@ -176,7 +192,7 @@ if [ -n "$TARGET_UNIT" ] && [ "$TARGET_UNIT" = "$CURRENT_UNIT" ]; then
   echo "**Next steps:**"
   echo "- Run \`/ai-dlc:execute\` to continue with the next ready unit"
   echo "- Run \`/ai-dlc:execute <unit-name>\` to target another specific unit"
-  echo "- Run \`/ai-dlc:advance\` if all units are complete"
+  echo "- Read \`plugin/skills/execute/subskills/advance/SKILL.md\` and execute it if all units are complete"
   exit 0
 fi
 ```
@@ -207,7 +223,7 @@ UNIT_SLUG="${CURRENT_UNIT#unit-}"
 UNIT_BRANCH="ai-dlc/${INTENT_SLUG}/${UNIT_SLUG}"
 
 if [ "$CHANGE_STRATEGY" = "unit" ]; then
-  # Unit strategy: open a PR/MR for the unit branch directly to the default branch
+  # Unit strategy: open a PR for the unit branch directly to the default branch
   git push -u origin "$UNIT_BRANCH" 2>/dev/null || true
 
   # Get this unit's ticket reference (if any) for the PR body
@@ -279,6 +295,24 @@ elif [ "$AUTO_MERGE" = "true" ]; then
 fi
 ```
 
+### Step 2d-1: Clean Up Completed Unit's Team Agents
+
+When Agent Teams are enabled, the completed unit's teammate agents (planner, builder, reviewer, etc.) may still be running. Delete the team to release all agent resources before proceeding to the next unit or integration.
+
+```bash
+AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
+```
+
+If `AGENT_TEAMS_ENABLED` is set, call `TeamDelete` to tear down the team and terminate any remaining agents:
+
+```javascript
+// Note: If no active team exists (e.g., prior run crashed before TeamCreate), TeamDelete
+// is a no-op. No manual error handling is needed; proceed normally.
+TeamDelete()
+```
+
+**Without Agent Teams:** Skip this step — there are no teammate agents to clean up.
+
 ```bash
 # Check if all units are complete using DAG library
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
@@ -299,7 +333,7 @@ if (ALL_COMPLETE) {
   // ALL UNITS COMPLETE - Check if integration validation should run
   // Skip integration for:
   //   - Single-unit intents (reviewer already validated it)
-  //   - ALL units effectively use "unit" strategy (each reviewed individually via per-unit MR)
+  //   - ALL units effectively use "unit" strategy (each reviewed individually via per-unit PR)
   // Hybrid check: iterate all units to see if any use non-unit strategy
 ```
 
@@ -379,12 +413,22 @@ AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
 If `AGENT_TEAMS_ENABLED` is set and `READY_COUNT > 0` after completing a unit:
 
 1. Read `teamName` from `iteration.json`
-2. For each newly ready unit:
+2. Read `intentTitle` from the `title` field in `intent.md` frontmatter
+3. Recreate the team (it was deleted in Step 2d-1 cleanup):
+
+```javascript
+TeamCreate({
+  team_name: teamName,
+  description: `AI-DLC: ${intentTitle}`
+})
+```
+
+4. For each newly ready unit:
    - Set `hat: planner` and `retries: 0` in unit frontmatter
    - Create unit worktree
    - Mark unit as `in_progress`
    - Spawn planner teammate via Task with `team_name` and `name`
-3. Commit updated unit frontmatter
+5. Commit updated unit frontmatter
 
 This replaces the sequential "loop back to builder" behavior when Agent Teams is active. Instead of the lead picking up the next unit sequentially, newly unblocked units are spawned as parallel teammates immediately.
 
@@ -394,7 +438,7 @@ This replaces the sequential "loop back to builder" behavior when Agent Teams is
 
 When `ALL_COMPLETE` is true and `state.integratorComplete` is not true, run integration validation instead of marking the intent completed.
 
-**Integration is NOT a per-unit hat** — it does not appear in the workflow sequence. It runs once on the merged intent branch after all units pass their per-unit workflows. It is implemented as the internal `/ai-dlc:integrate` skill (see `plugin/skills/integrate/SKILL.md`).
+**Integration is NOT a per-unit hat** — it does not appear in the workflow sequence. It runs once on the merged intent branch after all units pass their per-unit workflows. It is implemented as the internal `/ai-dlc:integrate` skill (see `plugin/skills/execute/subskills/integrate/SKILL.md`).
 
 1. Set state to indicate integration is running:
 
@@ -410,7 +454,7 @@ Task({
   subagent_type: "general-purpose",
   description: `integrate: ${intentSlug}`,
   prompt: `
-    Run the /ai-dlc:integrate skill for intent ${intentSlug}.
+    Read the skill definition at plugin/skills/execute/subskills/integrate/SKILL.md first, then execute it for intent ${intentSlug}.
 
     ## CRITICAL: Work on Intent Branch
     **Worktree path:** .ai-dlc/worktrees/${intentSlug}/
@@ -632,11 +676,13 @@ if ! git diff --cached --quiet 2>/dev/null; then
 fi
 ```
 
-### Pre-Delivery Code Review
+### Pre-Delivery Code Review (Delegated)
 
-Before creating the PR, review the full composed diff to catch cross-unit issues the per-unit reviewer couldn't see. **This is a hard gate — the PR cannot be created without passing.**
+Before creating the PR, run a full multi-agent code review to catch issues locally — eliminating the "push → bot finds issues → fix → repeat" cycle. **This is a hard gate — the PR cannot be created without passing.**
 
-**Skip condition:** If `ALL_UNIT_STRATEGY=true` (determined in the next step), this review is unnecessary because each unit already has its own individually-reviewed PR. However, since we haven't computed that yet, run this review for all intent-strategy and hybrid-strategy intents.
+The review is delegated to the `/ai-dlc:review` skill, which runs specialized agents in fresh contexts (no builder bias), reads REVIEW.md + CLAUDE.md for project-specific rules, and auto-fixes HIGH findings in a loop.
+
+**Skip condition:** If all units use unit strategy, each unit already has its own individually-reviewed PR — skip the pre-delivery review.
 
 ```bash
 # Determine if we need pre-delivery review (intent/hybrid strategy only)
@@ -654,71 +700,41 @@ for unit_file in "$INTENT_DIR"/unit-*.md; do
 done
 ```
 
-**If `NEEDS_DELIVERY_REVIEW=true`:** Run the pre-delivery code review.
+**If `NEEDS_DELIVERY_REVIEW=true`:** Invoke the review skill.
 
-1. Compute the full diff against the default branch:
-
-```bash
-DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
-FULL_DIFF=$(git diff "${DEFAULT_BRANCH}...HEAD" 2>/dev/null || git diff "${DEFAULT_BRANCH}..HEAD")
-DIFF_STAT=$(git diff --stat "${DEFAULT_BRANCH}...HEAD" 2>/dev/null || git diff --stat "${DEFAULT_BRANCH}..HEAD")
+```
+Skill("ai-dlc:review")
 ```
 
-2. Review the full diff for these categories:
-   - **Code quality**: naming consistency, dead code, unused imports, code duplication across units
-   - **Security**: injection risks, hardcoded secrets, auth issues introduced by the composed changes
-   - **Cross-unit integration**: conflicting patterns, inconsistent error handling, incompatible interfaces
-   - **Standards**: formatting drift, convention violations visible only in the aggregate
+The review skill handles the full lifecycle:
+1. Computes the diff against the default branch
+2. Loads REVIEW.md and CLAUDE.md as review context
+3. Spawns parallel specialized agents (correctness, security, performance, architecture, test quality, plus optional agents from settings)
+4. Auto-fixes HIGH findings and re-reviews (up to 3 iterations)
+5. Returns a structured result: `approved`, `needs_attention`, or `aborted`
 
-3. Produce a structured decision:
+**Handle the result:**
 
-```markdown
-## PRE-DELIVERY REVIEW
-
-**Diff stats:**
-{DIFF_STAT}
-
-**Decision:** APPROVED | REQUEST CHANGES
-
-### Findings (if any)
-- [HIGH] description — affected file(s)
-- [MEDIUM] description — affected file(s)
-- [LOW] description — affected file(s)
-
-### Affected Units (if REQUEST CHANGES)
-- unit-NN-name (reason)
-```
-
-4. **If Decision is APPROVED:**
+- **`approved`**: Record telemetry and proceed to delivery.
 
 ```bash
-# Record telemetry
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
 aidlc_telemetry_init
 aidlc_record_delivery_review "${INTENT_SLUG}" "approved" "0"
 ```
 
-Proceed to delivery.
-
-5. **If Decision is REQUEST CHANGES:**
-
-Only HIGH-confidence findings block delivery. MEDIUM and LOW findings are noted but do not block.
+- **`needs_attention`**: The user was already asked how to proceed by the review skill. If they chose "Proceed anyway", record telemetry and continue to delivery. If they chose "Let me fix manually" or "Abort", STOP — do not create the PR.
 
 ```bash
-# Record telemetry
+# Record telemetry for deliveries with noted findings
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
 aidlc_telemetry_init
-aidlc_record_delivery_review "${INTENT_SLUG}" "rejected" "${ISSUE_COUNT}"
+aidlc_record_delivery_review "${INTENT_SLUG}" "needs_attention" "${FINDINGS_COUNT}"
 ```
 
-For each affected unit with HIGH findings:
-- Identify the unit slug from the affected file paths
-- Call `/ai-dlc:fail` with the reason: "Pre-delivery review found issues: {description}"
-- The fail mechanism will revert the unit's hat to builder and re-enter the build loop
+- **`aborted`**: STOP. Do not proceed to delivery.
 
-**After calling /ai-dlc:fail, STOP.** Do not proceed to delivery. The execution loop will resume with the builder addressing the findings.
-
-**Gate on change strategy.** The delivery prompt only applies to intent-level strategy. With unit strategy, each unit already has its own PR.
+**Gate on change strategy.** The delivery review only applies to intent-level and hybrid strategies. With unit strategy, each unit already has its own PR.
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
@@ -765,7 +781,7 @@ To clean up:
     "question": "How would you like to deliver this intent?",
     "header": "Delivery",
     "options": [
-      {"label": "Open PR/MR for delivery", "description": "Create a pull/merge request to merge into the default branch"},
+      {"label": "Open PR for delivery", "description": "Create a pull request to merge into the default branch"},
       {"label": "I'll handle it", "description": "Just show me the branch details"}
     ],
     "multiSelect": false
@@ -773,7 +789,7 @@ To clean up:
 }
 ```
 
-### If PR/MR:
+### If PR:
 
 1. Push intent branch to remote (if not already):
 
@@ -797,7 +813,7 @@ for unit_file in "$INTENT_DIR"/unit-*.md; do
 done
 ```
 
-3. Create PR/MR:
+3. Create PR:
 
 ```bash
 PR_URL=$(gh pr create \
