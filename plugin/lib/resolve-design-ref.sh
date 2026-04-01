@@ -167,7 +167,7 @@ format: \"png\""
     figma)
       local file_key="${source#figma://}"
       file_key="${file_key#file/}"
-      tool_name="figma_mcp_export"
+      tool_name="<use ToolSearch to find export tool>"
       parameters="file_key: \"$file_key\"
 format: \"png\""
       ;;
@@ -187,14 +187,14 @@ format: \"png\""
       ;;
     penpot)
       local penpot_path="${source#penpot://}"
-      tool_name="penpot_mcp_export"
+      tool_name="<use ToolSearch to find export tool>"
       parameters="path: \"$penpot_path\"
 format: \"png\""
       ;;
     excalidraw)
       local scene_path="$source"
       [[ "$source" == excalidraw://* ]] && scene_path="${source#excalidraw://}"
-      tool_name="excalidraw_mcp_export"
+      tool_name="<use ToolSearch to find export tool>"
       parameters="path: \"$scene_path\"
 format: \"png\""
       ;;

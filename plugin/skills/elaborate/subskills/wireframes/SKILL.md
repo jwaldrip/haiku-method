@@ -491,7 +491,7 @@ For each frontend or design unit that received a wireframe, update its frontmatt
 **Provider-generated units** (where `PROVIDER_SUCCEEDED[unit]=true`):
 
 ```yaml
-design_ref: designs/unit-{NN}-{slug}-wireframe.{ext}  # or canva://{id} for Canva
+design_ref: .ai-dlc/{intent-slug}/designs/unit-{NN}-{slug}-wireframe.{ext}  # or canva://{id} for Canva
 wireframe: mockups/unit-{NN}-{slug}-wireframe.png
 ```
 
