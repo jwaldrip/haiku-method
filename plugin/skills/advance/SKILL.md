@@ -161,17 +161,9 @@ Clean up the targeted unit's team agents before exiting (if Agent Teams are enab
   AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
 ```
 
-If `AGENT_TEAMS_ENABLED` is set:
+If `AGENT_TEAMS_ENABLED` is set, delete the team to release all agent resources:
 
 ```javascript
-  // Note: to: "*" broadcasts to all teammates but excludes the sender (this lead agent),
-  // so the lead will not receive its own shutdown_request and will continue to TeamDelete.
-  SendMessage({
-    to: "*",
-    message: { type: "shutdown_request", reason: "Unit complete" }
-  })
-  // Note: If no active team exists (e.g., prior run crashed before TeamCreate), TeamDelete
-  // is a no-op. No manual error handling is needed; proceed normally.
   TeamDelete()
 ```
 
@@ -288,30 +280,15 @@ fi
 
 ### Step 2d-1: Clean Up Completed Unit's Team Agents
 
-When Agent Teams are enabled, the completed unit's teammate agents (planner, builder, reviewer, etc.) may still be running. Shut them down before proceeding to the next unit or integration to prevent resource leaks.
+When Agent Teams are enabled, the completed unit's teammate agents (planner, builder, reviewer, etc.) may still be running. Delete the team to release all agent resources before proceeding to the next unit or integration.
 
 ```bash
 AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
 ```
 
-If `AGENT_TEAMS_ENABLED` is set:
-
-1. Broadcast `shutdown_request` to all teammates so they exit gracefully:
+If `AGENT_TEAMS_ENABLED` is set, call `TeamDelete` to tear down the team and terminate any remaining agents:
 
 ```javascript
-// Note: to: "*" broadcasts to all teammates but excludes the sender (this lead agent),
-// so the lead will not receive its own shutdown_request and will continue to step 2.
-SendMessage({
-  to: "*",
-  message: { type: "shutdown_request", reason: "Unit complete" }
-})
-```
-
-2. Call `TeamDelete` to release team resources:
-
-```javascript
-// Note: If no active team exists (e.g., prior run crashed before TeamCreate), TeamDelete
-// is a no-op. No manual error handling is needed; proceed to Step 2e/2f normally.
 TeamDelete()
 ```
 
