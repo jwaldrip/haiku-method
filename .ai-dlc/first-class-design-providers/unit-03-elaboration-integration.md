@@ -12,7 +12,7 @@ workflow: ""
 ticket: ""
 design_ref: ""
 views: []
-hat: planner
+hat: builder
 ---
 
 # unit-03-elaboration-integration
