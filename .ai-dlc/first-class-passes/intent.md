@@ -9,7 +9,7 @@ passes: []
 active_pass: ""
 iterates_on: ""
 created: 2026-03-31
-status: active
+status: completed
 epic: ""
 quality_gates:
   - name: lint
@@ -56,19 +56,19 @@ Make passes a first-class concept that shapes construction behavior:
 - Settings: `.ai-dlc/settings.yml` `default_passes` field
 
 ## Success Criteria
-- [ ] Built-in pass definition files exist at `plugin/passes/{design,product,dev}.md` with frontmatter (name, description, available_workflows, default_workflow) and markdown instructions
-- [ ] Pass instructions are injected into hat subagent context during construction via `inject-context.sh` and `subagent-context.sh`
-- [ ] Workflow selection is constrained to the active pass's `available_workflows` — units requesting unavailable workflows fall back to the pass's `default_workflow`
-- [ ] Hat resolution uses augmentation pattern: plugin hat always loads, project `.ai-dlc/hats/{name}.md` appends instructions (never replaces)
-- [ ] Pass resolution uses same augmentation pattern: plugin pass always loads, project `.ai-dlc/passes/{name}.md` appends instructions (never replaces)
-- [ ] Project-defined passes with new names (not matching plugin passes) are recognized as custom passes
-- [ ] Settings schema `default_passes` accepts any string (no hardcoded enum), validated against available pass definition files
-- [ ] Phase 5.95 of elaborate skill presents configured passes as suggestion, user confirms or overrides per intent
-- [ ] Execute skill pass transition logic notifies user and stops for re-elaboration when a pass completes
-- [ ] Paper section "Iteration Through Passes" accurately describes the pass loop, pass definitions, pass-backs, and customization
-- [ ] Website docs and homepage reflect the pass concept accurately
-- [ ] Single-pass (dev only) remains the default — multipass is opt-in via `default_passes` setting
-- [ ] All existing quality gates pass (bun run lint, bun run build)
+- [x] Built-in pass definition files exist at `plugin/passes/{design,product,dev}.md` with frontmatter (name, description, available_workflows, default_workflow) and markdown instructions
+- [x] Pass instructions are injected into hat subagent context during construction via `inject-context.sh` and `subagent-context.sh`
+- [x] Workflow selection is constrained to the active pass's `available_workflows` — units requesting unavailable workflows fall back to the pass's `default_workflow`
+- [x] Hat resolution uses augmentation pattern: plugin hat always loads, project `.ai-dlc/hats/{name}.md` appends instructions (never replaces)
+- [x] Pass resolution uses same augmentation pattern: plugin pass always loads, project `.ai-dlc/passes/{name}.md` appends instructions (never replaces)
+- [x] Project-defined passes with new names (not matching plugin passes) are recognized as custom passes
+- [x] Settings schema `default_passes` accepts any string (no hardcoded enum), validated against available pass definition files
+- [x] Phase 5.95 of elaborate skill presents configured passes as suggestion, user confirms or overrides per intent
+- [x] Execute skill pass transition logic notifies user and stops for re-elaboration when a pass completes
+- [x] Paper section "Iteration Through Passes" accurately describes the pass loop, pass definitions, pass-backs, and customization
+- [x] Website docs and homepage reflect the pass concept accurately
+- [x] Single-pass (dev only) remains the default — multipass is opt-in via `default_passes` setting
+- [x] All existing quality gates pass (bun run lint, bun run build)
 
 ## Context
 - Provider loading in config.sh uses a three-tier merge pattern (plugin + settings inline + project override) that serves as the precedent for pass/hat augmentation
