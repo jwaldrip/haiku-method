@@ -11,7 +11,11 @@ iterates_on: ""
 created: 2026-04-01
 status: active
 epic: ""
-quality_gates: []
+quality_gates:
+  - name: build
+    command: bun run build
+  - name: lint
+    command: bun run lint
 ---
 
 # First-Class Design Providers
