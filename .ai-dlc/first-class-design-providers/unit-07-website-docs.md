@@ -15,7 +15,8 @@ workflow: ""
 ticket: ""
 design_ref: ""
 views: []
-hat: reviewer
+hat: builder
+retries: 1
 ---
 
 # unit-07-website-docs
