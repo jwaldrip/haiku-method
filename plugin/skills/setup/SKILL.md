@@ -456,16 +456,16 @@ Use `AskUserQuestion`:
       "header": "Delivery Strategy",
       "options": [
         {
-          "label": "Build everything, then open one MR",
-          "description": "Units merge into an intent branch as they complete. Dependent units start automatically once their dependencies are done. One final MR for the whole intent."
+          "label": "Build everything, then open one PR",
+          "description": "Units merge into an intent branch as they complete. Dependent units start automatically once their dependencies are done. One final PR for the whole intent."
         },
         {
           "label": "Review each unit individually",
-          "description": "Each unit opens its own PR/MR. Dependent units wait until their dependencies are merged. Best when you want to validate each piece before moving on."
+          "description": "Each unit opens its own PR. Dependent units wait until their dependencies are merged. Best when you want to validate each piece before moving on."
         },
         {
           "label": "Build everything on my default branch",
-          "description": "Same as above, but all work happens directly on the default branch. No feature branches, no MR — relies on CI to gate quality."
+          "description": "Same as above, but all work happens directly on the default branch. No feature branches, no PR — relies on CI to gate quality."
         }
       ],
       "multiSelect": false
@@ -478,7 +478,7 @@ Pre-fill from existing `settings.yml` `{vcs}.change_strategy` if available.
 
 Map user selections to config values:
 - "Review each unit individually" → `change_strategy: unit`
-- "Build everything, then open one MR" → `change_strategy: intent`
+- "Build everything, then open one PR" → `change_strategy: intent`
 - "Build everything on my default branch" → `change_strategy: trunk`
 
 **Question 2: Source branch** *(asked for ALL strategies)*

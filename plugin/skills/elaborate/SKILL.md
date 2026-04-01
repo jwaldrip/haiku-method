@@ -1425,16 +1425,16 @@ Use `AskUserQuestion`:
       "header": "Delivery Strategy",
       "options": [
         {
-          "label": "Build everything, then open one MR",
-          "description": "Units merge into an intent branch as they complete. Dependent units start automatically once their dependencies are done. One final MR for the whole intent."
+          "label": "Build everything, then open one PR",
+          "description": "Units merge into an intent branch as they complete. Dependent units start automatically once their dependencies are done. One final PR for the whole intent."
         },
         {
           "label": "Review each unit individually",
-          "description": "Each unit opens its own PR/MR. Dependent units wait until their dependencies are merged. Best when you want to validate each piece before moving on."
+          "description": "Each unit opens its own PR. Dependent units wait until their dependencies are merged. Best when you want to validate each piece before moving on."
         },
         {
           "label": "Build everything on {DEFAULT_BRANCH}",
-          "description": "Same as above, but all work happens directly on {DEFAULT_BRANCH}. No feature branches, no MR — relies on CI to gate quality."
+          "description": "Same as above, but all work happens directly on {DEFAULT_BRANCH}. No feature branches, no PR — relies on CI to gate quality."
         }
       ],
       "multiSelect": false
@@ -1485,17 +1485,17 @@ Map user selections to config values:
 
 | What You Want | Strategy Value |
 |--------------|----------------|
-| Build everything, then open one MR | `intent` |
+| Build everything, then open one PR | `intent` |
 | Review each unit individually | `unit` |
 | Build everything on {DEFAULT_BRANCH} | `trunk` |
 
-- "Build everything, then open one MR" → `intent` + `auto_merge: true`
+- "Build everything, then open one PR" → `intent` + `auto_merge: true`
 - "Review each unit individually" → `unit` (no `auto_merge` key — user merges their own PRs)
 - "Build everything on {DEFAULT_BRANCH}" → `trunk` (no `auto_merge` key — no branches)
 
 ### Hybrid Per-Unit Strategy (Auto-Decided)
 
-If the user selected **"Build everything, then open one MR"** (intent strategy), evaluate whether any foundational units should use per-unit branching instead. This creates a **hybrid** strategy where one or more units get their own PR (merged directly to the default branch), while the remaining units merge into the intent branch.
+If the user selected **"Build everything, then open one PR"** (intent strategy), evaluate whether any foundational units should use per-unit branching instead. This creates a **hybrid** strategy where one or more units get their own PR (merged directly to the default branch), while the remaining units merge into the intent branch.
 
 **Auto-decide using these heuristics:**
 - If a unit has `depends_on: []` (no dependencies) AND other units depend on it AND it involves schema migrations, shared library setup, or infrastructure provisioning → set `git: { change_strategy: unit }` on that unit (it should land on the default branch first)
@@ -2623,7 +2623,7 @@ IS_COWORK="${CLAUDE_CODE_IS_COWORK:-}"
     "header": "Handoff",
     "options": [
       {"label": "Execute", "description": "Start the autonomous build loop now"},
-      {"label": "Open PR/MR for review", "description": "Create a pull/merge request for spec review before building"}
+      {"label": "Open PR for review", "description": "Create a pull request for spec review before building"}
     ],
     "multiSelect": false
   }]
@@ -2643,7 +2643,7 @@ The artifacts have already been written to `.ai-dlc/{intent-slug}/` in the worki
     "question": "Elaboration is complete! How would you like to deliver the spec?",
     "header": "Handoff",
     "options": [
-      {"label": "Push branch + open PR/MR", "description": "Push the spec branch and create a pull/merge request for review (requires git push access)"},
+      {"label": "Push branch + open PR", "description": "Push the spec branch and create a pull request for review (requires git push access)"},
       {"label": "Download as zip", "description": "Package all spec artifacts into a zip file you can share with your team"}
     ],
     "multiSelect": false
@@ -2668,7 +2668,7 @@ Note: All AI-DLC work happens in the worktree at .ai-dlc/worktrees/{intent-slug}
 Your main working directory stays clean on the main branch.
 ```
 
-### If PR/MR for review:
+### If PR for review:
 
 **IMPORTANT:** Do NOT include "Closes", "Fixes", or "Resolves" issue references in the PR body. This is a spec review PR — merging it must not auto-close the linked issue. The issue stays open until execution is complete.
 
@@ -2679,7 +2679,7 @@ INTENT_BRANCH="ai-dlc/${INTENT_SLUG}/main"
 git push -u origin "$INTENT_BRANCH"
 ```
 
-2. Create PR/MR:
+2. Create PR:
 
 ```bash
 # Determine default branch

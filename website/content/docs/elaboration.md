@@ -99,7 +99,7 @@ Simple intents (single concern, single area of code) get a single unit — no de
 
 Two questions about how work will be delivered:
 
-1. **Delivery strategy** — One MR for the whole intent, individual PRs per unit, or direct to main
+1. **Delivery strategy** — One PR for the whole intent, individual PRs per unit, or direct to main
 2. **Source branch** — Build from the default branch or your current branch
 
 These are per-intent decisions. For project-level defaults, configure them in `/ai-dlc:setup`.
@@ -122,7 +122,7 @@ High-confidence fixes are auto-applied. Remaining findings are presented for you
 Elaboration is done. You choose what happens next:
 
 - **Execute** — start the autonomous build loop immediately
-- **Open PR/MR** — create a spec review PR for your team before building
+- **Open PR** — create a spec review PR for your team before building
 
 ## Customizing Elaboration
 

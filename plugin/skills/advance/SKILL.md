@@ -192,7 +192,7 @@ UNIT_SLUG="${CURRENT_UNIT#unit-}"
 UNIT_BRANCH="ai-dlc/${INTENT_SLUG}/${UNIT_SLUG}"
 
 if [ "$CHANGE_STRATEGY" = "unit" ]; then
-  # Unit strategy: open a PR/MR for the unit branch directly to the default branch
+  # Unit strategy: open a PR for the unit branch directly to the default branch
   git push -u origin "$UNIT_BRANCH" 2>/dev/null || true
 
   # Get this unit's ticket reference (if any) for the PR body
@@ -284,7 +284,7 @@ if (ALL_COMPLETE) {
   // ALL UNITS COMPLETE - Check if integration validation should run
   // Skip integration for:
   //   - Single-unit intents (reviewer already validated it)
-  //   - ALL units effectively use "unit" strategy (each reviewed individually via per-unit MR)
+  //   - ALL units effectively use "unit" strategy (each reviewed individually via per-unit PR)
   // Hybrid check: iterate all units to see if any use non-unit strategy
 ```
 
@@ -715,7 +715,7 @@ To clean up:
     "question": "How would you like to deliver this intent?",
     "header": "Delivery",
     "options": [
-      {"label": "Open PR/MR for delivery", "description": "Create a pull/merge request to merge into the default branch"},
+      {"label": "Open PR for delivery", "description": "Create a pull request to merge into the default branch"},
       {"label": "I'll handle it", "description": "Just show me the branch details"}
     ],
     "multiSelect": false
@@ -723,7 +723,7 @@ To clean up:
 }
 ```
 
-### If PR/MR:
+### If PR:
 
 1. Push intent branch to remote (if not already):
 
@@ -747,7 +747,7 @@ for unit_file in "$INTENT_DIR"/unit-*.md; do
 done
 ```
 
-3. Create PR/MR:
+3. Create PR:
 
 ```bash
 PR_URL=$(gh pr create \
