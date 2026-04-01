@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.82.7] - 2026-04-01
+
+### Fixed
+
+- detect CPU architecture for yq binary download ([ed3a63a](../../commit/ed3a63a))
+- remove committed build artifact, use bun in CI, fix yq install on apt-get ([8cbaf94](../../commit/8cbaf94))
+- make plugin install reliable without npm install ([9a98dac](../../commit/9a98dac))
+
 ## [1.82.6] - 2026-04-01
 
 ### Added
