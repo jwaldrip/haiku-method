@@ -23,7 +23,7 @@ Fresh-context, multi-agent code review of the full diff against the base branch.
 This skill can be invoked:
 - **Standalone** — `/ai-dlc:review` on any branch with uncommitted or committed changes
 - **From execute** — called automatically by `/ai-dlc:advance` before PR creation (intent/hybrid strategy)
-- **After quick mode** — run manually before pushing changes from `/ai-dlc:quick`
+- **From quick mode** — called automatically by `/ai-dlc:quick` after the hat loop completes
 
 ---
 
@@ -72,7 +72,7 @@ CHANGED_DIRS=$(git diff --name-only "${DIFF_BASE}...HEAD" 2>/dev/null | xargs -I
 for dir in $CHANGED_DIRS; do
   while [ "$dir" != "." ]; do
     if [ -f "${dir}/REVIEW.md" ]; then
-      REVIEW_GUIDELINES="${REVIEW_GUIDELINES}\n\n## ${dir}/REVIEW.md\n$(cat "${dir}/REVIEW.md")"
+      REVIEW_GUIDELINES="${REVIEW_GUIDELINES}"$'\n\n'"## ${dir}/REVIEW.md"$'\n'"$(cat "${dir}/REVIEW.md")"
     fi
     dir=$(dirname "$dir")
   done
@@ -218,15 +218,18 @@ After all agents complete, collect their YAML findings and:
 
 After fixing all HIGH findings:
 
+Stage only the files that were modified during fixes (not `git add -A` which would sweep in unrelated changes):
+
 ```bash
-# Stage and commit fixes
-git add -A
+# Stage only files touched by the fixes
+git add <list of files modified during fixes>
 git commit -m "fix: address pre-delivery review findings
 
-$(for finding in HIGH_FINDINGS; do
-  echo "- ${finding.title} (${finding.file}:${finding.line})"
-done)"
+- <title> (<file>:<line>)
+- <title> (<file>:<line>)"
 ```
+
+Construct the commit message by listing each fixed HIGH finding as a bullet with its title, file, and line number.
 
 ### Re-review
 
@@ -313,7 +316,7 @@ When called standalone, the report from Step 4 is the final output.
 When invoked directly via `/ai-dlc:review`:
 
 1. Run Steps 0-4 as described above
-2. After the review completes (APPROVED), ask:
+2. After the review completes (**APPROVED** or **NEEDS ATTENTION** where the user chose "Proceed anyway"), ask:
 
 ```json
 {
@@ -332,10 +335,4 @@ When invoked directly via `/ai-dlc:review`:
 If "Push and create PR":
 - Push the current branch to remote
 - Create a PR using `gh pr create` with a summary of changes
-- Include a note that the PR passed pre-delivery review
-
----
-
-## Integration with /ai-dlc:quick
-
-When a user runs `/ai-dlc:quick` and the work is complete, they can run `/ai-dlc:review` before pushing to catch issues proactively. The skill works identically — it diffs against the base branch and runs the full review loop.
+- Include a note on review status (passed clean, or passed with noted findings)

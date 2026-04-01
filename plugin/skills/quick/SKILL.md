@@ -271,7 +271,7 @@ DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@
 # If on the default branch, create a feature branch from the commits
 if [ "$CURRENT_BRANCH" = "$DEFAULT_BRANCH" ]; then
   # Determine how many commits were added by quick mode
-  COMMIT_COUNT=$(git rev-list --count "${DEFAULT_BRANCH}@{upstream}..HEAD" 2>/dev/null || echo "0")
+  COMMIT_COUNT=$(git rev-list --count "origin/${DEFAULT_BRANCH}..HEAD" 2>/dev/null || echo "0")
   if [ "$COMMIT_COUNT" -gt 0 ]; then
     BRANCH_NAME="quick/$(echo "${TASK_DESCRIPTION}" | tr '[:upper:]' '[:lower:]' | tr -cs '[:alnum:]' '-' | head -c 50 | sed 's/-$//')"
     git checkout -b "$BRANCH_NAME"
@@ -305,7 +305,7 @@ $(git diff --stat "${DEFAULT_BRANCH}...HEAD")
 
 ## Review
 
-Pre-delivery review: **passed** (multi-agent review with ${AGENT_COUNT} agents)
+Pre-delivery review: **passed** (multi-agent review)
 
 ---
 *Created via \`/ai-dlc:quick\` with pre-delivery review*

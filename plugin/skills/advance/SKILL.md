@@ -664,7 +664,14 @@ aidlc_telemetry_init
 aidlc_record_delivery_review "${INTENT_SLUG}" "approved" "0"
 ```
 
-- **`needs_attention`**: The user was already asked how to proceed by the review skill. If they chose "Proceed anyway", continue to delivery. If they chose "Let me fix manually" or "Abort", STOP — do not create the PR.
+- **`needs_attention`**: The user was already asked how to proceed by the review skill. If they chose "Proceed anyway", record telemetry and continue to delivery. If they chose "Let me fix manually" or "Abort", STOP — do not create the PR.
+
+```bash
+# Record telemetry for deliveries with noted findings
+source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
+aidlc_telemetry_init
+aidlc_record_delivery_review "${INTENT_SLUG}" "needs_attention" "${FINDINGS_COUNT}"
+```
 
 - **`aborted`**: STOP. Do not proceed to delivery.
 

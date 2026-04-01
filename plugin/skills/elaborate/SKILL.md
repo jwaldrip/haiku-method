@@ -1309,12 +1309,18 @@ After units are defined, identify concerns that span multiple units:
 
 > Examples: authentication, error handling patterns, logging conventions, shared state, caching strategy.
 
-**Always create a foundation unit** for each cross-cutting concern identified. Do NOT ask the user — cross-cutting concerns that span multiple units inherently require shared code or infrastructure, making a foundation unit the correct approach.
+**Auto-decide** how to handle each concern based on whether it requires shared code. Do NOT ask the user.
 
-For each cross-cutting concern:
-1. Create a new foundation unit with appropriate `depends_on: []` (foundational — no dependencies)
-2. Add the foundation unit to the `depends_on` list of all consuming units
-3. Follow the same unit specification format from Phase 5
+**If the concern requires shared code or infrastructure** (auth middleware, shared component library, database schema, shared API client):
+- Create a foundation unit with `depends_on: []`
+- Add it to the `depends_on` list of all consuming units
+- Follow the same unit specification format from Phase 5
+
+**If the concern is a pattern or convention** (error format standard, logging conventions, naming rules, coding patterns):
+- Add it as an intent-level success criterion that every unit's reviewer checks
+- Do NOT create a unit — conventions are rules to follow, not code to build
+
+The distinction is: does the concern produce *code artifacts* that other units import/depend on? If yes, foundation unit. If it's a *rule to follow consistently*, it's a criterion.
 
 **Skip this phase if there is only one unit.**
 
