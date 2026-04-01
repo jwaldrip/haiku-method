@@ -243,7 +243,7 @@ dlc_knowledge_update_section() {
   local tmp="${filepath}.tmp.$$"
 
   # Check if section exists in the file
-  if printf '%s\n' "$current" | grep -qF "## ${section}"; then
+  if printf '%s\n' "$current" | grep -qxF "## ${section}"; then
     # Replace existing section using temp file for multi-line safety.
     # Awk's -v flag cannot handle literal newlines, so we write
     # new_content to a temp file and use getline to read it in awk.
