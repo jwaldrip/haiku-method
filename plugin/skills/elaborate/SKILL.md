@@ -120,7 +120,14 @@ Before any elaboration, verify the working environment:
    ```
    Skill("ai-dlc:setup")
    ```
-   After setup completes, continue with elaboration. The settings file now exists and all subsequent phases can read from it.
+   After setup completes, verify the settings file was created:
+   ```bash
+   if [ ! -f ".ai-dlc/settings.yml" ]; then
+     echo "Setup was not completed. Please run /ai-dlc:setup before elaborating."
+     exit 1
+   fi
+   ```
+   If the file still doesn't exist (user cancelled or setup failed), stop and tell the user to run `/ai-dlc:setup` first. Do not proceed without configuration.
 
    **In autonomous mode:** If settings.yml is missing during autopilot, use all defaults without running setup — create a minimal settings file with sensible defaults instead of blocking:
    ```bash
@@ -1788,7 +1795,9 @@ Then ask:
 }
 ```
 
-If the user selects **"Let me choose"**, present each gate as a multi-select:
+If the user selects **"Let me choose"**:
+
+**If 4 or fewer gates:** Present each gate as a multi-select option:
 
 ```json
 {
@@ -1802,6 +1811,24 @@ If the user selects **"Let me choose"**, present each gate as a multi-select:
   }]
 }
 ```
+
+**If 5+ gates:** `AskUserQuestion` supports max 4 options, so use a different approach. The gates table is already displayed above. Ask the user which to exclude:
+
+```json
+{
+  "questions": [{
+    "question": "All {N} gates are shown in the table above. Which gates should be EXCLUDED? (Type gate names to exclude, or leave empty to use all)",
+    "header": "Exclude",
+    "options": [
+      {"label": "Use all gates", "description": "Keep all {N} detected gates"},
+      {"label": "Exclude some", "description": "I'll type which gates to skip"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+If the user selects "Exclude some", they type gate names via the "Other" free-text option. Parse the names and remove those gates from the list.
 
 After the user confirms (options 1 or 2), note:
 
