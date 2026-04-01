@@ -58,6 +58,13 @@ _clamp() {
 # At 100: warm shift (boost red, reduce blue)
 _shift_color_mood() {
   local hex="$1" mood="$2"
+
+  # Pass through non-hex values (transparent, inherit, etc.)
+  if [[ "$hex" != \#* ]]; then
+    echo "$hex"
+    return
+  fi
+
   # Strip # prefix
   hex="${hex#\#}"
 
@@ -209,7 +216,6 @@ dlc_generate_design_blueprint() {
 
   # Shape Language (0=sharp, 100=rounded): border-radius and border-width
   local border_radius border_width
-  border_radius="$(_lerp "$density" 0 20 | head -1)"
   border_radius="$(_lerp "$shape_language" 0 20)px"
   border_width="$(_lerp_float "$shape_language" 3.0 1.0)"
   # Round border_width to nearest integer
