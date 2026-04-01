@@ -16,7 +16,29 @@ fi
 if command -v brew >/dev/null 2>&1; then
   installer="brew install ${missing[*]}"
 elif command -v apt-get >/dev/null 2>&1; then
-  installer="sudo apt-get update && sudo apt-get install -y ${missing[*]}"
+  # apt-get has jq but not yq; install yq from GitHub releases
+  apt_pkgs=()
+  yq_needed=false
+  for dep in "${missing[@]}"; do
+    if [ "$dep" = "yq" ]; then
+      yq_needed=true
+    else
+      apt_pkgs+=("$dep")
+    fi
+  done
+  installer=""
+  if [ ${#apt_pkgs[@]} -gt 0 ]; then
+    installer="sudo apt-get update && sudo apt-get install -y ${apt_pkgs[*]}"
+  fi
+  if [ "$yq_needed" = true ]; then
+    yq_url="https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
+    yq_cmd="sudo curl -fsSL '$yq_url' -o /usr/local/bin/yq && sudo chmod +x /usr/local/bin/yq"
+    if [ -n "$installer" ]; then
+      installer="$installer && $yq_cmd"
+    else
+      installer="$yq_cmd"
+    fi
+  fi
 elif command -v apk >/dev/null 2>&1; then
   installer="apk add ${missing[*]}"
 else

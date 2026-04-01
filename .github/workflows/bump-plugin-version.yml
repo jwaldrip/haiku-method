@@ -143,19 +143,17 @@ jobs:
           git tag -f "$TAG"
           git push -f origin "$TAG"
 
-      - name: Setup Node.js
+      - name: Setup Bun
         if: steps.commit.outputs.released == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        if: steps.commit.outputs.released == 'true'
+        run: bun install --frozen-lockfile
 
       - name: Build MCP server bundle
         if: steps.commit.outputs.released == 'true'
-        run: |
-          npx esbuild plugin/mcp-server/src/server.ts \
-            --bundle --platform=node --format=esm \
-            --outfile=plugin/mcp-server/dist/server.mjs \
-            "--banner:js=import{createRequire}from'module';const require=createRequire(import.meta.url);"
+        run: bun run --cwd plugin/mcp-server build
 
       - name: Package plugin
         if: steps.commit.outputs.released == 'true'

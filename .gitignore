@@ -5,7 +5,6 @@ node_modules/
 .next/
 out/
 dist/
-!plugin/mcp-server/dist/
 
 # IDE
 .idea/
@@ -38,3 +37,4 @@ website/public/ai-dlc-plugin.zip
 # AI-DLC worktrees
 .ai-dlc/worktrees/
 .claude/worktrees
+.ai-dlc/quick/
