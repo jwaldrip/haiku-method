@@ -366,3 +366,116 @@ When a design provider is configured but unavailable at runtime:
 
 This ensures the system degrades gracefully — design providers enhance the workflow but are never a hard requirement.
 
+## Provider Context: Canva MCP (Available)
+
+The Canva MCP is already connected in this environment via Claude platform connectors. All 37 tools are available as `mcp__claude_ai_Canva__*`.
+
+### Available Tool Categories
+
+**Design Generation:**
+- `generate-design` — Create design from text description
+- `generate-design-structured` — Create design with structured input
+- `create-design-from-candidate` — Create from programmatic spec
+
+**Design Editing (Transactional):**
+- `start-editing-transaction` — Begin atomic edit session
+- `perform-editing-operations` — Apply modifications within transaction
+- `commit-editing-transaction` — Commit changes atomically
+- `cancel-editing-transaction` — Rollback changes
+- `resize-design` — Resize design dimensions
+
+**Design Reading:**
+- `get-design` — Get design metadata
+- `get-design-content` — Get full design content tree
+- `get-design-pages` — List design pages
+- `get-design-thumbnail` — Get preview image
+- `get-presenter-notes` — Get presentation notes
+- `get-assets` — List design assets
+- `get-export-formats` — List available export formats
+
+**Export:**
+- `export-design` — Export to PNG/JPG/PDF/PPTX/MP4
+
+**Discovery:**
+- `search-designs` — Search user's designs
+- `search-folders` — Search design folders
+- `list-folder-items` — Browse folder contents
+
+**Organization:**
+- `create-folder` — Create organizational folder
+- `move-item-to-folder` — Organize designs
+- `list-brand-kits` — Access brand token sets
+
+**Collaboration:**
+- `comment-on-design` — Add review comments
+- `list-comments` — Read existing comments
+- `list-replies` — Read comment threads
+- `reply-to-comment` — Respond to feedback
+- `request-outline-review` — Request design review
+
+**Import/Upload:**
+- `import-design-from-url` — Import external design
+- `upload-asset-from-url` — Add assets from URL
+- `resolve-shortlink` — Resolve Canva short URLs
+
+### Capability Mapping for AI-DLC Integration
+
+| AI-DLC Capability | Canva Tool(s) | Notes |
+|-------------------|---------------|-------|
+| `read_design` | `get-design`, `get-design-content`, `get-design-pages` | Full structure available |
+| `write_design` | Transactional editing workflow (start/perform/commit) | Atomic edits |
+| `export_png` | `export-design` with PNG format | Also supports JPG/PDF |
+| `generate_wireframe` | `generate-design` / `generate-design-structured` | Template-based generation |
+| `design_tokens` | `list-brand-kits` | Brand colors, fonts, logos |
+| `collaboration` | Comments workflow | Full thread support |
+
+### Integration Notes
+- Canva is fully headless — no browser/GUI needed
+- Transactional editing prevents partial/corrupt states
+- Export supports multiple formats useful for visual comparison
+- Brand kits provide design token access
+- Already authenticated via Claude platform — zero additional setup for users
+
+## External Research: Design Tool File Formats
+
+Understanding native file formats is essential for the `resolve-design-ref.sh` extension:
+
+| Format | Tool | Spec | Human-Readable | Version Control Friendly |
+|--------|------|------|----------------|--------------------------|
+| `.op` | OpenPencil (ZS) | JSON-based | Yes | Yes (text diff) |
+| `.fig` | OpenPencil (OP), Figma | Binary/protobuf | No | No (binary diff) |
+| `.pen` | Pencil.dev | JSON-based | Yes | Yes (text diff) |
+| `.penpot` | Penpot | SVG-native | Partially | Yes (XML diff) |
+| `.excalidraw` | Excalidraw | JSON-based | Yes | Yes (text diff) |
+| Canva | Canva | Cloud-only | N/A | N/A (API access) |
+| `.figma` | Figma | Cloud-only | N/A | N/A (API access) |
+
+**Key insight:** JSON-based formats (.op, .pen, .excalidraw) can be committed to the repo and diffed. Cloud-only formats (Canva, Figma) require API calls and URIs. This distinction affects how `design_ref:` works:
+- **Local formats:** `design_ref: .ai-dlc/my-intent/designs/dashboard.op`
+- **Cloud formats:** `design_ref: canva://design/DAGFx12345`
+
+## Quality Gate Candidates
+
+Detected from project tooling:
+
+| Name | Command | Source File |
+|------|---------|-------------|
+| build | `bun run build` | `package.json` (`scripts.build`) |
+| lint | `bun run lint` | `package.json` (`scripts.lint`) + `biome.json` |
+
+Note: `bun.lock` is present, so `bun` is used instead of `npm` for all commands.
+
+No test script detected in root `package.json` (`scripts.test` absent). Individual workspace packages may have their own test configurations.
+
+Recommended `quality_gates:` YAML block:
+
+```yaml
+quality_gates:
+  build:
+    command: "bun run build"
+    enabled: true
+  lint:
+    command: "bun run lint"
+    enabled: true
+```
+
