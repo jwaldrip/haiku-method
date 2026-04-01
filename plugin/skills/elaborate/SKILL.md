@@ -2079,6 +2079,7 @@ intent_slug: {INTENT_SLUG}
 worktree_path: {absolute path to intent worktree}
 intent_title: {Intent Title from intent.md}
 design_provider_type: {DESIGN_TYPE or empty}
+design_blueprint_path: {path to .ai-dlc/${INTENT_SLUG}/design-blueprint.md if it exists, or empty}
 ---
 
 # Frontend & Design Units
