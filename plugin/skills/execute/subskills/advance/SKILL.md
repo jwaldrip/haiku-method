@@ -161,7 +161,7 @@ if [ -n "$TARGET_UNIT" ] && [ "$TARGET_UNIT" = "$CURRENT_UNIT" ]; then
   echo "**Next steps:**"
   echo "- Run \`/ai-dlc:execute\` to continue with the next ready unit"
   echo "- Run \`/ai-dlc:execute <unit-name>\` to target another specific unit"
-  echo "- Run \`/ai-dlc:advance\` if all units are complete"
+  echo "- Read \`plugin/skills/execute/subskills/advance/SKILL.md\` and execute it if all units are complete"
   exit 0
 fi
 ```
