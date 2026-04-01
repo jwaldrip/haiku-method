@@ -1,6 +1,6 @@
 ---
-status: pending
-last_updated: ""
+status: in_progress
+last_updated: "2026-04-01T19:15:55Z"
 depends_on:
   - unit-01-schema-config-capabilities
 branch: ai-dlc/first-class-design-providers/02-design-ref-resolution
@@ -10,6 +10,7 @@ workflow: ""
 ticket: ""
 design_ref: ""
 views: []
+hat: planner
 ---
 
 # unit-02-design-ref-resolution
