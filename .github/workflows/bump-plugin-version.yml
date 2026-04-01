@@ -143,6 +143,18 @@ jobs:
           git tag -f "$TAG"
           git push -f origin "$TAG"
 
+      - name: Setup Bun
+        if: steps.commit.outputs.released == 'true'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        if: steps.commit.outputs.released == 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Build MCP server bundle
+        if: steps.commit.outputs.released == 'true'
+        run: bun run --cwd plugin/mcp-server build
+
       - name: Package plugin
         if: steps.commit.outputs.released == 'true'
         run: |

@@ -37,3 +37,4 @@ website/public/ai-dlc-plugin.zip
 # AI-DLC worktrees
 .ai-dlc/worktrees/
 .claude/worktrees
+.ai-dlc/quick/
