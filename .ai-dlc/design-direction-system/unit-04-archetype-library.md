@@ -373,6 +373,7 @@ After generating the design blueprint, call `dlc_knowledge_write("design", ...)`
 - [ ] Color mood parameter shifts the color palette temperature
 - [ ] Generated `design-blueprint.md` has valid YAML frontmatter and complete markdown body
 - [ ] Knowledge seeding correctly populates `knowledge/design.md` from the blueprint
+- [ ] Generated CSS token values are syntactically valid CSS custom property values at all parameter extremes (0 and 100 for each parameter)
 - [ ] All existing tests pass
 
 ## Risks

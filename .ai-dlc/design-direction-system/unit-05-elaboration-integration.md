@@ -244,6 +244,7 @@ design_blueprint_path: {path to design-blueprint.md or empty}
 - [ ] When no blueprint exists, wireframes produce standard gray-box output (backwards compatible)
 - [ ] Domain and product knowledge are loaded and available for Phase 3+ context
 - [ ] Autonomous mode auto-selects first archetype with defaults
+- [ ] When design_blueprint_path is set in the wireframe brief frontmatter, the wireframe skill reads and applies it; when empty or missing, gray-box behavior is preserved (end-to-end integration test)
 
 ## Risks
 - **Phase ordering complexity**: Inserting Phase 2.75 into an already complex elaboration flow could create subtle ordering issues. Mitigation: The phase has clear entry/exit conditions and only runs when both gates (greenfield AND no existing knowledge) are met.
