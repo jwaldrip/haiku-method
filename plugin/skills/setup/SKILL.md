@@ -408,6 +408,38 @@ Pre-fill from existing `settings.yml` `default_passes` if available.
 
 ---
 
+## Phase 5c: Default Announcements
+
+Ask the user what announcement formats should be generated when intents complete.
+
+Use `AskUserQuestion`:
+
+```json
+{
+  "questions": [{
+    "question": "What announcement formats should be generated when intents complete?",
+    "header": "Announcements",
+    "options": [
+      {"label": "Changelog only (Recommended)", "description": "Conventional changelog entry for developers"},
+      {"label": "Changelog + release notes", "description": "Changelog entry plus user-facing feature summary"},
+      {"label": "All formats", "description": "Changelog, release notes, social posts, and blog draft"},
+      {"label": "None", "description": "No announcements — just deliver the code"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+Map selections to `default_announcements` in settings.yml:
+- "Changelog only" → `default_announcements: [changelog]`
+- "Changelog + release notes" → `default_announcements: [changelog, release-notes]`
+- "All formats" → `default_announcements: [changelog, release-notes, social-posts, blog-draft]`
+- "None" → `default_announcements: []`
+
+Pre-fill from existing `settings.yml` `default_announcements` if available.
+
+---
+
 ## Phase 6: VCS Strategy
 
 Ask the user about their preferred delivery strategy and source branch.
@@ -497,6 +529,9 @@ git:  # or jj:
 # Visual review: browser-based review UI for elaboration gates
 visual_review: true  # or false
 
+# Announcement formats for intent completion (default: [changelog])
+default_announcements: [changelog]
+
 # Only include if non-default (non-empty)
 default_passes: [design, dev]
 
@@ -546,6 +581,7 @@ Display a final summary:
 | Auto-merge | yes |
 | Visual Review | enabled / disabled |
 | Default Passes | dev only |
+| Announcements | changelog |
 | Ticketing | jira (PROJ) |
 | Spec | confluence (TEAM) |
 | Design | — |

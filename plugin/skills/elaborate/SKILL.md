@@ -73,10 +73,10 @@ When elaboration is invoked from `/ai-dlc:autopilot`, it runs in **autonomous mo
 | **2.75 (Design Direction)** | Present design direction picker | **Auto-select Editorial** with default parameters. Skip the picker UI. The default archetype can be overridden via `default_archetype` in `.ai-dlc/settings.yml`. |
 | **3 (Workflow selection)** | Show options and ask user to choose | **Use the recommended workflow.** Run the recommendation logic, then apply it directly without asking. |
 | **4 (Success Criteria)** | Ask about NFRs, then confirm criteria list | **Generate criteria and auto-approve.** Derive NFRs from the domain model and codebase patterns. Do NOT ask for confirmation. |
-| **5.5 (Cross-cutting concerns)** | Ask per concern: foundation unit vs convention | **Decide autonomously.** If the concern requires shared code → foundation unit. If it's a pattern → convention. Do NOT ask. |
+| **5.5 (Cross-cutting concerns)** | Always create foundation units (no question asked) | **Same behavior.** Foundation units are always created autonomously — no change needed. |
 | **5.75 (Spec Alignment Gate)** | Ask user to confirm overall direction | **Auto-approve.** Skip the alignment question. |
 | **5.8 (Git Strategy)** | Ask delivery strategy, source branch, hybrid | **Default to intent strategy** (`change_strategy: intent`, `auto_merge: true`) from the repo's default branch. No hybrid overrides. Do NOT ask. |
-| **5.9 (Announcements)** | Ask what announcement formats to generate | **Default to `[changelog]`.** Do NOT ask. |
+| **5.9 (Announcements)** | Read from project settings (no question asked) | **Same behavior.** Settings are always read without asking — no change needed. |
 | **5.95 (Iteration Passes)** | Present configured passes via AskUserQuestion (3 options) | **Auto-accept defaults** but validate each pass name first via `validate_pass_exists`. If any pass is invalid, strip it and log a warning. Do NOT ask. |
 | **6 (Per-unit review)** | Present each unit and ask for approval | **Auto-approve each unit.** Still write and commit each unit, still display them in the output, but do NOT ask for approval. Move to the next unit immediately. |
 | **6.25 (Wireframe review)** | Ask product to review wireframes | **Auto-approve.** Still generate wireframes, but skip the review gate. |
@@ -778,6 +778,31 @@ Use `AskUserQuestion` to validate:
 
 **Do NOT proceed past this phase until the user confirms the domain model is accurate.** If they identify gaps, explore more. This is the foundation everything else builds on.
 
+### Post-Discovery: Monitoring Approach Confirmation
+
+**Gate:** Only run this sub-step if discovery found monitoring patterns (check `discovery.md` for a `## Monitoring Setup` section with substantive content). Skip entirely if:
+- No `## Monitoring Setup` section exists in discovery.md
+- The intent has no deployment surface (library, docs, design-only, pure refactor)
+
+If monitoring patterns were discovered, briefly summarize what was found and confirm the approach:
+
+```json
+{
+  "questions": [{
+    "question": "Discovery found existing monitoring patterns: {brief summary — e.g., 'Prometheus metrics with Grafana dashboards, OTel tracing'}. Should the new work follow these patterns?",
+    "header": "Monitoring",
+    "options": [
+      {"label": "Follow existing patterns", "description": "Integrate with the discovered monitoring stack"},
+      {"label": "New monitoring needed", "description": "This work needs monitoring beyond what exists"},
+      {"label": "No monitoring needed", "description": "This intent doesn't need observability"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+Store the answer — it feeds into Phase 5 (ops-aware unit creation) to determine whether an observability unit is needed.
+
 ### Visual Brainstorming
 
 For UI-heavy intents, support visual brainstorming alongside the terminal conversation:
@@ -1254,28 +1279,16 @@ Present the full unit breakdown to the user and confirm before proceeding.
 
 ## Phase 5.5: Cross-Cutting Concern Analysis
 
-After units are defined, identify concerns that span multiple units. Ask:
+After units are defined, identify concerns that span multiple units:
 
-> "Do any concerns span multiple units? Examples: authentication, error handling patterns, logging conventions, shared state, caching strategy."
+> Examples: authentication, error handling patterns, logging conventions, shared state, caching strategy.
 
-For each cross-cutting concern identified, decide how to handle it using `AskUserQuestion`:
+**Always create a foundation unit** for each cross-cutting concern identified. Do NOT ask the user — cross-cutting concerns that span multiple units inherently require shared code or infrastructure, making a foundation unit the correct approach.
 
-```json
-{
-  "questions": [{
-    "question": "How should we handle the cross-cutting concern: '{concern}'?",
-    "header": "Strategy",
-    "options": [
-      {"label": "Foundation unit", "description": "Create a new unit that others depend_on. Use when the concern requires shared code/infrastructure (e.g., auth middleware, shared component library)."},
-      {"label": "Intent-level convention", "description": "Document as an intent-level success criterion that every unit's reviewer checks. Use when the concern is a pattern to follow, not code to build (e.g., 'all API errors return RFC 7807 format')."}
-    ],
-    "multiSelect": false
-  }]
-}
-```
-
-- **If foundation unit**: Add it to the unit list with appropriate `depends_on` edges from consuming units. Follow the same unit specification format from Phase 5.
-- **If convention**: Add it to the intent-level success criteria. The integration validation step (and each unit's Reviewer) will verify compliance.
+For each cross-cutting concern:
+1. Create a new foundation unit with appropriate `depends_on: []` (foundational — no dependencies)
+2. Add the foundation unit to the `depends_on` list of all consuming units
+3. Follow the same unit specification format from Phase 5
 
 **Skip this phase if there is only one unit.**
 
@@ -1480,59 +1493,56 @@ Map user selections to config values:
 - "Review each unit individually" → `unit` (no `auto_merge` key — user merges their own PRs)
 - "Build everything on {DEFAULT_BRANCH}" → `trunk` (no `auto_merge` key — no branches)
 
-### Hybrid Per-Unit Strategy (Optional)
+### Hybrid Per-Unit Strategy (Auto-Decided)
 
-If the user selected **"Build everything, then open one MR"** (intent strategy), ask whether any foundational units should use per-unit branching instead. This creates a **hybrid** strategy where one or more units get their own PR (merged directly to the default branch), while the remaining units merge into the intent branch.
+If the user selected **"Build everything, then open one MR"** (intent strategy), evaluate whether any foundational units should use per-unit branching instead. This creates a **hybrid** strategy where one or more units get their own PR (merged directly to the default branch), while the remaining units merge into the intent branch.
 
-This is useful when a foundational unit (e.g., database schema, shared library setup) needs to land on `main` before other units can build on it.
+**Auto-decide using these heuristics:**
+- If a unit has `depends_on: []` (no dependencies) AND other units depend on it AND it involves schema migrations, shared library setup, or infrastructure provisioning → set `git: { change_strategy: unit }` on that unit (it should land on the default branch first)
+- If the dependency graph is linear (A → B → C) with no clear foundational boundary → keep all units on the intent branch (no hybrid)
+- If a unit has `discipline: infrastructure` and is depended on by feature units → set it as per-unit
 
-Use `AskUserQuestion`:
+**Only ask the user via `AskUserQuestion` when the heuristic is ambiguous** — e.g., multiple units could qualify as foundational but it's unclear which ones genuinely need to land on the default branch first. In that case:
+
 ```json
 {
   "questions": [{
-    "question": "Should any foundational units be reviewed individually (own PR to main) while others merge into the intent branch?",
+    "question": "Multiple units could be delivered individually to {DEFAULT_BRANCH} before the rest. Which foundational units should get their own PR?",
     "header": "Hybrid",
     "options": [
-      {"label": "No, build everything into the intent branch", "description": "All units merge into the intent branch (standard intent strategy)"},
-      {"label": "Yes, some reviewed individually", "description": "I'll specify which foundational units should get their own PR"}
+      {"label": "None — all into intent branch", "description": "Standard intent strategy, no hybrid overrides"},
+      {"label": "{unit-slug-1}", "description": "{one-line description}"},
+      {"label": "{unit-slug-2}", "description": "{one-line description}"}
     ],
-    "multiSelect": false
+    "multiSelect": true
   }]
 }
 ```
 
-If the user selects "Yes", ask which units should be reviewed individually. Note these units — their `git: { change_strategy: unit }` override will be written into unit frontmatter in Phase 6 Step 3.
+Units selected get `git: { change_strategy: unit }` in their frontmatter (Phase 6 Step 3).
 
-**Skip this question entirely if the user selected "Review each unit individually" or "Build everything on {DEFAULT_BRANCH}"** — per-unit overrides only make sense with the intent branch strategy.
+**Skip entirely if the user selected "Review each unit individually" or "Build everything on {DEFAULT_BRANCH}"** — per-unit overrides only make sense with the intent branch strategy.
 
 ---
 
 ## Phase 5.9: Completion Announcements
 
-Ask the user if they want announcement artifacts generated when the intent completes.
+Read the default announcements from project settings — **do NOT ask the user**. This is a project-level preference configured during `/ai-dlc:setup`.
 
-Use `AskUserQuestion`:
-```json
-{
-  "questions": [{
-    "question": "What announcement formats should be generated when this intent completes?",
-    "header": "Announcements",
-    "options": [
-      {"label": "None", "description": "No announcements — just deliver the code"},
-      {"label": "Changelog", "description": "Conventional changelog entry for developers"},
-      {"label": "Release notes", "description": "User-facing feature summary"},
-      {"label": "All formats", "description": "Changelog, release notes, social posts, and blog draft"}
-    ],
-    "multiSelect": false
-  }]
-}
+```bash
+source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
+DEFAULT_ANNOUNCEMENTS=$(get_setting_value "default_announcements")
+# Falls back to ["changelog"] if not configured
+if [ -z "$DEFAULT_ANNOUNCEMENTS" ] || [ "$DEFAULT_ANNOUNCEMENTS" = "null" ]; then
+  DEFAULT_ANNOUNCEMENTS='["changelog"]'
+fi
 ```
 
-Map selections to the `announcements` array in intent.md frontmatter:
-- "None" → `[]`
-- "Changelog" → `[changelog]`
-- "Release notes" → `[changelog, release-notes]`
-- "All formats" → `[changelog, release-notes, social-posts, blog-draft]`
+Write the value directly into intent.md frontmatter as `announcements:`. Valid values:
+- `[]` — No announcements
+- `[changelog]` — Conventional changelog entry (default)
+- `[changelog, release-notes]` — Changelog + user-facing summary
+- `[changelog, release-notes, social-posts, blog-draft]` — All formats
 
 ---
 
