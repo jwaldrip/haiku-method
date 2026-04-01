@@ -4,6 +4,7 @@ last_updated: ""
 depends_on:
   - unit-01-schema-config-capabilities
   - unit-02-design-ref-resolution
+  - unit-06-provider-instructions-schemas
 branch: ai-dlc/first-class-design-providers/03-elaboration-integration
 discipline: backend
 pass: ""
@@ -46,8 +47,9 @@ Add a provider dispatch step before the HTML wireframe generation. The flow beco
 ```
 Read brief → Check provider type → If provider available AND has generate_wireframe:
   → Dispatch to provider-specific generation
-  → Write native artifact to mockups/
-  → Update unit frontmatter with wireframe path and design_ref
+  → Write native artifact to designs/ directory (e.g., .ai-dlc/{intent}/designs/)
+  → Export PNG preview to mockups/ directory
+  → Update unit frontmatter: design_ref → designs/ path, wireframe → mockups/ PNG
   → ALSO generate HTML wireframe as supplementary (for universal viewing)
 Else:
   → Generate HTML wireframe (existing behavior, unchanged)
@@ -57,45 +59,17 @@ Else:
 
 For each provider, the skill includes instructions the subagent follows to generate wireframes:
 
-**Canva:**
-1. Call `mcp__claude_ai_Canva__generate-design` with unit description as prompt
-2. Get the design ID from the response
-3. Call `mcp__claude_ai_Canva__export-design` to get PNG preview
-4. Save PNG to `mockups/unit-{NN}-{slug}-wireframe.png`
-5. Set `design_ref: canva://design/{id}` in unit frontmatter
-6. Set `wireframe: mockups/unit-{NN}-{slug}-wireframe.png` for universal viewing
+Provider-specific generation instructions should be loaded from the three-tier instruction merge system (built-in from `design.md`, inline from settings, project override from `.ai-dlc/providers/`). The brief already includes merged provider instructions from `config.sh`. The subagent reads these instructions and follows the provider-specific guidance for wireframe generation.
 
-**OpenPencil (CLI):**
-1. Write a prompt file describing the wireframe needed
-2. Run `op design --prompt "{description}" --out mockups/unit-{NN}-{slug}-wireframe.op`
-3. Run `op export --format png --input mockups/unit-{NN}-{slug}-wireframe.op --output mockups/unit-{NN}-{slug}-wireframe.png`
-4. Set `design_ref: mockups/unit-{NN}-{slug}-wireframe.op` in unit frontmatter
-5. Set `wireframe: mockups/unit-{NN}-{slug}-wireframe.png`
-
-**OpenPencil (MCP):**
-1. Use MCP tools matching `mcp__*openpencil*` — call `design_skeleton` then `design_content` then `design_refine`
-2. Export result to PNG
-3. Save both .op and .png to mockups/
-
-**Pencil.dev (CLI):**
-1. Run `pencil --out mockups/unit-{NN}-{slug}-wireframe.pen --prompt "{description}"`
-2. Run `pencil --in mockups/unit-{NN}-{slug}-wireframe.pen --export png --out mockups/unit-{NN}-{slug}-wireframe.png`
-3. Set `design_ref: mockups/unit-{NN}-{slug}-wireframe.pen`
-
-**Penpot (MCP):**
-1. Use Penpot MCP tools to create design elements
-2. Export to PNG via MCP export tool
-3. Save PNG to mockups/
-
-**Excalidraw (MCP):**
-1. Use Excalidraw MCP `create_element` tools or generate-from-prompt
-2. Export to PNG via MCP export
-3. Save both .excalidraw and .png to mockups/
-
-**Figma (MCP):**
-1. Use Figma Write MCP tools to create design in Figma
-2. Export to PNG via `download_figma_images` or `export-design`
-3. Set `design_ref: figma://file/{key}` in unit frontmatter
+**General flow for all providers:**
+1. Verify MCP tool availability via ToolSearch using the provider's MCP hint pattern
+2. If tools available: use them to generate the design in the provider's native format
+3. Save native artifacts to `designs/` directory (e.g., `designs/unit-{NN}-{slug}-wireframe.op`)
+4. Export PNG preview to `mockups/` directory (e.g., `mockups/unit-{NN}-{slug}-wireframe.png`)
+5. For cloud providers (Canva, Figma): export returns a URL — download the file to local PNG
+6. Set `design_ref:` to native artifact path or provider URI
+7. Set `wireframe:` to the PNG in mockups/
+8. If tools NOT available: log warning, fall through to HTML wireframe generation
 
 ### 4. Fallback Chain
 
@@ -126,12 +100,13 @@ native_artifacts:
 
 ## Success Criteria
 - [ ] When a design provider with `generate_wireframe` capability is available, wireframes are generated using the provider's native tools
-- [ ] Provider-native artifacts (.op, .pen, Canva design IDs) are saved to mockups/ directory
+- [ ] Provider-native artifacts (.op, .pen, Canva design IDs) are saved to designs/ directory
 - [ ] PNG exports of provider wireframes are saved alongside native artifacts
 - [ ] Unit frontmatter `design_ref` is set to the provider-native artifact path or URI
 - [ ] HTML wireframe is ALSO generated as supplementary output for universal viewing
 - [ ] When no provider is available, HTML wireframe generation works exactly as before (regression-free)
 - [ ] Provider generation failures fall through gracefully to HTML wireframe generation
+- [ ] Subagent verifies MCP tool availability via ToolSearch before attempting provider delegation
 - [ ] Results brief reports which provider was used
 
 ## Risks

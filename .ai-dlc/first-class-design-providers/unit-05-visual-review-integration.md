@@ -64,7 +64,7 @@ When a `design_ref` exists (either from elaboration wireframes or a previous ite
 6. **Handle response**:
    - "Accept differences": Proceed, no changes needed
    - "Fix required": Feed findings back to builder for correction
-   - "Update design ref": Update `design_ref` to match the new built output (the design evolved)
+   - "Update design ref": Take a screenshot of the current built output, save it as the new reference PNG at `{screenshots_dir}/ref-{unit_slug}.png`, and update the unit frontmatter `design_ref` to point to this screenshot. If the unit previously had a provider URI, replace it with the local screenshot path.
 
 ### 3. Visual Gate Enhancement (`plugin/lib/detect-visual-gate.sh`)
 
@@ -117,7 +117,7 @@ Add provider-awareness to the reviewer's visual fidelity gate:
 - **MCP tool availability during review**: The reviewer agent needs access to provider export tools for `needs_agent_export` resolution. Mitigation: if export tools aren't available, skip the visual comparison and log a warning.
 
 ## Boundaries
-This unit does NOT handle: provider config/detection (unit-01), URI resolution implementation (unit-02), elaboration wireframe generation (unit-03), designer hat design creation (unit-04), or provider schemas (unit-06). It only modifies the visual review and comparison pipeline.
+This unit does NOT handle: provider config/detection (unit-01), URI resolution implementation (unit-02), elaboration wireframe generation (unit-03), designer hat design creation (unit-04), or provider schemas (unit-06). It modifies the visual review and comparison pipeline, including minimal MCP server (`server.ts`) changes needed for comparison presentation.
 
 ## Notes
 - The `ask_user_visual_question` MCP tool is the existing mechanism for presenting visual questions. This unit builds on it rather than creating a new review tool.

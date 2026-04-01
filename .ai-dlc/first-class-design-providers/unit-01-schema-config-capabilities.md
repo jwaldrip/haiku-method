@@ -20,7 +20,7 @@ Extend the AI-DLC settings schema and config.sh to support 6 design tool provide
 backend - This unit will be executed by backend-focused agents.
 
 ## Domain Entities
-- **DesignProvider**: Extends the existing `designProviderEntry` type enum from `["figma"]` to `["canva", "openpencil", "pencil", "penpot", "excalidraw", "figma", "auto"]`
+- **DesignProvider**: Extends the existing `designProviderEntry` type enum from `["figma"]` to `["canva", "openpencil", "pencil", "penpot", "excalidraw", "figma", "auto"]`. Note: `openpencil` refers specifically to ZSeven-W/openpencil (MIT, .op JSON format, `op` CLI, 8-framework export). The separate open-pencil/open-pencil project (.fig format, Tauri app) is NOT included — it can be added as a separate provider type in a follow-up intent if needed.
 - **DesignCapability**: New entity representing atomic operations (read_design, write_design, export_png, generate_wireframe, design_tokens, code_export, collaboration)
 - **DesignProviderRegistry**: Runtime registry resolved from configured + detected providers
 
@@ -78,12 +78,12 @@ Create `get_provider_capabilities()` that returns a JSON object of capabilities 
 get_provider_capabilities() {
   local provider_type="$1"
   case "$provider_type" in
-    canva)     echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true,"code_export":false,"collaboration":true}' ;;
-    openpencil) echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true,"code_export":true,"collaboration":false}' ;;
-    pencil)    echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true,"code_export":true,"collaboration":false}' ;;
-    penpot)    echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true,"code_export":false,"collaboration":true}' ;;
-    excalidraw) echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":false,"code_export":false,"collaboration":false}' ;;
-    figma)     echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true,"code_export":true,"collaboration":true}' ;;
+    canva)     echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true}' ;;
+    openpencil) echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true}' ;;
+    pencil)    echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":true}' ;;
+    penpot)    echo '{"read_design":true,"write_design":false,"export_png":false,"generate_wireframe":false,"design_tokens":true,"requires_browser":true}' ;;
+    excalidraw) echo '{"read_design":true,"write_design":true,"export_png":true,"generate_wireframe":true,"design_tokens":false}' ;;
+    figma)     echo '{"read_design":true,"write_design":false,"export_png":true,"generate_wireframe":false,"design_tokens":true}' ;;
     *)         echo '{}' ;;
   esac
 }
@@ -125,6 +125,7 @@ Create `get_provider_uri_scheme()` returning the URI prefix for a provider:
 ## Risks
 - **MCP tool naming inconsistency**: Provider tools may use different naming conventions across Claude platform connectors vs local MCP servers. Mitigation: use broad glob patterns with `|` alternation.
 - **Auto-detection false positives**: A tool like `pencil` CLI could match both Pencil.dev and OpenPencil. Mitigation: check OpenPencil-specific patterns first, then exclude from Pencil.dev match.
+- **CLI binary name conflicts**: The `op` command collides with 1Password CLI. Mitigation: when `op` is found in PATH, run a version check (`op --version`) and verify the output contains "openpencil" before treating it as the OpenPencil CLI. Similarly verify `pencil --version` for Pencil.dev. The npm package `@pencil.dev/cli` may install as a different binary name — check the package bin field.
 
 ## Boundaries
 This unit does NOT handle: URI resolution/export logic (unit-02), elaboration skill integration (unit-03), designer hat integration (unit-04), visual review integration (unit-05), or provider-specific schemas/instructions content (unit-06).
@@ -132,4 +133,7 @@ This unit does NOT handle: URI resolution/export logic (unit-02), elaboration sk
 ## Notes
 - The `auto` type is the recommended default — it gives users zero-config design provider support when tools are available
 - Capability model is intentionally static (hardcoded per provider type) rather than runtime-discovered, since provider capabilities are well-known and don't change dynamically
+- The `code_export` and `collaboration` capabilities from the original research are excluded from this implementation — they are not exercised by any integration unit in this intent. They can be added in a follow-up.
+- Figma defaults to `write_design:false` and `generate_wireframe:false` because the most common MCP (Framelink, 14K stars) is read-only. Users with Figma Write Server should override capabilities via provider config.
+- Penpot defaults to `write_design:false`, `export_png:false`, `generate_wireframe:false` with `requires_browser:true` flag because write operations need an active browser session. When a browser session is active, these capabilities become available.
 - The `format_providers_markdown()` function in config.sh generates the markdown table injected into hat context — it may need updating to include design provider capabilities

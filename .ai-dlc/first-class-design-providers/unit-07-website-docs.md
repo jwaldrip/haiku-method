@@ -2,6 +2,7 @@
 status: pending
 last_updated: ""
 depends_on:
+  - unit-01-schema-config-capabilities
   - unit-02-design-ref-resolution
   - unit-03-elaboration-integration
   - unit-04-designer-hat-integration

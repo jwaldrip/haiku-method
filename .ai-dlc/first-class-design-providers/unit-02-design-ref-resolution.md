@@ -49,7 +49,7 @@ Each provider URI scheme maps to a resolution strategy:
 
 | URI Scheme | Example | Resolution Strategy |
 |------------|---------|-------------------|
-| `canva://design/{id}` | `canva://design/DAGFx12345` | Agent instruction: call `mcp__claude_ai_Canva__export-design` with design ID, save PNG to screenshots dir |
+| `canva://design/{id}` | `canva://design/DAGFx12345` | Agent instruction: call `mcp__claude_ai_Canva__export-design` with design ID → returns download URL → download file to `{screenshots_dir}/ref.png` |
 | `figma://file/{key}` | `figma://file/abc123XYZ` | Agent instruction: call Figma MCP `download_figma_images` or `export-design`, save PNG |
 | `openpencil://{path}` | `openpencil://designs/main.op` | CLI: `op export --format png --input {path} --output {screenshots_dir}/ref.png` OR agent instruction if CLI unavailable |
 | `pencil://{path}` | `pencil://designs/dash.pen` | CLI: `pencil --in {path} --export png --out {screenshots_dir}/ref.png` OR agent instruction |
