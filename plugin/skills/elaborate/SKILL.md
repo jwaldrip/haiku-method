@@ -545,10 +545,17 @@ Write empty scaffold knowledge artifacts so subsequent phases have files to refe
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
 
-dlc_knowledge_write "domain" "$(cat <<'SCAFFOLD_EOF'
+SCAFFOLD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+dlc_knowledge_write "domain" "$(cat <<SCAFFOLD_EOF
 ---
 type: domain
+version: 1
+created: ${SCAFFOLD_TIMESTAMP}
 status: scaffold
+source: synthesized
+confidence: low
+project_maturity: greenfield
 ---
 
 # Domain Knowledge
@@ -565,10 +572,15 @@ status: scaffold
 SCAFFOLD_EOF
 )"
 
-dlc_knowledge_write "product" "$(cat <<'SCAFFOLD_EOF'
+dlc_knowledge_write "product" "$(cat <<SCAFFOLD_EOF
 ---
 type: product
+version: 1
+created: ${SCAFFOLD_TIMESTAMP}
 status: scaffold
+source: synthesized
+confidence: low
+project_maturity: greenfield
 ---
 
 # Product Knowledge
@@ -841,15 +853,11 @@ HAS_DESIGN_KNOWLEDGE=$(dlc_knowledge_exists "design" && echo "true" || echo "fal
 
 **Gate:** Only activate if `PROJECT_MATURITY` is `greenfield` or `early` AND `HAS_DESIGN_KNOWLEDGE` is `false`. If the project is `established` or design knowledge already exists, skip to Step 3.
 
+Attempt to use the `pick_design_direction` MCP tool. If the tool call fails (tool not found, MCP server disconnected), fall back to the Terminal Fallback Path below.
+
 **Visual Picker Path (preferred):**
 
-Check if the `pick_design_direction` MCP tool is available:
-
-```
-ToolSearch("pick_design_direction")
-```
-
-If the tool is found:
+Try calling `pick_design_direction` with the archetype and parameter data. If the call succeeds, proceed with polling. If it fails with a tool-not-found error, fall through to the Terminal Fallback Path.
 
 1. Call `pick_design_direction` with the archetypes data. The MCP tool opens a browser-based visual picker showing archetype previews and parameter sliders.
 2. Parse the session ID from the response, then poll `get_review_status({session_id})` until `status` is `"answered"`.
@@ -867,8 +875,30 @@ dlc_generate_design_blueprint "${INTENT_SLUG}" "${SELECTED_ARCHETYPE}" "${SELECT
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
-BLUEPRINT_CONTENT=$(cat ".ai-dlc/${INTENT_SLUG}/design-blueprint.md")
-dlc_knowledge_write "design" "${BLUEPRINT_CONTENT}"
+
+# Read blueprint details
+ARCHETYPE_NAME=$(dlc_frontmatter_get "archetype_name" ".ai-dlc/${INTENT_SLUG}/design-blueprint.md" 2>/dev/null || dlc_frontmatter_get "archetype" ".ai-dlc/${INTENT_SLUG}/design-blueprint.md" 2>/dev/null || echo "unknown")
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Extract the body (everything after frontmatter) from the blueprint
+BLUEPRINT_BODY=$(sed '1,/^---$/d' ".ai-dlc/${INTENT_SLUG}/design-blueprint.md" | sed '1,/^---$/d')
+
+# Write as properly-structured knowledge artifact
+dlc_knowledge_write "design" "---
+type: design
+version: 1
+created: ${TIMESTAMP}
+last_updated: ${TIMESTAMP}
+source: direction-picker
+confidence: high
+project_maturity: greenfield
+---
+
+# Design Knowledge
+
+Derived from design direction: ${ARCHETYPE_NAME}
+
+${BLUEPRINT_BODY}"
 ```
 
 6. Commit:
@@ -2074,7 +2104,7 @@ intent_slug: {INTENT_SLUG}
 worktree_path: {absolute path to intent worktree}
 intent_title: {Intent Title from intent.md}
 design_provider_type: {DESIGN_TYPE or empty}
-design_blueprint_path: {path to .ai-dlc/${INTENT_SLUG}/design-blueprint.md if it exists, or empty}
+design_blueprint_path: {${WORKTREE_PATH}/.ai-dlc/${INTENT_SLUG}/design-blueprint.md if it exists, or empty}
 ---
 
 # Frontend & Design Units

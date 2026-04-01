@@ -102,7 +102,7 @@ export function renderDesignDirectionPage(
 	const clientScript = `
   <script>
   (function() {
-    var sessionId = '${sessionId}';
+    var sessionId = ${JSON.stringify(sessionId)};
     var cards = Array.from(document.querySelectorAll('.archetype-card'));
     var sliders = document.querySelectorAll('#parameter-tuners input[type="range"]');
 

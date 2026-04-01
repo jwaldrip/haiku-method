@@ -181,6 +181,12 @@ dlc_knowledge_write() {
     return 1
   fi
 
+  # Validate that frontmatter is closed (second --- line exists)
+  if ! printf '%s' "$content" | tail -n +2 | grep -qm1 "^---$"; then
+    echo "ai-dlc: knowledge: content frontmatter is not closed (missing second ---)" >&2
+    return 1
+  fi
+
   # Extract frontmatter block (between first and second ---)
   local frontmatter
   frontmatter=$(printf '%s' "$content" | sed -n '2,/^---$/p' | sed '$d')
@@ -237,7 +243,7 @@ dlc_knowledge_update_section() {
   local tmp="${filepath}.tmp.$$"
 
   # Check if section exists in the file
-  if printf '%s\n' "$current" | grep -q "^## ${section}$"; then
+  if printf '%s\n' "$current" | grep -qF "## ${section}"; then
     # Replace existing section using temp file for multi-line safety.
     # Awk's -v flag cannot handle literal newlines, so we write
     # new_content to a temp file and use getline to read it in awk.
@@ -259,7 +265,11 @@ dlc_knowledge_update_section() {
         }
       }
       !in_section { print }
-    ' > "$tmp" && mv "$tmp" "$filepath"
+    ' > "$tmp" && mv "$tmp" "$filepath" || {
+      rm -f "$content_tmp" "$tmp"
+      echo "ai-dlc: knowledge: failed to update section '${section}' in ${type}" >&2
+      return 1
+    }
     rm -f "$content_tmp"
   else
     # Append new section at end of file

@@ -115,9 +115,9 @@ _expressiveness_modifier() {
 }
 
 # Write knowledge file for design decisions
-# Usage: dlc_knowledge_write <intent_dir> <knowledge_key> <content>
+# Usage: _dlc_blueprint_write_knowledge <intent_dir> <knowledge_key> <content>
 # Writes to .ai-dlc/{intent-slug}/knowledge/{key}.md
-dlc_knowledge_write() {
+_dlc_blueprint_write_knowledge() {
   local intent_dir="$1"
   local key="$2"
   local content="$3"
@@ -359,7 +359,7 @@ ${archetype_desc}
 **Expressiveness:** ${expressiveness_note}
 "
 
-  dlc_knowledge_write "$intent_dir" "design" "$knowledge_content"
+  _dlc_blueprint_write_knowledge "$intent_dir" "design" "$knowledge_content"
   echo "ai-dlc: knowledge seeded to ${intent_dir}/knowledge/design.md" >&2
 
   return 0
