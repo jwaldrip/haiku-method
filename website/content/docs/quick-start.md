@@ -108,6 +108,7 @@ Once your intent is complete, manage ongoing operational tasks with `/ai-dlc:ope
 
 ## Next Steps
 
+- [Elaboration Guide](/docs/elaboration/) - What to expect during `/ai-dlc:elaborate`
 - [Core Concepts](/docs/concepts/) - Understand intents, units, and hats
 - [Workflows](/docs/workflows/) - Learn about TDD, adversarial, and hypothesis workflows
 - [Installation](/docs/installation/) - Detailed setup including Han CLI
