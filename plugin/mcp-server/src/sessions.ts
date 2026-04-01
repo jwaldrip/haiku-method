@@ -31,7 +31,7 @@ export interface QuestionSession {
   questions: QuestionDef[];
   context: string;
   imagePaths: string[];
-  imageBaseDir?: string;
+  imageBaseDirs?: string[];
   status: "pending" | "answered";
   answers: QuestionAnswer[];
   html: string;

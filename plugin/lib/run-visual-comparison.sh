@@ -356,13 +356,9 @@ dlc_run_visual_comparison() {
     # When no design_ref exists but a design provider IS configured and
     # provider-native files are among the changed files, enter present-for-review mode.
     local design_provider=""
-    if [ -f "$VISUAL_SCRIPT_DIR/config.sh" ]; then
-      # shellcheck source=config.sh
-      source "$VISUAL_SCRIPT_DIR/config.sh"
-      local providers_json
-      providers_json=$(load_providers "$repo_root" 2>/dev/null || echo '{}')
-      design_provider=$(echo "$providers_json" | jq -r '.design.type // empty')
-    fi
+    local providers_json
+    providers_json=$(load_providers "$repo_root" 2>/dev/null || echo '{}')
+    design_provider=$(echo "$providers_json" | jq -r '.design.type // empty')
 
     if [ -n "$design_provider" ]; then
       # Check for provider-native files in changed files

@@ -563,8 +563,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 		const questions: QuestionDef[] = input.questions
 		const imagePaths = input.image_paths ?? []
 
-		// Derive base directory for path validation (defense-in-depth in the HTTP handler)
-		const imageBaseDir = imagePaths.length > 0 ? dirname(resolve(imagePaths[0])) : undefined
+		// Derive per-path base directories for path validation (defense-in-depth in the HTTP handler)
+		const imageBaseDirs = imagePaths.map(p => dirname(resolve(p)))
 
 		// Create question session
 		const session = createQuestionSession({
@@ -572,7 +572,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			questions,
 			context,
 			imagePaths,
-			imageBaseDir,
+			imageBaseDirs,
 			html: "",
 		})
 

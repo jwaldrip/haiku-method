@@ -453,9 +453,6 @@ detect_design_provider() {
         case "$CLAUDE_MCP_TOOL_LIST" in
           *$pattern*) echo "$provider"; return ;;
         esac
-      elif command -v "$provider" >/dev/null 2>&1; then
-        echo "$provider"
-        return
       fi
     done
     unset IFS
