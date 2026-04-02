@@ -71,3 +71,66 @@ The product stage's review gate is `external` — it's the go/no-go decision bou
 - Built-in software studio with design/product/dev stages
 - STUDIO-SPEC.md written
 - HTML architecture visualization (3 versions in Downloads)
+
+## Design Artifacts
+
+These artifacts capture the full architecture design and are included in this intent for historical reference:
+
+- **`architecture-spec.md`** — Full technical specification: file structure, STAGE.md schema, FSM model, execution model, settings, resolution logic, custom stage/studio examples, migration path, backwards compatibility guarantees.
+- **`architecture-viz.html`** — Interactive HTML visualization: core lifecycle loop, stage anatomy, software studio pipeline with hats/review/outputs grid, ideation studio (default), marketing studio example, persistence layer comparison, continuous vs discrete modes, knowledge pools, full hierarchy diagram.
+
+## Rename Map (from exploration agent)
+
+### Directories and files to rename
+| From | To |
+|------|-----|
+| `.ai-dlc/` | `.haiku/` |
+| `plugin/hats/` | (removed — hats move into STAGE.md) |
+| `plugin/workflows.yml` | (removed — stages define hat sequences) |
+| `plugin/stages/` | `plugin/studios/{name}/stages/{stage}/STAGE.md` |
+| `plugin/passes/` | (already renamed to stages, then into studios) |
+
+### Code identifier renames
+| From | To |
+|------|-----|
+| `dlc_*` functions | `hku_*` functions |
+| `aidlc_*` telemetry | `haiku_*` telemetry |
+| `_DLC_*` guard vars | `_HKU_*` guard vars |
+| `DLC_*` constants | `HKU_*` constants |
+| `CLAUDE_PLUGIN_ROOT` | (unchanged — this is a Claude Code convention) |
+
+### Frontmatter field renames
+| From | To |
+|------|-----|
+| `passes:` | `stages:` (already done) |
+| `active_pass:` | `active_stage:` (already done) |
+| `pass:` | `stage:` (already done) |
+
+### Command renames
+| From | To |
+|------|-----|
+| `/ai-dlc:elaborate` | `/haiku:stage` (or `/haiku:run` for continuous) |
+| `/ai-dlc:execute` | (dissolved into stage loop) |
+| `/ai-dlc:setup` | `/haiku:setup` |
+| `/ai-dlc:autopilot` | `/haiku:run` (continuous mode) |
+| `/ai-dlc:review` | `/haiku:review` |
+| `/ai-dlc:followup` | `/haiku:followup` |
+| `/ai-dlc:quick` | `/haiku:quick` |
+| `/ai-dlc:adopt` | `/haiku:adopt` |
+| `/ai-dlc:refine` | `/haiku:refine` |
+| `/ai-dlc:release-notes` | `/haiku:release-notes` |
+| `/ai-dlc:compound` | `/haiku:compound` |
+| `/ai-dlc:blockers` | `/haiku:blockers` |
+| `/ai-dlc:backpressure` | `/haiku:backpressure` |
+| `/ai-dlc:fundamentals` | `/haiku:fundamentals` |
+| `/ai-dlc:completion-criteria` | `/haiku:completion-criteria` |
+
+### Files that reference ai-dlc (from exploration)
+- **Libraries (plugin/lib/):** config.sh, dag.sh, stage.sh, studio.sh, knowledge.sh, state.sh, deps.sh, parse.sh, design-blueprint.sh, telemetry.sh
+- **Hooks (plugin/hooks/):** inject-context.sh, subagent-context.sh, quality-gate.sh, redirect-plan-mode.sh, session-start.sh, stop-hook.sh
+- **Skills:** All 20+ SKILL.md files across elaborate, execute, setup, review, etc.
+- **Schemas:** settings.schema.json, all provider schemas
+- **Types:** shared/src/types.ts
+- **Plugin metadata:** .claude-plugin/plugin.json, .claude-plugin/hooks.json
+- **Website:** All content in website/content/docs/, website/content/papers/, website/content/blog/
+- **Root:** CLAUDE.md, CHANGELOG.md, README.md
