@@ -1,7 +1,7 @@
 ---
 status: pending
 last_updated: ""
-depends_on: [unit-03-schemas-types-settings, unit-04-studio-infrastructure, unit-06-stage-orchestrator]
+depends_on: [unit-01-lib-hooks-rename, unit-03-schemas-types-settings, unit-04-studio-infrastructure, unit-06-stage-orchestrator]
 branch: ai-dlc/haiku-rebrand/13-legacy-intent-migration
 discipline: backend
 stage: ""
@@ -106,8 +106,10 @@ hku_migrate_legacy_intent() {
   # 4. Create state.json for the intent
   hku_write_intent_state "${new_dir}" "$slug"
 
-  # 5. Create backward-compat symlink from old path to new (read-only, no writes)
-  ln -sf "${new_dir}" "${old_dir}.haiku-migrated"
+  # 5. Replace old path with a symlink to the new location for backward compat
+  #    Rename the original to a backup first, then point the original path to new
+  mv "${old_dir}" "${old_dir}.pre-haiku-backup"
+  ln -sf "${new_dir}" "${old_dir}"
   echo "haiku: intent ${slug} migrated from .ai-dlc/ to .haiku/intents/" >&2
 }
 ```
@@ -146,7 +148,7 @@ After frontmatter migration, add two new fields reflecting migration state:
 
 ```yaml
 migrated_from: .ai-dlc/{slug}/    # provenance
-migration_date: 2026-04-02        # when migration ran
+migration_date: <current-date>    # set to the current date at migration runtime (not hardcoded)
 ```
 
 ### Unit Stage Inference (`hku_infer_stage_from_unit`)
@@ -228,7 +230,7 @@ Report the migration outcome:
 
 ### Auto-Detection Hook
 
-Add to the startup hook (or to `hku_migrate_settings` in unit-03's `plugin/lib/migrate.sh`):
+Add a call to `hku_detect_legacy_intents` in `plugin/hooks/session-start.sh`:
 
 ```bash
 hku_detect_legacy_intents() {
@@ -269,7 +271,7 @@ name: migration-plan
 scope: intent
 location: .haiku/intents/{intent-slug}/knowledge/MIGRATION-PLAN.md
 migrated_from: .ai-dlc/{slug}/
-migration_date: 2026-04-02
+migration_date: <current-date>    # set at migration runtime
 ---
 
 # Migration Plan: {slug}
@@ -301,6 +303,7 @@ Resume with: `/haiku:run {slug}`
 - [ ] `plugin/lib/migrate.sh` contains `hku_migrate_legacy_intent`, `hku_migrate_intent_frontmatter`, `hku_infer_stage_from_unit`, and `hku_detect_legacy_intents` functions
 - [ ] `hku_migrate_legacy_intent` moves intent.md and all units to `.haiku/intents/{slug}/`
 - [ ] `hku_migrate_intent_frontmatter` maps `passes:` → removed, `active_pass:` → `active_stage:`, `workflow:` → removed, adds `studio: software`, `mode: continuous`, `migrated_from:`, `migration_date:`
+- [ ] `migration_date` in MIGRATION-PLAN.md frontmatter and in `hku_migrate_intent_frontmatter` output is set to the current date at migration runtime — NOT a hardcoded value
 - [ ] `hku_infer_stage_from_unit` maps `pass: dev` → `development`, `pass: design` → `design`, `pass: product` → `product`, unknown → `development`
 - [ ] Units are placed under `.haiku/intents/{slug}/stages/{stage}/units/` (not at the intent root)
 - [ ] `hku_detect_legacy_intents` detects active intents in `.ai-dlc/` and prints a notice (detection only — no auto-migration)

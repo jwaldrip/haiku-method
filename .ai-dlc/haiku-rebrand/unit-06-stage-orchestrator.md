@@ -201,6 +201,24 @@ hku_stage_units() {
   local stage_name="$2"
   # Returns: unit file paths tagged with this stage
 }
+
+# Run ONLY the plan phase for a stage — does NOT run build, adversarial review, or gate.
+# Used by /haiku:migrate for gap-stage planning so users can review generated units
+# before any build work starts.
+hku_run_plan_phase() {
+  local intent_dir="$1"
+  local stage_name="$2"
+  # Steps:
+  #   1. Load STAGE.md for stage_name from the active studio
+  #   2. Resolve qualified inputs: for each {stage, output} pair in STAGE.md inputs:
+  #      look up the producing stage's output definition and read the persisted artifact
+  #   3. Load ALL resolved input artifacts as context for decomposition
+  #   4. Decompose work into units with criteria (uses elaborate sub-skills:
+  #      gather, discover, decompose, criteria, dag — parameterized by stage context)
+  #   5. For each unit, populate its ## References section
+  #   6. Write unit files to ${intent_dir}/stages/${stage_name}/units/
+  # Returns: 0 on success; units written, ready for user review before build runs
+}
 ```
 
 ### What Gets Removed/Deprecated

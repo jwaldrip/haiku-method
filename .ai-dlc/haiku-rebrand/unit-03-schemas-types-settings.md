@@ -24,7 +24,8 @@ backend - JSON Schema, TypeScript type definitions, and settings migration logic
 - `plugin/schemas/settings.schema.json` — settings validation schema
 - `plugin/schemas/providers/*.json` — provider configuration schemas
 - `plugin/shared/src/types.ts` — TypeScript type definitions
-- `plugin/lib/config.sh` — settings loading and migration logic
+- `plugin/lib/config.sh` — settings loading logic
+- `plugin/lib/migrate.sh` — settings, providers, and knowledge migration functions (new file)
 
 ## Technical Specification
 
@@ -59,7 +60,7 @@ backend - JSON Schema, TypeScript type definitions, and settings migration logic
 
 ### Settings Migration
 
-Add migration logic to `plugin/lib/config.sh` (or a new `plugin/lib/migrate.sh`):
+Add migration logic to a new `plugin/lib/migrate.sh`:
 
 ```bash
 # Detect legacy .ai-dlc/settings.yml and migrate
@@ -130,3 +131,5 @@ grep -r '\.ai-dlc/' plugin/schemas/ --include='*.json'       # 0 results
 ## Boundaries
 
 This unit covers schemas, types, and settings migration only. It does NOT modify shell library function names (unit-01), skill definitions (unit-02), or any architectural changes (units 04-08).
+
+`plugin/lib/migrate.sh` created here handles settings, providers, and knowledge directory migration only. Migration of existing `.ai-dlc/{slug}/` intent directories (including frontmatter translation and unit placement under `stages/{stage}/units/`) is owned by **unit-13-legacy-intent-migration**, which extends `migrate.sh` with intent migration functions.
