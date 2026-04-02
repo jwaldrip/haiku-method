@@ -381,6 +381,7 @@ Resolution order:
 studio: software                  # Which studio this intent uses
 stages: [inception, design, product, development, operations, security]   # Resolved from studio (empty for continuous mode)
 active_stage: design              # Current stage being elaborated/executed (empty for continuous mode)
+mode: discrete                    # continuous | discrete (default: continuous)
 ---
 ```
 

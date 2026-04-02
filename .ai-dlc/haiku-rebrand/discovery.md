@@ -127,7 +127,7 @@ The builder agent reads ONLY these files, not the entire knowledge pool. This se
 Each stage has an `outputs/` directory containing self-describing frontmatter docs. Each output file declares its name, persistence scope, format, and whether it's required. The body provides guidance for what to produce.
 
 ```
-plugin/studios/software-development/stages/inception/
+plugin/studios/software/stages/inception/
 ├── STAGE.md
 └── outputs/
     └── DISCOVERY.md         # scope: intent, format: text
