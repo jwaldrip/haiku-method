@@ -11,7 +11,7 @@ AI-DLC's elaboration was a 2,400-line monolithic skill file that hard-coded know
 
 This spec redesigns the system around three concepts:
 
-- **Studio** — a named development lifecycle (the ordered sequence of stages a team follows). Software teams use inception → design → product → development → operations → security. Hardware teams, security-focused teams, or any organization defines their own by dropping files in `.ai-dlc/studios/`.
+- **Studio** — a named development lifecycle (the ordered sequence of stages a team follows). Software teams use inception → design → product → development → operations → security. Hardware teams, security-focused teams, or any organization defines their own by dropping files in `.haiku/studios/`.
 - **Stage** — a lifecycle phase that defines its own hats (roles), review mode, and outputs. Each stage runs the same internal loop: elaborate → execute → adversarial review → review gate. One `STAGE.md` per stage contains everything. No separate workflow files, hat directories, or phase files.
 - **Inputs/Outputs** — stages declare inputs (qualified references in STAGE.md frontmatter, each specifying a producing stage and output name) and outputs (self-describing frontmatter docs in an `outputs/` directory). Inputs are loaded during the plan phase only; during the build phase, each unit's `## References` section declares the specific artifacts its builder needs. Output scopes control persistence: `project` (`.haiku/knowledge/`), `intent` (`.haiku/intents/{name}/knowledge/`), `stage` (working context), `repo` (source tree).
 
@@ -299,14 +299,14 @@ In practice, continuous mode doesn't actually read stage definitions — it uses
 
 Hats (planner, builder, reviewer, designer, etc.) are generic workers defined inline in each stage's STAGE.md body as `## {hat-name}` sections. They gain stage-specific context through layering:
 
-| Layer | Source | Single-Stage | Multi-Stage |
-|-------|--------|-------------|-------------|
+| Layer | Source | Continuous | Discrete |
+|-------|--------|------------|---------|
 | 1. Hat | STAGE.md `## {hat-name}` section | Always read | Always read |
 | 2. Outputs | Stage's `outputs/` directory definitions | Merged | Active stage only |
 | 3. References | Unit's `## References` section | Always read | Always read |
-| 4. Unit | `.haiku/intents/{slug}/stages/{stage}/units/unit-NN-*.md` | Always read | Always read |
+| 4. Unit | `.haiku/intents/{intent-slug}/stages/{stage}/units/unit-NN-*.md` | Always read | Always read |
 
-In single-stage mode, all stage definitions are merged and hat guidance comes from the combined STAGE.md. In multi-stage mode, the active stage's STAGE.md provides hat-specific guidance. Stage inputs are loaded during the plan phase for decomposition context. During the build phase, each unit's `## References` section declares which specific artifacts the builder needs -- the full stage input set is NOT injected into builders.
+In continuous mode, all stage definitions are merged and hat guidance comes from the combined STAGE.md. In discrete mode, the active stage's STAGE.md provides hat-specific guidance. Stage inputs are loaded during the plan phase for decomposition context. During the build phase, each unit's `## References` section declares which specific artifacts the builder needs -- the full stage input set is NOT injected into builders.
 
 ### Bolt Cycle
 
@@ -330,7 +330,7 @@ The planner and builder hats read the unit's `## References` section -- NOT the 
 
 All units execute together in dependency order. All stage definitions are merged into a single context — hat guidance comes from the combined STAGE.md sections, outputs from the union of all stages' `outputs/` directories. When all units complete → deliver.
 
-### Multi-Stage Execution
+### Discrete Mode Execution
 
 Only units tagged with the active stage execute. During the plan phase, the orchestrator loads all resolved stage inputs as context for decomposition and criteria definition. During the build phase, each unit's `## References` section drives what artifacts the builder reads -- the full stage input set is not re-loaded. The reviewer checks stage-specific criteria and verifies required outputs are produced. When all stage units complete, outputs are written to their scope-based locations, and the orchestrator advances to the next stage.
 
@@ -366,7 +366,7 @@ Resolution order:
 ---
 studio: software                  # Which studio this intent uses
 stages: [inception, design, product, development, operations, security]   # Resolved from studio (empty for continuous mode)
-active_stage: design              # Current stage being elaborated/executed (empty for single-stage)
+active_stage: design              # Current stage being elaborated/executed (empty for continuous mode)
 ---
 ```
 
@@ -439,8 +439,8 @@ During the plan phase, the orchestrator populates each unit's `## References` se
 
 ```markdown
 ## References
-- .haiku/intents/{name}/knowledge/DISCOVERY.md
-- .haiku/intents/{name}/knowledge/BEHAVIORAL-SPEC.md
+- .haiku/intents/{intent-slug}/knowledge/DISCOVERY.md
+- .haiku/intents/{intent-slug}/knowledge/BEHAVIORAL-SPEC.md
 ```
 
 The builder agent reads ONLY these listed files. This keeps builder context focused and avoids loading irrelevant knowledge artifacts into every build agent.
