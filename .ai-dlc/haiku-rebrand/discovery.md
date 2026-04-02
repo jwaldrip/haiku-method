@@ -17,7 +17,7 @@ The AI-DLC system is being rebranded and rearchitected as H·AI·K·U — a doma
 - **Studio** — a named lifecycle for a specific domain. Declares stage order and persistence layer.
 - **Stage** — a lifecycle phase. Plans, builds, and reviews its own work. Defines its own hats (roles). One STAGE.md contains everything.
 - **Persistence** — how work is saved. Git for software, Notion for content, filesystem for generic. The studio declares its type.
-- **Outputs** — scope-based persistence. Each stage declares outputs in an `outputs/` directory with frontmatter docs. Scopes: `project` (persists across intents), `intent` (this intent only), `stage` (working context), `repo` (actual source files). Inputs are a simple list in STAGE.md frontmatter.
+- **Outputs** — scope-based persistence. Each stage declares outputs in an `outputs/` directory with frontmatter docs. Scopes: `project` (persists across intents), `intent` (this intent only), `stage` (working context), `repo` (actual source files). Inputs are qualified references in STAGE.md frontmatter, each specifying the producing stage and output name (e.g. `{stage: inception, output: discovery}`).
 
 ### Architecture Decision: Unified Stage Loop
 

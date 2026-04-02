@@ -408,7 +408,7 @@ This replaces the old `plugin/hats/*.md` files -- all hat instructions live inli
 - [ ] Input/output chains are consistent: every `inputs` entry's `output` name appears as an output `name` in the referenced `stage`'s `outputs/` directory
 - [ ] All `inputs` entries use qualified references (`stage` + `output` pairs), not bare slugs
 - [ ] Hat section `### Reads` subsections reference the unit's `## References` pattern, not the stage input set directly
-- [ ] Software stage review modes match spec: inception=auto, design=ask, product=external, development=ask, operations=auto, security=external
+- [ ] Software stage review modes match spec: inception=auto, design=ask, product=[external,ask], development=ask, operations=auto, security=[external,ask]
 - [ ] Ideation stage review modes match spec: research=auto, create=ask, review=ask, deliver=auto
 - [ ] Hat sections provide actionable guidance (not just labels)
 - [ ] Criteria guidance sections include good/bad examples

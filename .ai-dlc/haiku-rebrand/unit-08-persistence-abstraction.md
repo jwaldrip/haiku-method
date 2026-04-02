@@ -125,7 +125,7 @@ _persistence_git_create_workspace() {
   local studio_name="$2"
   # Create branch: haiku/{intent_slug}/main
   # Set up worktree (if configured)
-  # Initialize .haiku/{intent_slug}/ directory
+  # Initialize .haiku/intents/{intent_slug}/ directory
   # Existing logic from execute/SKILL.md and inject-context.sh
 }
 
@@ -169,19 +169,19 @@ Minimal adapter for non-git projects (content creation, research, etc.):
 _persistence_filesystem_create_workspace() {
   local intent_slug="$1"
   local studio_name="$2"
-  # Create .haiku/{intent_slug}/ directory
+  # Create .haiku/intents/{intent_slug}/ directory
   # Create workspace directory for deliverables
-  mkdir -p ".haiku/${intent_slug}/workspace"
-  mkdir -p ".haiku/${intent_slug}/versions"
+  mkdir -p ".haiku/intents/${intent_slug}/workspace"
+  mkdir -p ".haiku/intents/${intent_slug}/versions"
 }
 
 _persistence_filesystem_save() {
   local intent_slug="$1"
   local message="$2"
   # Create timestamped snapshot in versions/
-  local version_dir=".haiku/${intent_slug}/versions/$(date +%Y%m%d-%H%M%S)"
+  local version_dir=".haiku/intents/${intent_slug}/versions/$(date +%Y%m%d-%H%M%S)"
   mkdir -p "$version_dir"
-  cp -r ".haiku/${intent_slug}/workspace/"* "$version_dir/"
+  cp -r ".haiku/intents/${intent_slug}/workspace/"* "$version_dir/"
   echo "$message" > "${version_dir}/COMMIT_MSG"
 }
 
@@ -190,13 +190,14 @@ _persistence_filesystem_create_review() {
   local stage_name="$2"
   local review_body="$3"
   # Write review summary to file
-  echo "$review_body" > ".haiku/${intent_slug}/reviews/${stage_name}-review.md"
+  mkdir -p ".haiku/intents/${intent_slug}/reviews"
+  echo "$review_body" > ".haiku/intents/${intent_slug}/reviews/${stage_name}-review.md"
 }
 
 _persistence_filesystem_deliver() {
   local intent_slug="$1"
   # Move workspace to delivered/
-  mv ".haiku/${intent_slug}/workspace" ".haiku/${intent_slug}/delivered"
+  mv ".haiku/intents/${intent_slug}/workspace" ".haiku/intents/${intent_slug}/delivered"
 }
 
 _persistence_filesystem_cleanup() {

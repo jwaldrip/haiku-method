@@ -601,8 +601,10 @@ Document all identified threats with:
 
 ## Backwards Compatibility
 
-**Single-stage mode (no studio configured) MUST work identically to the current system.** This means:
+**Legacy mode (no studio configured) MUST work identically to the current system.** This means:
 - No `studio:` in settings → `stages: []`, `active_stage: ""`
 - Sub-skills use built-in defaults when no stage definition is available
 - No STAGE.md or outputs/ files are read
 - The elaboration and execution flows are unchanged from the current working system
+
+> **Note:** In practice, omitting `studio:` defaults to `ideation` (see Settings Schema above). "No studio configured" describes the pre-H·AI·K·U legacy state where the settings file itself doesn't exist. This guarantee ensures existing projects continue to work before running the migration.

@@ -219,8 +219,9 @@ hku_load_stage_outputs() {
   # ...
 }
 
-# Resolve inputs for a stage by finding matching outputs from prior stages
-# For each input name, searches prior stages' outputs/ for a matching name
+# Resolve inputs for a stage using qualified references (stage + output pairs)
+# For each {stage, output} input, looks up the named output directly in the
+# specified stage's outputs/ directory — no cross-stage search needed
 # Returns: JSON array of { name, scope, resolved_path }
 hku_resolve_stage_inputs() {
   local stage_name="$1"

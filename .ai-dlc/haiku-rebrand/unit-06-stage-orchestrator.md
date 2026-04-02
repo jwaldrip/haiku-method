@@ -212,7 +212,7 @@ hku_stage_units() {
 ### Backward Compatibility
 
 - `/haiku:elaborate` and `/haiku:execute` continue to work as aliases
-- Intents created before this change (no `studio:` field) default to software studio, continuous mode
+- Intents created before this change (no `studio:` field) default to ideation studio, continuous mode
 - The stage loop for a single-studio, auto-review-gate setup behaves identically to the old elaborate -> execute flow
 
 ## Success Criteria
