@@ -17,7 +17,7 @@ This spec redesigns the system around three concepts:
 
 The key insight is that stages aren't just elaboration modes — they're the full lifecycle. Design doesn't just spec wireframes, it builds them. Product doesn't just define criteria, it writes behavioral specs. Each stage completes its own elaborate → execute cycle and produces real artifacts before the next stage begins.
 
-**The default experience doesn't change.** The studio always exists (default: software). The user chooses per-intent whether to run **continuous** (autopilot drives stage transitions, user reviews at gates) or **discrete** (user explicitly invokes each stage). Continuous mode is how AI-DLC works today — one guided session through all stages. Discrete mode expands the same pipeline into user-driven steps.
+**The default experience doesn't change.** The studio always exists (default: ideation). The user chooses per-intent whether to run **continuous** (autopilot drives stage transitions, user reviews at gates) or **discrete** (user explicitly invokes each stage). Continuous mode is how AI-DLC works today — one guided session through all stages. Discrete mode expands the same pipeline into user-driven steps.
 
 ### What this eliminates
 
@@ -30,7 +30,7 @@ The key insight is that stages aren't just elaboration modes — they're the ful
 
 ### Architecture visual
 
-See `ai-dlc-architecture-v2.html` for the full interactive visualization of this architecture.
+See `architecture-viz.html` for the full interactive visualization of this architecture.
 
 ---
 
@@ -157,7 +157,7 @@ Project-scoped outputs persist to `.haiku/knowledge/` (e.g., `ARCHITECTURE.md` f
 ---
 name: software
 description: Standard software development lifecycle
-stages: [design, product, dev]
+stages: [inception, design, product, development, operations, security]
 ---
 ```
 
@@ -204,7 +204,7 @@ Each file in a stage's `outputs/` directory:
 ```yaml
 ---
 name: discovery
-location: .haiku/intents/{name}/knowledge/DISCOVERY.md
+location: .haiku/intents/{intent-slug}/knowledge/DISCOVERY.md
 scope: intent
 format: text
 required: true
@@ -223,7 +223,7 @@ Fields:
 | Field | Type | Description |
 |-------|------|-------------|
 | `name` | string | Output identifier (referenced by other stages' `inputs:` lists) |
-| `location` | string | Path template where the output is persisted (uses `{name}` for intent slug) |
+| `location` | string | Path template where the output is persisted (uses `{intent-slug}` for intent slug) |
 | `scope` | string | Persistence scope: `project`, `intent`, `stage`, or `repo` |
 | `format` | string | Content format: `text`, `code`, `design` |
 | `required` | boolean | Whether this output must be produced before the stage completes |
@@ -233,8 +233,8 @@ Output scopes determine persistence:
 | Scope | Location | Lifespan |
 |-------|----------|----------|
 | `project` | `.haiku/knowledge/{name}.md` | Persists across intents |
-| `intent` | `.haiku/intents/{name}/knowledge/{name}.md` | This intent only |
-| `stage` | `.haiku/intents/{name}/stages/{stage}/{name}` | Working context for this stage's units |
+| `intent` | `.haiku/intents/{intent-slug}/knowledge/{name}.md` | This intent only |
+| `stage` | `.haiku/intents/{intent-slug}/stages/{stage}/{name}` | Working context for this stage's units |
 | `repo` | Project source tree | Actual code, configs — permanent |
 
 ## The Collapsible FSM
@@ -247,9 +247,9 @@ INIT → GATHER → DISCOVER → [ELABORATE(stage) → EXECUTE(stage)]* → DELI
 
 Where `[ELABORATE → EXECUTE]*` repeats for each stage in the studio pipeline.
 
-### Single-Stage Mode (Collapsed)
+### Continuous Mode
 
-User chooses "single-stage" during elaboration:
+User chooses "continuous" during elaboration:
 
 ```
 GATHER → DISCOVER → ELABORATE(all) → EXECUTE(all) → DELIVER
@@ -259,9 +259,9 @@ GATHER → DISCOVER → ELABORATE(all) → EXECUTE(all) → DELIVER
 
 One elaborate ↓ execute cycle. All stage definitions from the studio are merged. Sub-skills use the union of all stages' guidance.
 
-### Multi-Stage Mode (Expanded)
+### Discrete Mode
 
-User chooses "multi-stage" during elaboration:
+User chooses "discrete" during elaboration:
 
 ```
                     ┌──────────┐   ┌──────────┐   ┌──────────┐
@@ -284,29 +284,27 @@ Each stage transition:
 
 ### The Collapse Operation
 
-Single-stage mode is conceptually equivalent to merging all stage definitions and running once:
+Continuous mode is conceptually equivalent to merging all stage definitions and running once:
 
 - `unit_types` = union of all stages' unit types
-- `criteria_guidance` = concatenation of all stages' guidance
-- `artifact_types` = union of all stages' artifacts
-- `available_workflows` = union of all stages' workflows
-- `inputs` = empty (first stage)
-- `outputs` = union of all stages' output definitions
+- `## Criteria Guidance` = concatenation of all stages' `## Criteria Guidance` body sections
+- `outputs/` = union of all stages' output definitions (from each stage's `outputs/` directory)
+- `inputs` = empty (no prior stage outputs exist)
 
-In practice, single-stage mode doesn't actually read stage definitions — it uses the sub-skills' built-in behavior, which produces the same result as the merge.
+In practice, continuous mode doesn't actually read stage definitions — it uses the sub-skills' built-in behavior, which produces the same result as the merge.
 
 ## Execution Model
 
 ### Hat Layering
 
-Hats (planner, builder, reviewer, designer, etc.) are generic workers defined in `plugin/hats/*.md`. They gain stage-specific context through layering:
+Hats (planner, builder, reviewer, designer, etc.) are generic workers defined inline in each stage's STAGE.md body as `## {hat-name}` sections. They gain stage-specific context through layering:
 
 | Layer | Source | Single-Stage | Multi-Stage |
 |-------|--------|-------------|-------------|
 | 1. Hat | STAGE.md `## {hat-name}` section | Always read | Always read |
 | 2. Outputs | Stage's `outputs/` directory definitions | Merged | Active stage only |
 | 3. References | Unit's `## References` section | Always read | Always read |
-| 4. Unit | `.haiku/{slug}/stages/{stage}/units/unit-NN-*.md` | Always read | Always read |
+| 4. Unit | `.haiku/intents/{slug}/stages/{stage}/units/unit-NN-*.md` | Always read | Always read |
 
 In single-stage mode, all stage definitions are merged and hat guidance comes from the combined STAGE.md. In multi-stage mode, the active stage's STAGE.md provides hat-specific guidance. Stage inputs are loaded during the plan phase for decomposition context. During the build phase, each unit's `## References` section declares which specific artifacts the builder needs -- the full stage input set is NOT injected into builders.
 
@@ -328,9 +326,9 @@ Unit → Resolve hat sequence from STAGE.md
 
 The planner and builder hats read the unit's `## References` section -- NOT the full stage input set. This keeps builder context focused on what each unit actually needs.
 
-### Single-Stage Execution
+### Continuous Mode Execution
 
-All units execute together in dependency order. Each unit uses its own workflow (design units → design workflow, backend units → default workflow). Hats use built-in instructions only. All workflows are available. When all units complete → deliver.
+All units execute together in dependency order. All stage definitions are merged into a single context — hat guidance comes from the combined STAGE.md sections, outputs from the union of all stages' `outputs/` directories. When all units complete → deliver.
 
 ### Multi-Stage Execution
 
@@ -353,10 +351,10 @@ Stage: design
 
 ```yaml
 # .haiku/settings.yml
-studio: software    # Always present. Default: "software" if omitted.
+studio: ideation    # Always present. Default: "ideation" if omitted.
 ```
 
-Every project has a studio. Omitting `studio:` defaults to `software`. The per-intent decision of single-stage vs multi-stage is made during elaboration, not in settings.
+Every project has a studio. Omitting `studio:` defaults to `ideation`. The per-intent decision of continuous vs discrete mode is made when starting the intent, not in settings.
 
 Resolution order:
 1. Project-level: `.haiku/studios/{name}/STUDIO.md`
@@ -367,12 +365,12 @@ Resolution order:
 ```yaml
 ---
 studio: software                  # Which studio this intent uses
-stages: [design, product, dev]   # Resolved from studio (empty for single-stage)
+stages: [inception, design, product, development, operations, security]   # Resolved from studio (empty for continuous mode)
 active_stage: design              # Current stage being elaborated/executed (empty for single-stage)
 ---
 ```
 
-Single-stage intent: `stages: []`, `active_stage: ""`, `studio: "software"` (studio is always set).
+Continuous mode intent: `stages: []`, `active_stage: ""`, `studio: "ideation"` (studio is always set).
 
 ## Unit Frontmatter
 
@@ -536,7 +534,7 @@ attack surface, and no critical/high findings remain unaddressed.
 ```yaml
 ---
 name: threat-model
-location: .haiku/intents/{name}/knowledge/THREAT-MODEL.md
+location: .haiku/intents/{intent-slug}/knowledge/THREAT-MODEL.md
 scope: intent
 format: text
 required: true

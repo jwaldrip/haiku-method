@@ -1,7 +1,7 @@
 ---
 status: pending
 last_updated: ""
-depends_on: [unit-05-stage-definitions, unit-06-stage-orchestrator]
+depends_on: [unit-01-lib-hooks-rename, unit-05-stage-definitions, unit-06-stage-orchestrator]
 branch: ai-dlc/haiku-rebrand/07-dissolve-hats-workflows
 discipline: backend
 stage: ""

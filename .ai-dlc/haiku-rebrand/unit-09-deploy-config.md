@@ -23,8 +23,16 @@ devops - Infrastructure as code (Terraform), CI/CD pipeline configuration, DNS a
 
 ### Source (haiku-method repo)
 
-- `/Volumes/dev/src/github.com/thebushidocollective/haiku-method/deploy/terraform/` — Terraform configs for Railway + GCP DNS
-- `/Volumes/dev/src/github.com/thebushidocollective/haiku-method/website/` — deployed website with haikumethod.ai domain
+The haiku-method infrastructure lives in the `TheBushidoCollective/haiku-method` GitHub repository. Before executing this unit, an agent must clone it:
+
+```bash
+git clone https://github.com/TheBushidoCollective/haiku-method.git /tmp/haiku-method
+```
+
+- `/tmp/haiku-method/deploy/terraform/` — Terraform configs for Railway + GCP DNS
+- `/tmp/haiku-method/website/` — deployed website with haikumethod.ai domain
+
+If the repo is private, configure access via the `GITHUB_TOKEN` environment variable or SSH keys before cloning.
 
 ### Destination (this repo)
 
@@ -36,7 +44,7 @@ devops - Infrastructure as code (Terraform), CI/CD pipeline configuration, DNS a
 
 ### Terraform Configuration
 
-Bring over from `haiku-method/deploy/terraform/`:
+Bring over from `/tmp/haiku-method/deploy/terraform/` (cloned from `TheBushidoCollective/haiku-method`):
 
 1. **Railway configuration** — web service for the Next.js static site
    - Service name, region, build command, start command

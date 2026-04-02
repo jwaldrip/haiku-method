@@ -1,7 +1,7 @@
 ---
 status: pending
 last_updated: ""
-depends_on: [unit-06-stage-orchestrator]
+depends_on: [unit-04-studio-infrastructure, unit-06-stage-orchestrator]
 branch: ai-dlc/haiku-rebrand/08-persistence-abstraction
 discipline: backend
 stage: ""
@@ -82,6 +82,9 @@ persistence_cleanup() {
 Dispatch function:
 
 ```bash
+# Guard variable: tracks which adapter is currently sourced (avoids re-sourcing on every call)
+_HKU_ADAPTER_SOURCED=""
+
 # Internal: resolve and call the adapter for the active studio
 _persistence_dispatch() {
   local operation="$1"
@@ -95,7 +98,10 @@ _persistence_dispatch() {
     return 1
   fi
 
-  source "$adapter_file"
+  if [[ "$_HKU_ADAPTER_SOURCED" != "$adapter_type" ]]; then
+    source "$adapter_file" || return 1
+    _HKU_ADAPTER_SOURCED="$adapter_type"
+  fi
   "_persistence_${adapter_type}_${operation}" "$@"
 }
 

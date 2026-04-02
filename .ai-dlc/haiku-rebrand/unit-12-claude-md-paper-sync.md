@@ -24,7 +24,15 @@ documentation - Project configuration files, methodology paper, and cross-refere
 - `CLAUDE.md` — project-level Claude Code instructions
 - `.claude/rules/sync-check.md` — cross-component sync rules
 - `website/content/papers/ai-dlc-2026.md` — AI-DLC methodology paper (to be merged/replaced)
-- `/Volumes/dev/src/github.com/thebushidocollective/haiku-method/paper/haiku-method.md` — H·AI·K·U methodology paper (canonical source)
+- `TheBushidoCollective/haiku-method` GitHub repo, path `paper/haiku-method.md` — H·AI·K·U methodology paper (canonical source)
+
+Before executing the paper merge steps, clone the haiku-method repo:
+```bash
+git clone https://github.com/TheBushidoCollective/haiku-method.git /tmp/haiku-method
+# Paper is then at: /tmp/haiku-method/paper/haiku-method.md
+```
+
+If the repo is private, configure access via `GITHUB_TOKEN` or SSH keys before cloning.
 
 ## Technical Specification
 
@@ -171,7 +179,7 @@ Before completing any work that modifies the plugin, paper, or website, verify c
 
 ### Paper Merge
 
-The haiku-method paper at `/Volumes/dev/src/github.com/thebushidocollective/haiku-method/paper/haiku-method.md` is the canonical methodology document. The AI-DLC paper at `website/content/papers/ai-dlc-2026.md` contains implementation-specific details.
+The haiku-method paper at `/tmp/haiku-method/paper/haiku-method.md` (cloned from `TheBushidoCollective/haiku-method`) is the canonical methodology document. The AI-DLC paper at `website/content/papers/ai-dlc-2026.md` contains implementation-specific details.
 
 Merge strategy:
 

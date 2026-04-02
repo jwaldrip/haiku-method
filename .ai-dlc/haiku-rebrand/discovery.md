@@ -116,8 +116,8 @@ Unit specs get a `## References` section populated during the plan phase:
 
 ```markdown
 ## References
-- .haiku/intents/{name}/knowledge/DISCOVERY.md
-- .haiku/intents/{name}/knowledge/BEHAVIORAL-SPEC.md
+- .haiku/intents/{intent-slug}/knowledge/DISCOVERY.md
+- .haiku/intents/{intent-slug}/knowledge/BEHAVIORAL-SPEC.md
 ```
 
 The builder agent reads ONLY these files, not the entire knowledge pool. This section is populated based on what the unit actually needs, derived from the stage inputs and the unit's specific scope of work.
@@ -138,7 +138,7 @@ plugin/studios/software-development/stages/inception/
 ```yaml
 ---
 name: discovery
-location: .haiku/intents/{name}/knowledge/DISCOVERY.md
+location: .haiku/intents/{intent-slug}/knowledge/DISCOVERY.md
 scope: intent
 format: text
 required: true
@@ -158,8 +158,8 @@ When exploring the domain, document:
 | Scope | Persisted To | Lifespan |
 |-------|-------------|----------|
 | `project` | `.haiku/knowledge/{name}.md` | Persists across intents |
-| `intent` | `.haiku/intents/{name}/knowledge/{name}.md` | This intent only |
-| `stage` | `.haiku/intents/{name}/stages/{stage}/{name}` | Working context for this stage's units only |
+| `intent` | `.haiku/intents/{intent-slug}/knowledge/{name}.md` | This intent only |
+| `stage` | `.haiku/intents/{intent-slug}/stages/{stage}/{name}` | Working context for this stage's units only |
 | `repo` | Project source tree | Actual code, configs — permanent |
 
 ### Example Output Types

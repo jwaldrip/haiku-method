@@ -38,7 +38,7 @@ User says `/haiku:new`. The system:
 2. **Extracts slug** from the user's answer (kebab-case, max 40 chars)
 3. **Detects studio**: reads `studio:` from `.haiku/settings.yml` (default: `ideation`)
 4. **Asks mode**: "Continuous (I'll drive, you review at gates) or discrete (you invoke each stage)?"
-5. **Creates intent**: `.haiku/{slug}/intent.md` with frontmatter:
+5. **Creates intent**: `.haiku/intents/{slug}/intent.md` with frontmatter:
    ```yaml
    ---
    studio: ideation
@@ -50,7 +50,7 @@ User says `/haiku:new`. The system:
    # ... existing fields (quality_gates, git config, etc.)
    ---
    ```
-6. **Creates workspace**: `.haiku/{slug}/` directory structure
+6. **Creates workspace**: `.haiku/intents/{slug}/` directory structure
 7. **Begins first stage**: automatically transitions into the first stage's plan phase
 
 If mode is discrete, it stops after creating the intent and tells the user to run `/haiku:run {slug}` when ready.
@@ -59,7 +59,7 @@ If mode is discrete, it stops after creating the intent and tells the user to ru
 
 User says `/haiku:run my-feature` or `/haiku:run my-feature design`. The system:
 
-1. **Resolves intent**: finds `.haiku/{name}/intent.md`
+1. **Resolves intent**: finds `.haiku/intents/{name}/intent.md`
 2. **Determines stage**: if stage argument given, runs that stage. If not, reads `active_stage:` from intent frontmatter and advances to the next incomplete stage.
 3. **Loads stage definition**: resolves STAGE.md from the studio
 4. **Runs the stage loop** (see below)
@@ -122,8 +122,8 @@ STAGE LOOP:
      - For each output definition in outputs/:
        - Write the output to its scope-based location:
          - project → .haiku/knowledge/{name}.md
-         - intent → .haiku/intents/{name}/knowledge/{name}.md
-         - stage → .haiku/intents/{name}/stages/{stage}/{name}
+         - intent → .haiku/intents/{intent-slug}/knowledge/{name}.md
+         - stage → .haiku/intents/{intent-slug}/stages/{stage}/{name}
          - repo → project source tree (already written during build)
 
   5. REVIEW GATE

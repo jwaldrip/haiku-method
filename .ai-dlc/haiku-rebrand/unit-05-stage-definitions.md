@@ -28,7 +28,7 @@ backend - Stage definition files with structured frontmatter and instructional b
 - `plugin/studios/ideation/stages/create/STAGE.md`
 - `plugin/studios/ideation/stages/create/outputs/DRAFT-DELIVERABLE.md` (scope: intent)
 - `plugin/studios/ideation/stages/review/STAGE.md`
-- `plugin/studios/ideation/stages/review/outputs/REVIEW-REPORT.md` (scope: stage)
+- `plugin/studios/ideation/stages/review/outputs/REVIEW-REPORT.md` (scope: intent)
 - `plugin/studios/ideation/stages/deliver/STAGE.md`
 - `plugin/studios/ideation/stages/deliver/outputs/FINAL-DELIVERABLE.md` (scope: intent)
 
@@ -107,7 +107,7 @@ Each output doc follows this format:
 ```yaml
 ---
 name: discovery
-location: .haiku/intents/{name}/knowledge/DISCOVERY.md
+location: .haiku/intents/{intent-slug}/knowledge/DISCOVERY.md
 scope: intent
 format: text
 required: true
@@ -136,8 +136,8 @@ Scopes:
 | Scope | Persisted To | Lifespan |
 |-------|-------------|----------|
 | `project` | `.haiku/knowledge/{name}.md` | Across intents |
-| `intent` | `.haiku/intents/{name}/knowledge/{name}.md` | This intent |
-| `stage` | `.haiku/intents/{name}/stages/{stage}/{name}` | This stage's units |
+| `intent` | `.haiku/intents/{intent-slug}/knowledge/{name}.md` | This intent |
+| `stage` | `.haiku/intents/{intent-slug}/stages/{stage}/{name}` | This stage's units |
 | `repo` | Project source tree | Permanent |
 
 ### Ideation Studio Stages
@@ -198,7 +198,7 @@ inputs:
 - **critic** hat: identify weaknesses, gaps, inconsistencies
 - **fact-checker** hat: verify claims, check sources, validate logic
 - Review `ask` — review findings are presented for the user to act on
-- Outputs: `outputs/REVIEW-REPORT.md` (scope: stage)
+- Outputs: `outputs/REVIEW-REPORT.md` (scope: intent)
 
 #### deliver
 
@@ -366,8 +366,8 @@ Unit specs get a `## References` section populated during the plan phase. This l
 
 ```markdown
 ## References
-- .haiku/intents/{name}/knowledge/DISCOVERY.md
-- .haiku/intents/{name}/knowledge/BEHAVIORAL-SPEC.md
+- .haiku/intents/{intent-slug}/knowledge/DISCOVERY.md
+- .haiku/intents/{intent-slug}/knowledge/BEHAVIORAL-SPEC.md
 ```
 
 The builder agent reads ONLY these files, not the entire knowledge pool or the full stage input set. This is populated during the plan phase based on what the unit actually needs -- derived from the stage's resolved inputs and the unit's specific scope of work.
