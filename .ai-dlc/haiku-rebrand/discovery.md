@@ -17,7 +17,7 @@ The AI-DLC system is being rebranded and rearchitected as H·AI·K·U — a doma
 - **Studio** — a named lifecycle for a specific domain. Declares stage order and persistence layer.
 - **Stage** — a lifecycle phase. Plans, builds, and reviews its own work. Defines its own hats (roles). One STAGE.md contains everything.
 - **Persistence** — how work is saved. Git for software, Notion for content, filesystem for generic. The studio declares its type.
-- **Knowledge** — two layers: global pool (project-level, persists across intents) and intent artifacts (accumulated as stages complete).
+- **Outputs** — scope-based persistence. Each stage declares outputs in an `outputs/` directory with frontmatter docs. Scopes: `project` (persists across intents), `intent` (this intent only), `stage` (working context), `repo` (actual source files). Inputs are a simple list in STAGE.md frontmatter.
 
 ### Architecture Decision: Unified Stage Loop
 
@@ -66,7 +66,7 @@ The product stage's review gate is `external` — it's the go/no-go decision bou
 
 - `pass` renamed to `stage` across all plugin files, hooks, schemas, types
 - `plugin/passes/` → `plugin/stages/` (then further into studios)
-- Stage definitions created with FSM model (requires/produces)
+- Stage definitions created with input/output model (inputs in frontmatter, outputs/ directory)
 - Studio infrastructure: studio.sh, stage.sh, STUDIO.md
 - Built-in software studio with design/product/dev stages
 - STUDIO-SPEC.md written
@@ -79,82 +79,101 @@ These artifacts capture the full architecture design and are included in this in
 - **`architecture-spec.md`** — Full technical specification: file structure, STAGE.md schema, FSM model, execution model, settings, resolution logic, custom stage/studio examples, migration path, backwards compatibility guarantees.
 - **`architecture-viz.html`** — Interactive HTML visualization: core lifecycle loop, stage anatomy, software studio pipeline with hats/review/outputs grid, ideation studio (default), marketing studio example, persistence layer comparison, continuous vs discrete modes, knowledge pools, full hierarchy diagram.
 
-## Architecture Decision: Knowledge Architecture
+## Architecture Decision: Input/Output Architecture
 
-Two knowledge layers, both with frontmatter-structured documents:
+Stages declare their data flow through two mechanisms: **inputs** (a simple list in STAGE.md frontmatter) and **outputs** (self-describing frontmatter docs in an `outputs/` directory within the stage).
 
-### Global Knowledge (.haiku/knowledge/)
-Project-level. Persists across intents. Synthesized from the codebase.
-- `design.md` — design tokens, component patterns, design system
-- `architecture.md` — tech stack, module boundaries, data flow patterns
-- `product.md` — user personas, product principles, business rules
-- `conventions.md` — code style, testing philosophy, PR process
-- `domain.md` — glossary, entity model, domain constraints
+### Inputs
 
-### Intent Knowledge (.haiku/intents/{name}/knowledge/)
-Per-intent. Accumulated as stages complete. Each stage writes its findings here.
-- `discovery.md` — domain exploration (produced by inception/research stage)
-- `design.md` — design decisions, tokens, wireframe rationale (produced by design stage)
-- `product.md` — behavioral specs, acceptance criteria decisions (produced by product stage)
-- `architecture.md` — implementation decisions, patterns established (produced by development stage)
-- `threat-model.md` — attack surface, mitigations (produced by security stage)
+A simple list in STAGE.md frontmatter. Each name refers to an output produced by a prior stage. No input schema files. No `inputs/` directory.
 
-### Knowledge Guides in STAGE.md
-Each stage defines its knowledge outputs as frontmatter docs within the stage directory. These are templates with frontmatter that guide the agent on what knowledge to collect and how to structure it:
+```yaml
+---
+name: security
+description: Threat modeling and penetration testing
+hats: [threat-modeler, red-team, blue-team, reviewer]
+review: external
+unit_types: [security, backend]
+inputs: [behavioral-spec, implementation]
+---
+```
+
+The orchestrator resolves each input name to the corresponding output's persisted location.
+
+### Outputs
+
+Each stage has an `outputs/` directory containing self-describing frontmatter docs. Each output file declares its name, persistence scope, format, and whether it's required. The body provides guidance for what to produce.
 
 ```
-plugin/studios/software/stages/inception/
+plugin/studios/software-development/stages/inception/
 ├── STAGE.md
-└── knowledge/
-    └── discovery.md          # Frontmatter template: what to discover, how to structure findings
+└── outputs/
+    └── DISCOVERY.md         # scope: intent, format: text
 ```
 
-The knowledge template's frontmatter defines:
+### Output Doc Schema
+
 ```yaml
 ---
 name: discovery
-description: Domain exploration findings
-output_path: knowledge/discovery.md    # Where to write in the intent directory
-required: true                          # Must produce this by stage completion
-schema:                                 # Expected sections
-  - "## Domain Model"
-  - "## Data Sources"
-  - "## Architecture"
-  - "## Quality Gate Candidates"
+location: .haiku/intents/{name}/knowledge/DISCOVERY.md
+scope: intent
+format: text
+required: true
 ---
 
-# Discovery Knowledge Guide
+# Discovery Output Guide
 
-When exploring the domain for this intent, document:
-- Every entity and its fields...
-- Every API endpoint and its behavior...
-{guidance for what to collect}
+When exploring the domain, document:
+- Every entity and its fields
+- Every API endpoint and its behavior
+- Architecture patterns and constraints
+- Quality gate candidates
 ```
 
-This means the stage's knowledge directory contains GUIDES (templates), and the intent's knowledge directory contains OUTPUTS (populated by the agent during the stage). The `produces:` field in STAGE.md maps to these knowledge guides.
+### Output Scopes
+
+| Scope | Persisted To | Lifespan |
+|-------|-------------|----------|
+| `project` | `.haiku/knowledge/{name}.md` | Persists across intents |
+| `intent` | `.haiku/intents/{name}/knowledge/{name}.md` | This intent only |
+| `stage` | `.haiku/intents/{name}/stages/{stage}/{name}` | Working context for this stage's units only |
+| `repo` | Project source tree | Actual code, configs — permanent |
+
+### Example Output Types
+
+- `ARCHITECTURE.md` — scope: project, format: text (persists to `.haiku/knowledge/`)
+- `DISCOVERY.md` — scope: intent, format: text
+- `DESIGN-BRIEF.md` — scope: stage, format: text (only for this stage's units)
+- `CODE.md` — scope: repo, format: code (actual source files)
+- `WIREFRAMES.md` — scope: stage, format: design
+
+### What This Replaces
+
+- No `knowledge/` directory inside stages — replaced by `outputs/`
+- No `requires:` or `produces:` fields in STAGE.md frontmatter — replaced by `inputs:` (frontmatter list) and `outputs/` (directory of docs)
+- No `output_path:` in knowledge templates — replaced by `location:` with scope-based paths
 
 ### Directory Structure
 
 ```
 .haiku/
 ├── settings.yml
-├── knowledge/                          # Global (project-level)
-│   ├── design.md
-│   ├── architecture.md
-│   ├── product.md
-│   ├── conventions.md
-│   └── domain.md
+├── knowledge/                          # Project-scoped outputs land here
+│   ├── ARCHITECTURE.md
+│   └── CONVENTIONS.md
 ├── studios/                            # Custom/override studios
 └── intents/
     └── {name}/
         ├── intent.md
-        ├── knowledge/                  # Intent-scoped (per-stage outputs)
-        │   ├── discovery.md            ← inception wrote this
-        │   ├── design.md              ← design stage wrote this
-        │   └── threat-model.md        ← security stage wrote this
+        ├── knowledge/                  # Intent-scoped outputs land here
+        │   ├── DISCOVERY.md            ← inception wrote this
+        │   ├── DESIGN-BRIEF.md         ← design stage wrote this
+        │   └── THREAT-MODEL.md         ← security stage wrote this
         ├── stages/
         │   ├── inception/
         │   │   ├── state.json
+        │   │   ├── WORKING-NOTES.md    ← stage-scoped output (lives here)
         │   │   └── units/
         │   ├── design/
         │   │   ├── state.json

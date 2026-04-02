@@ -82,18 +82,21 @@ Every stage runs the same internal loop regardless of studio or domain:
 ```
 STAGE LOOP:
   1. PLAN phase
-     - Load stage STAGE.md (hats, requires, produces, guidance)
-     - Load prior stage artifacts (requires chain)
+     - Load stage STAGE.md (hats, inputs, guidance)
+     - Load output definitions from outputs/ directory (scope, format, location)
+     - Resolve inputs: for each name in inputs list, find the matching output
+       from a prior stage and read from its persisted location
      - If stage has units already (from a prior run): resume
      - If no units: decompose work into units with criteria
        - Uses existing elaborate sub-skills: gather, discover, decompose, criteria
-       - Sub-skills are parameterized by the stage definition
+       - Sub-skills are parameterized by the stage definition and resolved inputs
      - Build dependency graph (DAG)
 
   2. BUILD phase
      - For each unit in dependency order:
        - For each hat in the stage's hat sequence:
          - Load hat guidance from STAGE.md ## {hat-name} section
+         - Inject resolved inputs as context
          - Execute hat (build, review, etc.)
          - Run quality gates (if configured)
        - Check unit completion criteria
@@ -103,9 +106,18 @@ STAGE LOOP:
   3. ADVERSARIAL REVIEW phase
      - Run the stage's final hat(s) as adversarial reviewers
      - Check all units in the stage meet criteria
+     - Verify all required outputs are produced
      - Produce review summary
 
-  4. REVIEW GATE
+  4. OUTPUT PERSISTENCE
+     - For each output definition in outputs/:
+       - Write the output to its scope-based location:
+         - project → .haiku/knowledge/{name}.md
+         - intent → .haiku/intents/{name}/knowledge/{name}.md
+         - stage → .haiku/intents/{name}/stages/{stage}/{name}
+         - repo → project source tree (already written during build)
+
+  5. REVIEW GATE
      - auto: advance to next stage immediately
      - ask: pause, present summary, wait for user approval
      - external: create PR or review request, wait for external approval
@@ -117,15 +129,15 @@ The plan phase reuses existing elaborate sub-skills, parameterized by stage cont
 
 | Existing Sub-Skill | Plan Phase Role | Stage Parameterization |
 |--------------------|-----------------|-----------------------|
-| gather | Collect context and requirements | Stage's `requires` field drives what to gather |
+| gather | Collect context and requirements | Stage's `inputs` list drives what to gather (resolved from prior output locations) |
 | discover | Explore codebase / problem space | Stage body provides exploration focus |
-| decompose | Break work into units | Stage's hat list and produces field guide decomposition |
+| decompose | Break work into units | Stage's hat list and `outputs/` definitions guide decomposition |
 | criteria | Define completion criteria | Stage's `## Criteria Guidance` section |
 | dag | Build dependency graph | Unit dependencies within the stage |
-| design-direction | Visual direction (design stage) | Only runs if stage produces design artifacts |
+| design-direction | Visual direction (design stage) | Only runs if stage has design-format outputs |
 | wireframes | Wireframe exploration | Only runs if stage includes designer hat |
 
-Sub-skills that are irrelevant to a stage are skipped. The stage's `produces` field determines which sub-skills activate.
+Sub-skills that are irrelevant to a stage are skipped. The stage's `outputs/` directory determines which sub-skills activate (e.g., design-format outputs trigger design sub-skills).
 
 ### Mapping Existing Execute to Build Phase
 
@@ -187,9 +199,12 @@ hku_stage_units() {
 - [ ] `/haiku:run` with explicit stage argument runs that specific stage
 - [ ] `/haiku:run` without stage argument auto-advances to next incomplete stage
 - [ ] `/haiku:autopilot` skill exists and overrides all review gates to auto
-- [ ] The stage loop correctly executes: plan -> build -> adversarial review -> gate
-- [ ] Plan phase reuses existing elaborate sub-skills parameterized by stage
+- [ ] The stage loop correctly executes: plan -> build -> adversarial review -> output persistence -> gate
+- [ ] Plan phase resolves inputs from STAGE.md frontmatter and reads from prior output locations
+- [ ] Plan phase reuses existing elaborate sub-skills parameterized by stage and resolved inputs
 - [ ] Build phase reuses existing execute bolt loop with hats from STAGE.md
+- [ ] Output persistence writes each output to its scope-based location (project/intent/stage/repo)
+- [ ] Adversarial review verifies all required outputs are produced
 - [ ] Review gates behave correctly: auto advances, ask pauses, external creates review
 - [ ] State tracking correctly reports stage status
 - [ ] `/haiku:elaborate` and `/haiku:execute` work as backward-compat aliases

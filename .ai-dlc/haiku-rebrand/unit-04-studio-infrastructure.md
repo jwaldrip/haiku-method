@@ -66,19 +66,54 @@ plugin/studios/
   ideation/
     STUDIO.md
     stages/
-      research/STAGE.md
-      create/STAGE.md
-      review/STAGE.md
-      deliver/STAGE.md
+      research/
+        STAGE.md
+        outputs/
+          RESEARCH-BRIEF.md
+      create/
+        STAGE.md
+        outputs/
+          DRAFT-DELIVERABLE.md
+      review/
+        STAGE.md
+        outputs/
+          REVIEW-REPORT.md
+      deliver/
+        STAGE.md
+        outputs/
+          FINAL-DELIVERABLE.md
   software/
     STUDIO.md
     stages/
-      inception/STAGE.md
-      design/STAGE.md
-      product/STAGE.md
-      development/STAGE.md
-      operations/STAGE.md
-      security/STAGE.md
+      inception/
+        STAGE.md
+        outputs/
+          DISCOVERY.md
+      design/
+        STAGE.md
+        outputs/
+          DESIGN-BRIEF.md
+          DESIGN-TOKENS.md
+      product/
+        STAGE.md
+        outputs/
+          BEHAVIORAL-SPEC.md
+          DATA-CONTRACTS.md
+      development/
+        STAGE.md
+        outputs/
+          CODE.md
+          ARCHITECTURE.md
+      operations/
+        STAGE.md
+        outputs/
+          RUNBOOK.md
+          DEPLOYMENT-CONFIG.md
+      security/
+        STAGE.md
+        outputs/
+          THREAT-MODEL.md
+          VULN-REPORT.md
 ```
 
 Project-level overrides:
@@ -87,7 +122,10 @@ Project-level overrides:
   software/              # Override built-in software studio
     STUDIO.md            # Override stage list
     stages/
-      custom-stage/STAGE.md   # Add custom stage
+      custom-stage/
+        STAGE.md
+        outputs/
+          CUSTOM-OUTPUT.md   # scope: intent, format: text
 ```
 
 ### Studio Library (`plugin/lib/studio.sh`)
@@ -156,9 +194,38 @@ hku_resolve_stage() {
 }
 
 # Load stage metadata from STAGE.md frontmatter
+# Returns: JSON with name, description, hats, review, unit_types, inputs
 hku_load_stage_metadata() {
   local stage_name="$1"
   local studio_name="$2"
+  # ...
+}
+
+# Resolve the outputs/ directory for a stage
+# Resolution order mirrors stage resolution
+# Returns: absolute path to outputs/ directory
+hku_resolve_stage_outputs_dir() {
+  local stage_name="$1"
+  local studio_name="$2"
+  # Returns: dirname(resolve_stage) + "/outputs"
+}
+
+# List all output definitions for a stage
+# Reads frontmatter from each *.md file in the outputs/ directory
+# Returns: JSON array of { name, location, scope, format, required }
+hku_load_stage_outputs() {
+  local stage_name="$1"
+  local studio_name="$2"
+  # ...
+}
+
+# Resolve inputs for a stage by finding matching outputs from prior stages
+# For each input name, searches prior stages' outputs/ for a matching name
+# Returns: JSON array of { name, scope, resolved_path }
+hku_resolve_stage_inputs() {
+  local stage_name="$1"
+  local studio_name="$2"
+  local intent_dir="$3"
   # ...
 }
 
@@ -222,10 +289,13 @@ This allows projects to add stages to a built-in studio or override individual s
 - [ ] `hku_get_active_studio` falls through: intent -> settings -> default
 - [ ] `hku_list_available_studios` returns both built-in and project-level studios
 - [ ] `plugin/lib/stage.sh` resolves stages relative to studios
+- [ ] `hku_resolve_stage_outputs_dir` resolves the `outputs/` directory for a stage
+- [ ] `hku_load_stage_outputs` reads frontmatter from all output docs in `outputs/`
+- [ ] `hku_resolve_stage_inputs` maps input names to prior stage output locations
 - [ ] Studio directories created: `plugin/studios/ideation/`, `plugin/studios/software/`
 - [ ] STUDIO.md files created for ideation and software studios (frontmatter + body)
 - [ ] Settings schema includes `studio` field with default `"ideation"`
-- [ ] Stage STAGE.md stub files exist (detailed content in unit-05)
+- [ ] Stage STAGE.md stub files and `outputs/` directories exist (detailed content in unit-05)
 
 ## Risks
 
@@ -235,4 +305,4 @@ This allows projects to add stages to a built-in studio or override individual s
 
 ## Boundaries
 
-This unit creates the studio infrastructure (library, schema, directory structure). It does NOT write detailed stage content (unit-05), create the orchestrator (unit-06), or implement persistence adapters (unit-08). Stage STAGE.md files created here are stubs — unit-05 fills in the full content with hats, review modes, and guidance.
+This unit creates the studio infrastructure (library, schema, directory structure). It does NOT write detailed stage content or output docs (unit-05), create the orchestrator (unit-06), or implement persistence adapters (unit-08). Stage STAGE.md files and `outputs/` directories created here are stubs — unit-05 fills in the full content with hats, review modes, guidance, and output definitions.

@@ -13,7 +13,7 @@ This spec redesigns the system around three concepts:
 
 - **Studio** — a named development lifecycle (the ordered sequence of stages a team follows). Software teams use inception → design → product → development → operations → security. Hardware teams, security-focused teams, or any organization defines their own by dropping files in `.ai-dlc/studios/`.
 - **Stage** — a lifecycle phase that defines its own hats (roles), review mode, and outputs. Each stage runs the same internal loop: elaborate → execute → adversarial review → review gate. One `STAGE.md` per stage contains everything. No separate workflow files, hat directories, or phase files.
-- **Knowledge** — two layers of accumulated context. The global knowledge pool (`.ai-dlc/knowledge/`) persists project-level understanding across intents. Intent artifacts accumulate as stages complete — each stage reads everything prior stages built.
+- **Inputs/Outputs** — stages declare inputs (a simple list in STAGE.md frontmatter) and outputs (self-describing frontmatter docs in an `outputs/` directory). Output scopes control persistence: `project` (`.haiku/knowledge/`), `intent` (`.haiku/intents/{name}/knowledge/`), `stage` (working context), `repo` (source tree).
 
 The key insight is that stages aren't just elaboration modes — they're the full lifecycle. Design doesn't just spec wireframes, it builds them. Product doesn't just define criteria, it writes behavioral specs. Each stage completes its own elaborate → execute cycle and produces real artifacts before the next stage begins.
 
@@ -24,7 +24,9 @@ The key insight is that stages aren't just elaboration modes — they're the ful
 - `plugin/hats/` directory — hats are now defined inside each stage's STAGE.md
 - `plugin/workflows.yml` — each stage defines its own hat sequence; the studio defines stage ordering
 - Workflow selection sub-skill — no need to pick a workflow; the stage already knows its hats
-- `phases/ELABORATION.md` and `phases/EXECUTION.md` — the stage body is injected as context into both elaboration and execution; no structured phase files
+- `phases/ELABORATION.md` and `phases/EXECUTION.md` — the stage body is injected as context; no structured phase files
+- `knowledge/` directory inside stages — replaced by `outputs/` directory with self-describing frontmatter docs
+- `requires:` / `produces:` fields in STAGE.md — replaced by `inputs:` (frontmatter list) and `outputs/` (directory)
 
 ### Architecture visual
 
@@ -66,29 +68,32 @@ plugin/studios/software/
 ├── STUDIO.md                                # Pipeline definition
 └── stages/
     ├── inception/
-    │   ├── STAGE.md                         # Hats, review mode, requires/produces, guidance
-    │   └── knowledge/
-    │       └── discovery.md                 # Knowledge guide: what to discover, expected sections
+    │   ├── STAGE.md                         # Hats, review mode, inputs, guidance
+    │   └── outputs/
+    │       └── DISCOVERY.md                 # scope: intent, format: text
     ├── design/
     │   ├── STAGE.md                         # Hats, guidance, criteria, per-hat sections
-    │   └── knowledge/
-    │       └── design.md                    # Knowledge guide
+    │   └── outputs/
+    │       ├── DESIGN-BRIEF.md              # scope: stage, format: design
+    │       └── DESIGN-TOKENS.md             # scope: intent, format: text
     ├── product/
     │   ├── STAGE.md
-    │   └── knowledge/
-    │       └── product.md
+    │   └── outputs/
+    │       ├── BEHAVIORAL-SPEC.md           # scope: intent, format: text
+    │       └── DATA-CONTRACTS.md            # scope: intent, format: text
     ├── development/
     │   ├── STAGE.md
-    │   └── knowledge/
-    │       └── architecture.md
+    │   └── outputs/
+    │       ├── CODE.md                      # scope: repo, format: code
+    │       └── ARCHITECTURE.md              # scope: project, format: text
     ├── operations/
     │   ├── STAGE.md
-    │   └── knowledge/
-    │       └── operations.md
+    │   └── outputs/
+    │       └── RUNBOOK.md                   # scope: intent, format: text
     └── security/
         ├── STAGE.md
-        └── knowledge/
-            └── threat-model.md
+        └── outputs/
+            └── THREAT-MODEL.md              # scope: intent, format: text
 ```
 
 ### Intent directory (.haiku/intents/{name}/)
@@ -96,16 +101,18 @@ plugin/studios/software/
 ```
 .haiku/intents/my-feature/
 ├── intent.md                                # Problem, solution, domain model, criteria
-├── knowledge/                               # Populated by stages as they complete
-│   ├── discovery.md                         ← inception wrote this (guided by stage's knowledge/discovery.md)
-│   ├── design.md                            ← design stage wrote this
-│   └── architecture.md                      ← development stage wrote this
+├── knowledge/                               # Intent-scoped outputs land here
+│   ├── DISCOVERY.md                         ← inception wrote this (scope: intent)
+│   ├── BEHAVIORAL-SPEC.md                   ← product stage wrote this (scope: intent)
+│   └── THREAT-MODEL.md                      ← security stage wrote this (scope: intent)
 ├── stages/
 │   ├── inception/
 │   │   ├── state.json
+│   │   ├── WORKING-NOTES.md                 ← stage-scoped output (scope: stage)
 │   │   └── units/
 │   ├── design/
 │   │   ├── state.json
+│   │   ├── DESIGN-BRIEF.md                  ← stage-scoped output (scope: stage)
 │   │   └── units/
 │   │       └── unit-01-wireframes.md
 │   └── development/
@@ -116,6 +123,8 @@ plugin/studios/software/
 └── state.json                               # { active_stage, mode, studio }
 ```
 
+Project-scoped outputs persist to `.haiku/knowledge/` (e.g., `ARCHITECTURE.md` from development stage). Repo-scoped outputs are actual source files written to the project tree.
+
 ### Project-level (custom or override)
 
 ```
@@ -125,19 +134,19 @@ plugin/studios/software/
 │   └── stages/
 │       └── security-hardening/              # Custom stage
 │           ├── STAGE.md
-│           └── knowledge/
-│               └── pen-test-report.md       # Knowledge guide
+│           └── outputs/
+│               └── PEN-TEST-REPORT.md       # scope: intent, format: text
 └── hardware/                                # Entirely custom studio
     ├── STUDIO.md
     └── stages/
         ├── pcb-design/
         │   ├── STAGE.md
-        │   └── knowledge/
-        │       └── schematic.md
+        │   └── outputs/
+        │       └── SCHEMATIC.md             # scope: intent, format: design
         └── firmware/
             ├── STAGE.md
-            └── knowledge/
-                └── firmware-spec.md
+            └── outputs/
+                └── FIRMWARE-SPEC.md         # scope: intent, format: text
 ```
 
 ## File Schemas
@@ -162,19 +171,18 @@ Contains structural metadata that applies to both elaboration and execution:
 ---
 name: design
 description: Visual and interaction design
-
-# What this stage produces and consumes (FSM context flow)
-requires: []
-produces: [design-tokens, wireframes, component-specs, interaction-flows]
-
-# Execution configuration
+hats: [designer, design-reviewer]
+review: ask
 unit_types: [design, frontend]
-available_workflows: [design]
-default_workflow: design
+inputs: [discovery, intent-spec]
 ---
 ```
 
-The body contains free-form documentation about the stage's purpose and philosophy.
+The body contains free-form documentation about the stage's purpose and philosophy, including per-hat guidance sections.
+
+Inputs are a simple list of output names from prior stages. The orchestrator resolves each name to the persisted location based on the producing stage's output scope.
+
+Outputs are defined in the `outputs/` directory alongside STAGE.md — each output is a separate file with self-describing frontmatter (see Output Doc Schema below).
 
 Fields:
 
@@ -182,76 +190,50 @@ Fields:
 |-------|------|-------------|
 | `name` | string | Stage identifier |
 | `description` | string | One-line description |
-| `requires` | string[] | Artifact names this stage needs from prior stages |
-| `produces` | string[] | Artifact names this stage outputs for subsequent stages |
+| `hats` | string[] | Ordered hat roles for this stage's build phase |
+| `review` | string | Review gate mode: `auto`, `ask`, or `external` |
 | `unit_types` | string[] | Disciplines of units this stage creates (e.g., `[design, frontend]`) |
-| `available_workflows` | string[] | Workflows available during this stage's execution |
-| `default_workflow` | string | Default workflow if none specified |
+| `inputs` | string[] | Output names from prior stages this stage needs |
 
-### phases/ELABORATION.md
+### Output Doc Schema
 
-How this stage behaves during elaboration. Read by the elaboration sub-skills.
+Each file in a stage's `outputs/` directory:
 
 ```yaml
 ---
-# Sub-skill composition
-skip: []                    # Sub-skills to skip (e.g., [wireframes, git-strategy])
-add: []                     # Custom sub-skills to add (from .ai-dlc/subskills/)
-
-# Wireframe behavior
-wireframe_fidelity: high    # high | low | skip
-
-# What to focus on
-criteria_focus: design      # Hint for criteria sub-skill — reads ## Criteria Guidance below
+name: discovery
+location: .haiku/intents/{name}/knowledge/DISCOVERY.md
+scope: intent
+format: text
+required: true
 ---
 
-# Design Stage — Elaboration
+# Discovery Output Guide
 
-## Criteria Guidance
-
-When generating criteria for this stage, focus on verifiable design deliverables:
-
-- Screen layouts defined for all breakpoints (mobile 375px / tablet 768px / desktop 1280px)
-- All interactive states specified (default, hover, focus, active, disabled, error)
-- Color usage references only design system tokens — no raw hex values
-- Touch targets meet 44px minimum on mobile breakpoints
-...
-
-Design criteria are verified by **visual approval**, not automated tests.
-
-Bad criteria: "Design looks good", "It's responsive"
+When exploring the domain, document:
+- Every entity and its fields
+- Every API endpoint and its behavior
+- Architecture patterns and constraints
 ```
 
-### phases/EXECUTION.md
+Fields:
 
-How this stage behaves during construction. Read by the builder and reviewer hats.
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Output identifier (referenced by other stages' `inputs:` lists) |
+| `location` | string | Path template where the output is persisted (uses `{name}` for intent slug) |
+| `scope` | string | Persistence scope: `project`, `intent`, `stage`, or `repo` |
+| `format` | string | Content format: `text`, `code`, `design` |
+| `required` | boolean | Whether this output must be produced before the stage completes |
 
-```markdown
----
-# (no frontmatter needed — structural config lives in STAGE.md)
----
+Output scopes determine persistence:
 
-# Design Stage — Execution
-
-## Builder Focus
-
-- Explore wireframes, mockups, or prototypes to clarify the visual and interaction direction
-- Define or extend design tokens as shared vocabulary
-- Specify component structure, states, and interaction behavior
-...
-
-## Reviewer Focus
-
-- Verify design thinking addresses every acceptance criterion
-- Check consistency with existing design system tokens and patterns
-- Confirm interaction flows cover error states, empty states, and loading states
-...
-
-## Completion Signal
-
-The design stage is complete when the design direction is clear enough to inform
-subsequent product or dev stages without ambiguity.
-```
+| Scope | Location | Lifespan |
+|-------|----------|----------|
+| `project` | `.haiku/knowledge/{name}.md` | Persists across intents |
+| `intent` | `.haiku/intents/{name}/knowledge/{name}.md` | This intent only |
+| `stage` | `.haiku/intents/{name}/stages/{stage}/{name}` | Working context for this stage's units |
+| `repo` | Project source tree | Actual code, configs — permanent |
 
 ## The Collapsible FSM
 
@@ -291,12 +273,12 @@ GATHER → DISCOVER → │ ELABORATE │ → │ ELABORATE │ → │ ELABORAT
 ```
 
 Each stage transition:
-1. Reads `stages/{name}/STAGE.md` for structural metadata
-2. Reads `stages/{name}/phases/ELABORATION.md` for elaboration guidance
-3. Loads prior stage artifacts via `load-prior-artifacts` sub-skill
+1. Reads `stages/{name}/STAGE.md` for structural metadata (hats, inputs, guidance)
+2. Reads `stages/{name}/outputs/*.md` for output definitions (scope, format, location)
+3. Resolves inputs from prior stage outputs via scope-based locations
 4. Runs the invariant elaboration core parameterized by the stage's metadata
-5. Executes the stage's units (bolt cycles guided by `phases/EXECUTION.md`)
-6. Commits built artifacts — these become input for the next stage
+5. Executes the stage's units (bolt cycles guided by STAGE.md hat sections)
+6. Writes outputs to scope-based locations — these become inputs for the next stage
 
 ### The Collapse Operation
 
@@ -306,8 +288,8 @@ Single-stage mode is conceptually equivalent to merging all stage definitions an
 - `criteria_guidance` = concatenation of all stages' guidance
 - `artifact_types` = union of all stages' artifacts
 - `available_workflows` = union of all stages' workflows
-- `requires` = empty (first stage)
-- `produces` = union of all stages' outputs
+- `inputs` = empty (first stage)
+- `outputs` = union of all stages' output definitions
 
 In practice, single-stage mode doesn't actually read stage definitions — it uses the sub-skills' built-in behavior, which produces the same result as the merge.
 
@@ -319,23 +301,24 @@ Hats (planner, builder, reviewer, designer, etc.) are generic workers defined in
 
 | Layer | Source | Single-Stage | Multi-Stage |
 |-------|--------|-------------|-------------|
-| 1. Hat | `plugin/hats/{hat}.md` | Always read | Always read |
-| 2. Stage | `stages/{name}/phases/EXECUTION.md` | Not read | Read for active stage |
-| 3. Unit | `.ai-dlc/{slug}/unit-NN-{slug}.md` | Always read | Always read |
+| 1. Hat | STAGE.md `## {hat-name}` section | Always read | Always read |
+| 2. Outputs | Stage's `outputs/` directory definitions | Merged | Active stage only |
+| 3. Inputs | Resolved from prior stage outputs | N/A | Read for active stage |
+| 4. Unit | `.haiku/{slug}/stages/{stage}/units/unit-NN-*.md` | Always read | Always read |
 
-In single-stage mode, the hat's built-in instructions already cover all disciplines — no stage guidance is needed. In multi-stage mode, the active stage's `EXECUTION.md` supplements the hat with stage-specific focus (e.g., "explore wireframes" for design stage, "implement code" for dev stage).
+In single-stage mode, all stage definitions are merged and hat guidance comes from the combined STAGE.md. In multi-stage mode, the active stage's STAGE.md provides hat-specific guidance and the stage's `inputs:` list drives what prior artifacts are loaded.
 
 ### Bolt Cycle
 
 Each unit executes through bolt cycles until its criteria are met:
 
 ```
-Unit → Resolve workflow → hat sequence
+Unit → Resolve hat sequence from STAGE.md
          │
-         ├── Planner hat    → reads hat + unit spec
-         ├── Builder hat    → reads hat + EXECUTION.md (multi-stage) + unit spec
+         ├── Planner hat    → reads STAGE.md ## planner + unit spec + inputs
+         ├── Builder hat    → reads STAGE.md ## builder + unit spec + inputs
          ├── Quality gates  → tests, lint, typecheck (backpressure)
-         └── Reviewer hat   → reads hat + EXECUTION.md (multi-stage) + criteria
+         └── Reviewer hat   → reads STAGE.md ## reviewer + criteria + outputs/ defs
                 │
                 ├── Criteria met → advance to next unit
                 └── Issues found → another bolt cycle
@@ -347,29 +330,29 @@ All units execute together in dependency order. Each unit uses its own workflow 
 
 ### Multi-Stage Execution
 
-Only units tagged with the active stage execute. Workflows are constrained to the stage's `available_workflows`. Hats read the active stage's `EXECUTION.md` for supplemental guidance (Builder Focus, Reviewer Focus). The reviewer checks stage-specific criteria. When all stage units complete → advance to next stage's elaboration.
+Only units tagged with the active stage execute. Hats read the active stage's STAGE.md for guidance. The stage's `inputs:` list drives what prior artifacts are loaded. The reviewer checks stage-specific criteria and verifies required outputs are produced. When all stage units complete, outputs are written to their scope-based locations, and the orchestrator advances to the next stage.
 
 ```
 Stage: design
   ├── Filter: units where stage: design
-  ├── Constrain workflows: [design]
-  ├── Hat guidance: stages/design/phases/EXECUTION.md
+  ├── Resolve inputs: [discovery, intent-spec] → read from prior output locations
+  ├── Hat guidance: stages/design/STAGE.md ## {hat-name} sections
   ├── Execute bolt cycles per unit
-  ├── Check: Completion Signal from EXECUTION.md
-  └── All design units done → advance to product stage elaboration
+  ├── Write outputs: DESIGN-BRIEF.md (scope: stage), DESIGN-TOKENS.md (scope: intent)
+  └── All design units done → advance to product stage
 ```
 
 ## Settings
 
 ```yaml
-# .ai-dlc/settings.yml
+# .haiku/settings.yml
 studio: software    # Always present. Default: "software" if omitted.
 ```
 
 Every project has a studio. Omitting `studio:` defaults to `software`. The per-intent decision of single-stage vs multi-stage is made during elaboration, not in settings.
 
 Resolution order:
-1. Project-level: `.ai-dlc/studios/{name}/STUDIO.md`
+1. Project-level: `.haiku/studios/{name}/STUDIO.md`
 2. Built-in: `plugin/studios/{name}/STUDIO.md`
 
 ## Intent Frontmatter
@@ -417,14 +400,25 @@ STAGE_FILE=$(resolve_stage_definition "design" "software")
 # → plugin/studios/software/stages/design/STAGE.md
 ```
 
-### Phase Resolution (within a stage)
+### Output Resolution (within a stage)
 
-The elaboration and execution systems read phase files directly:
+The orchestrator reads output definitions from the stage's `outputs/` directory:
 
 ```bash
-STAGE_DIR=$(dirname "$(resolve_stage_definition "$STAGE_NAME" "$STUDIO_NAME")")
-ELABORATION_FILE="${STAGE_DIR}/phases/ELABORATION.md"
-EXECUTION_FILE="${STAGE_DIR}/phases/EXECUTION.md"
+STAGE_DIR=$(dirname "$(hku_resolve_stage "$STAGE_NAME" "$STUDIO_NAME")")
+OUTPUTS_DIR="${STAGE_DIR}/outputs/"
+# Each *.md file in outputs/ is a self-describing output doc with frontmatter
+```
+
+### Input Resolution
+
+Inputs listed in STAGE.md frontmatter are resolved by finding the matching output definition from a prior stage and reading from its persisted location:
+
+```bash
+# For each input name in STAGE.md inputs: [discovery, intent-spec]
+# 1. Find which prior stage produces an output with that name
+# 2. Read the output's scope and location from the producing stage's outputs/ dir
+# 3. Read the persisted file from the scope-based path
 ```
 
 ## Sub-Skill Parameterization
@@ -433,27 +427,29 @@ Sub-skills are generic — they contain no hard-coded knowledge about specific s
 
 | Sub-Skill | Reads From | What It Gets |
 |-----------|-----------|--------------|
-| `criteria` | `phases/ELABORATION.md` → `## Criteria Guidance` | Good/bad examples, focus area |
+| `criteria` | `STAGE.md` → `## Criteria Guidance` | Good/bad examples, focus area |
 | `decompose` | `STAGE.md` → `unit_types` | Allowed unit disciplines |
-| `workflow-select` | `STAGE.md` → `available_workflows` | Constrained workflow list |
-| `wireframes` | `phases/ELABORATION.md` → `wireframe_fidelity` | high / low / skip |
-| Builder hat | `phases/EXECUTION.md` → `## Builder Focus` | Construction guidance |
-| Reviewer hat | `phases/EXECUTION.md` → `## Reviewer Focus` | Review guidance |
-| Advance | `phases/EXECUTION.md` → `## Completion Signal` | When to advance |
+| `wireframes` | `STAGE.md` → hat sections | Whether design hats are present |
+| Builder hat | `STAGE.md` → `## {hat-name}` section | Construction guidance |
+| Reviewer hat | `STAGE.md` → `## {hat-name}` section | Review guidance |
+| Advance | `STAGE.md` → `## Completion Signal` | When to advance |
+| Output writer | `outputs/*.md` → frontmatter | Scope, location, format for each output |
+| Input loader | `STAGE.md` → `inputs:` list | Names of outputs to load from prior stages |
 
 ## Custom Stage Example: Security
 
 A company adds a security stage to the software studio:
 
 ```
-.ai-dlc/studios/software/
+.haiku/studios/software/
 ├── STUDIO.md                          # Override: stages: [design, product, security, dev]
 └── stages/
     └── security/
         ├── STAGE.md
-        └── phases/
-            ├── ELABORATION.md
-            └── EXECUTION.md
+        └── outputs/
+            ├── THREAT-MODEL.md        # scope: intent, format: text
+            ├── SECURITY-REQS.md       # scope: intent, format: text
+            └── VULN-REPORT.md         # scope: intent, format: text
 ```
 
 **STAGE.md:**
@@ -461,24 +457,37 @@ A company adds a security stage to the software studio:
 ---
 name: security
 description: Threat modeling and penetration testing
-requires: [behavioral-specs, data-contracts]
-produces: [threat-model, security-requirements, vulnerability-report]
+hats: [threat-modeler, red-team, blue-team, reviewer]
+review: external
 unit_types: [security, backend]
-available_workflows: [adversarial]
-default_workflow: adversarial
----
-```
-
-**phases/ELABORATION.md:**
-```yaml
----
-skip: [design-direction, wireframes]
-add: [threat-model]
-wireframe_fidelity: skip
-criteria_focus: security
+inputs: [behavioral-spec, implementation]
 ---
 
-# Security Stage — Elaboration
+# Security Stage
+
+## threat-modeler
+
+### Focus
+- Perform STRIDE threat modeling for all data flows and trust boundaries
+- Identify attack surface and categorize threats
+
+## red-team
+
+### Focus
+- Write security-focused tests: injection, auth bypass, CSRF, SSRF
+- Review dependencies for known CVEs
+
+## blue-team
+
+### Focus
+- Verify mitigations for all identified threats
+- Validate security controls
+
+## reviewer
+
+### Focus
+- Verify all identified threats have documented mitigations
+- Check security test coverage against OWASP Top 10
 
 ## Criteria Guidance
 
@@ -486,25 +495,6 @@ criteria_focus: security
 - Authentication and authorization boundary testing
 - Data protection requirements (encryption at rest, in transit)
 - Input validation and output encoding
-...
-```
-
-**phases/EXECUTION.md:**
-```markdown
-# Security Stage — Execution
-
-## Builder Focus
-
-- Perform STRIDE threat modeling for all data flows and trust boundaries
-- Write security-focused tests: injection, auth bypass, CSRF, SSRF
-- Review dependencies for known CVEs
-...
-
-## Reviewer Focus
-
-- Verify all identified threats have documented mitigations
-- Check security test coverage against OWASP Top 10
-...
 
 ## Completion Signal
 
@@ -512,32 +502,47 @@ All identified threats have documented mitigations, security tests cover the
 attack surface, and no critical/high findings remain unaddressed.
 ```
 
+**outputs/THREAT-MODEL.md:**
+```yaml
+---
+name: threat-model
+location: .haiku/intents/{name}/knowledge/THREAT-MODEL.md
+scope: intent
+format: text
+required: true
+---
+
+# Threat Model Output Guide
+
+Document all identified threats with:
+- STRIDE classification
+- Attack vectors and impact assessment
+- Mitigations (implemented and recommended)
+```
+
 ## Custom Studio Example: Hardware
 
 ```
-.ai-dlc/studios/hardware/
+.haiku/studios/hardware/
 ├── STUDIO.md
 └── stages/
     ├── requirements/
     │   ├── STAGE.md
-    │   └── phases/
-    │       ├── ELABORATION.md
-    │       └── EXECUTION.md
+    │   └── outputs/
+    │       └── REQUIREMENTS-SPEC.md         # scope: intent, format: text
     ├── pcb-design/
     │   ├── STAGE.md
-    │   └── phases/
-    │       ├── ELABORATION.md
-    │       └── EXECUTION.md
+    │   └── outputs/
+    │       └── SCHEMATIC.md                 # scope: intent, format: design
     ├── firmware/
     │   ├── STAGE.md
-    │   └── phases/
-    │       ├── ELABORATION.md
-    │       └── EXECUTION.md
+    │   └── outputs/
+    │       ├── FIRMWARE-SPEC.md             # scope: intent, format: text
+    │       └── CODE.md                      # scope: repo, format: code
     └── integration-test/
         ├── STAGE.md
-        └── phases/
-            ├── ELABORATION.md
-            └── EXECUTION.md
+        └── outputs/
+            └── TEST-REPORT.md               # scope: intent, format: text
 ```
 
 ## Migration Path
@@ -545,9 +550,9 @@ attack surface, and no critical/high findings remain unaddressed.
 1. ~~Extract shared phases into sub-skills~~ (done)
 2. ~~Rename pass → stage~~ (done)
 3. ~~Create studio infrastructure~~ (done — STUDIO.md, studio.sh, stage.sh)
-4. Split STAGE.md into STAGE.md + phases/ELABORATION.md + phases/EXECUTION.md
-5. Update sub-skills to read from phase files instead of STAGE.md body
-6. Update execution hats to read from phases/EXECUTION.md
+4. Replace `knowledge/` directories with `outputs/` directories containing self-describing frontmatter docs
+5. Replace `requires:`/`produces:` with `inputs:` (frontmatter list) and `outputs/` (directory)
+6. Update sub-skills and hats to read guidance from STAGE.md body sections
 7. Update settings schema (studio: field replaces default_stages)
 8. Update paper, website docs, and CLAUDE.md terminology
 9. Delete REFACTOR-SPEC.md (superseded by this spec)
@@ -557,5 +562,5 @@ attack surface, and no critical/high findings remain unaddressed.
 **Single-stage mode (no studio configured) MUST work identically to the current system.** This means:
 - No `studio:` in settings → `stages: []`, `active_stage: ""`
 - Sub-skills use built-in defaults when no stage definition is available
-- No STAGE.md, ELABORATION.md, or EXECUTION.md files are read
+- No STAGE.md or outputs/ files are read
 - The elaboration and execution flows are unchanged from the current working system

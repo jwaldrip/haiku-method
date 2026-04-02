@@ -38,13 +38,12 @@ Rebrand AI-DLC to H·AI·K·U and implement a studio/stage/persistence architect
 
 ### Entities
 - **Studio** — named lifecycle template. Declares stage order and persistence type. Lives in `plugin/studios/{name}/STUDIO.md` or `.haiku/studios/{name}/STUDIO.md`.
-- **Stage** — lifecycle phase with hats, review mode, requires/produces contract. Lives in `studios/{name}/stages/{stage}/STAGE.md`.
+- **Stage** — lifecycle phase with hats, review mode, inputs (frontmatter list), and outputs (`outputs/` directory of self-describing docs). Lives in `studios/{name}/stages/{stage}/STAGE.md`.
 - **Persistence Adapter** — how work is saved/versioned/delivered. Git adapter is the default for software.
 - **Intent** — what's being built. Lives in `.haiku/intents/{name}/intent.md`.
 - **Unit** — discrete piece of work within a stage. Lives in `.haiku/intents/{name}/stages/{stage}/units/`.
 - **Bolt** — one cycle through a stage's hat sequence.
-- **Global Knowledge** — project-level accumulated knowledge in `.haiku/knowledge/`. Persists across intents. Synthesized from codebase.
-- **Intent Knowledge** — per-intent accumulated knowledge in `.haiku/intents/{name}/knowledge/`. Each stage writes its findings here. The `produces:` field in STAGE.md names knowledge artifacts, and the stage body guides what to collect.
+- **Output** — a self-describing frontmatter doc in a stage's `outputs/` directory. Declares name, location, scope, format, and whether required. Scopes: `project` (`.haiku/knowledge/`), `intent` (`.haiku/intents/{name}/knowledge/`), `stage` (`.haiku/intents/{name}/stages/{stage}/`), `repo` (project source tree).
 - **Review Gate** — auto | ask | external. Controls what happens after a stage completes.
 
 ### Relationships
@@ -56,15 +55,17 @@ Rebrand AI-DLC to H·AI·K·U and implement a studio/stage/persistence architect
 - Unit has many Bolts
 - Intent references one Studio
 - Intent has many Stages (from its studio)
-- Knowledge Pool is shared across all stages of an intent
+- Stage has many Outputs (declared in `outputs/` directory, persisted by scope)
+- Stage has many Inputs (list in frontmatter, resolved from prior stage outputs)
 
 ### Data Sources
 - Plugin source: `plugin/` directory (skills, hooks, lib, schemas)
 - Website: `website/` (Next.js 15 static site)
 - Paper: `website/content/papers/ai-dlc-2026.md`
 - Settings: `.ai-dlc/settings.yml` (→ `.haiku/settings.yml`)
-- Global knowledge: `.haiku/knowledge/` (project-level)
-- Intent knowledge: `.haiku/intents/{name}/knowledge/` (per-intent, per-stage)
+- Project-scoped outputs: `.haiku/knowledge/` (persist across intents)
+- Intent-scoped outputs: `.haiku/intents/{name}/knowledge/` (per-intent)
+- Stage-scoped outputs: `.haiku/intents/{name}/stages/{stage}/` (working context)
 - Architecture spec: `plugin/skills/elaborate/STUDIO-SPEC.md`
 - Architecture viz: `~/Downloads/haiku-architecture-v1.html`
 
@@ -74,7 +75,7 @@ Rebrand AI-DLC to H·AI·K·U and implement a studio/stage/persistence architect
 - [ ] All "AI-DLC" branding → "H·AI·K·U" in user-facing content
 - [ ] Default ideation studio created (`plugin/studios/ideation/`)
 - [ ] Software studio created (`plugin/studios/software/`) with 6 stages
-- [ ] Each stage has STAGE.md with hats, review mode, guidance, requires/produces
+- [ ] Each stage has STAGE.md with hats, review mode, guidance, inputs list, and outputs/ directory
 - [ ] plugin/hats/ directory removed — hats live in STAGE.md
 - [ ] plugin/workflows.yml removed — stages define their own hat sequences
 - [ ] Unified stage orchestrator skill replaces separate elaborate/execute skills

@@ -13,7 +13,7 @@ ticket: ""
 
 ## Description
 
-Create the full stage definitions for both the ideation studio (4 stages) and the software studio (6 stages). Each stage gets a STAGE.md file with frontmatter defining hats, review mode, requires/produces contracts, and a body with per-hat guidance, criteria examples, and completion signals.
+Create the full stage definitions for both the ideation studio (4 stages) and the software studio (6 stages). Each stage gets a STAGE.md file with frontmatter defining hats, review mode, inputs list, and a body with per-hat guidance, criteria examples, and completion signals. Each stage also gets an `outputs/` directory with self-describing frontmatter docs that declare scope, location, format, and guidance for each output.
 
 ## Discipline
 
@@ -24,26 +24,33 @@ backend - Stage definition files with structured frontmatter and instructional b
 ### Ideation Studio Stages
 
 - `plugin/studios/ideation/stages/research/STAGE.md`
-- `plugin/studios/ideation/stages/research/knowledge/findings.md` (knowledge guide)
+- `plugin/studios/ideation/stages/research/outputs/RESEARCH-BRIEF.md` (scope: intent)
 - `plugin/studios/ideation/stages/create/STAGE.md`
-- `plugin/studios/ideation/stages/create/knowledge/artifacts.md` (knowledge guide)
+- `plugin/studios/ideation/stages/create/outputs/DRAFT-DELIVERABLE.md` (scope: intent)
 - `plugin/studios/ideation/stages/review/STAGE.md`
+- `plugin/studios/ideation/stages/review/outputs/REVIEW-REPORT.md` (scope: stage)
 - `plugin/studios/ideation/stages/deliver/STAGE.md`
+- `plugin/studios/ideation/stages/deliver/outputs/FINAL-DELIVERABLE.md` (scope: intent)
 
 ### Software Studio Stages
 
 - `plugin/studios/software/stages/inception/STAGE.md`
-- `plugin/studios/software/stages/inception/knowledge/discovery.md` (knowledge guide)
+- `plugin/studios/software/stages/inception/outputs/DISCOVERY.md` (scope: intent)
 - `plugin/studios/software/stages/design/STAGE.md`
-- `plugin/studios/software/stages/design/knowledge/design.md` (knowledge guide)
+- `plugin/studios/software/stages/design/outputs/DESIGN-BRIEF.md` (scope: stage)
+- `plugin/studios/software/stages/design/outputs/DESIGN-TOKENS.md` (scope: intent)
 - `plugin/studios/software/stages/product/STAGE.md`
-- `plugin/studios/software/stages/product/knowledge/product.md` (knowledge guide)
+- `plugin/studios/software/stages/product/outputs/BEHAVIORAL-SPEC.md` (scope: intent)
+- `plugin/studios/software/stages/product/outputs/DATA-CONTRACTS.md` (scope: intent)
 - `plugin/studios/software/stages/development/STAGE.md`
-- `plugin/studios/software/stages/development/knowledge/architecture.md` (knowledge guide)
+- `plugin/studios/software/stages/development/outputs/CODE.md` (scope: repo)
+- `plugin/studios/software/stages/development/outputs/ARCHITECTURE.md` (scope: project)
 - `plugin/studios/software/stages/operations/STAGE.md`
-- `plugin/studios/software/stages/operations/knowledge/operations.md` (knowledge guide)
+- `plugin/studios/software/stages/operations/outputs/RUNBOOK.md` (scope: intent)
+- `plugin/studios/software/stages/operations/outputs/DEPLOYMENT-CONFIG.md` (scope: repo)
 - `plugin/studios/software/stages/security/STAGE.md`
-- `plugin/studios/software/stages/security/knowledge/threat-model.md` (knowledge guide)
+- `plugin/studios/software/stages/security/outputs/THREAT-MODEL.md` (scope: intent)
+- `plugin/studios/software/stages/security/outputs/VULN-REPORT.md` (scope: intent)
 
 ## Technical Specification
 
@@ -56,10 +63,9 @@ Each stage follows this structure:
 name: <stage-name>
 description: <one-line description>
 hats: [<ordered list of hat roles>]
-review_mode: auto | ask | external
+review: auto | ask | external
 unit_types: [<disciplines of units this stage creates>]
-requires: [<artifact names from prior stages>]
-produces: [<artifact names for subsequent stages>]
+inputs: [<output names from prior stages>]
 ---
 
 # <Stage Name>
@@ -79,33 +85,31 @@ produces: [<artifact names for subsequent stages>]
 <When this stage is done>
 ```
 
-### Knowledge Guides
+No `requires:` or `produces:` fields. Inputs are a simple frontmatter list. Outputs are defined in the `outputs/` directory.
 
-Each stage that produces knowledge artifacts includes a `knowledge/` directory with frontmatter template files. These guide the agent on what to collect and how to structure the output:
+### Output Docs
+
+Each stage has an `outputs/` directory with self-describing frontmatter docs. These guide the agent on what to produce and declare where the output persists:
 
 ```
 plugin/studios/software/stages/inception/
 ├── STAGE.md
-└── knowledge/
-    └── discovery.md       # Template with frontmatter guiding what to discover
+└── outputs/
+    └── DISCOVERY.md       # scope: intent, format: text
 ```
 
-Each knowledge guide follows this format:
+Each output doc follows this format:
 
 ```yaml
 ---
 name: discovery
-description: Domain exploration findings for this intent
-output_path: knowledge/discovery.md
+location: .haiku/intents/{name}/knowledge/DISCOVERY.md
+scope: intent
+format: text
 required: true
-sections:
-  - "## Domain Model"
-  - "## Data Sources"
-  - "## Architecture"
-  - "## Quality Gate Candidates"
 ---
 
-# Discovery Guide
+# Discovery Output Guide
 
 When exploring the domain, document:
 - Every entity and its fields
@@ -113,9 +117,24 @@ When exploring the domain, document:
 ...
 ```
 
-The `output_path` is relative to the intent directory (`.haiku/intents/{name}/`). The `sections` field lists expected headings — the adversarial review checks that all required sections are present. The body provides collection guidance.
+Output doc fields:
 
-When a stage runs, the agent reads the knowledge guide templates and writes populated versions to `.haiku/intents/{name}/knowledge/{name}.md`.
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Output identifier (referenced by other stages' `inputs:` lists) |
+| `location` | string | Path template where the output is persisted |
+| `scope` | string | `project`, `intent`, `stage`, or `repo` |
+| `format` | string | `text`, `code`, or `design` |
+| `required` | boolean | Must be produced before stage completes |
+
+Scopes:
+
+| Scope | Persisted To | Lifespan |
+|-------|-------------|----------|
+| `project` | `.haiku/knowledge/{name}.md` | Across intents |
+| `intent` | `.haiku/intents/{name}/knowledge/{name}.md` | This intent |
+| `stage` | `.haiku/intents/{name}/stages/{stage}/{name}` | This stage's units |
+| `repo` | Project source tree | Permanent |
 
 ### Ideation Studio Stages
 
@@ -126,16 +145,16 @@ When a stage runs, the agent reads the knowledge guide templates and writes popu
 name: research
 description: Gather context, explore prior art, and understand the problem space
 hats: [researcher, analyst]
-review_mode: auto
-requires: []
-produces: [research-brief, problem-definition, prior-art-summary]
+review: auto
+unit_types: [research]
+inputs: []
 ---
 ```
 
 - **researcher** hat: explore sources, gather data, synthesize findings
 - **analyst** hat: evaluate findings, identify patterns, surface insights
-- Review mode `auto` — research naturally flows into creation
-- Produces a research brief that the create stage consumes
+- Review `auto` — research naturally flows into creation
+- Outputs: `outputs/RESEARCH-BRIEF.md` (scope: intent)
 
 #### create
 
@@ -144,15 +163,16 @@ produces: [research-brief, problem-definition, prior-art-summary]
 name: create
 description: Generate the primary deliverable using research insights
 hats: [creator, editor]
-review_mode: ask
-requires: [research-brief, problem-definition]
-produces: [draft-deliverable, supporting-materials]
+review: ask
+unit_types: [content]
+inputs: [research-brief]
 ---
 ```
 
 - **creator** hat: produce the primary output (document, design, plan, etc.)
 - **editor** hat: refine, restructure, improve clarity and quality
-- Review mode `ask` — the user decides when the draft is ready for formal review
+- Review `ask` — the user decides when the draft is ready for formal review
+- Outputs: `outputs/DRAFT-DELIVERABLE.md` (scope: intent)
 
 #### review
 
@@ -161,15 +181,16 @@ produces: [draft-deliverable, supporting-materials]
 name: review
 description: Adversarial quality review of the deliverable
 hats: [critic, fact-checker]
-review_mode: ask
-requires: [draft-deliverable]
-produces: [review-report, revision-list]
+review: ask
+unit_types: [review]
+inputs: [draft-deliverable]
 ---
 ```
 
 - **critic** hat: identify weaknesses, gaps, inconsistencies
 - **fact-checker** hat: verify claims, check sources, validate logic
-- Review mode `ask` — review findings are presented for the user to act on
+- Review `ask` — review findings are presented for the user to act on
+- Outputs: `outputs/REVIEW-REPORT.md` (scope: stage)
 
 #### deliver
 
@@ -178,14 +199,15 @@ produces: [review-report, revision-list]
 name: deliver
 description: Finalize and package the deliverable for its audience
 hats: [publisher]
-review_mode: auto
-requires: [draft-deliverable, review-report]
-produces: [final-deliverable]
+review: auto
+unit_types: [delivery]
+inputs: [draft-deliverable, review-report]
 ---
 ```
 
 - **publisher** hat: format, package, and deliver
-- Review mode `auto` — once review is addressed, delivery completes
+- Review `auto` — once review is addressed, delivery completes
+- Outputs: `outputs/FINAL-DELIVERABLE.md` (scope: intent)
 
 ### Software Studio Stages
 
@@ -196,16 +218,17 @@ produces: [final-deliverable]
 name: inception
 description: Understand the problem, define success, and decompose into units
 hats: [architect, decomposer]
-review_mode: auto
-requires: []
-produces: [intent-spec, unit-specs, dependency-graph, success-criteria]
+review: auto
+unit_types: [research, backend, frontend]
+inputs: []
 ---
 ```
 
 - **architect** hat: understand the problem space, define scope, identify technical constraints
 - **decomposer** hat: break the intent into units with dependencies and criteria
-- Review mode `auto` — inception flows directly into design
+- Review `auto` — inception flows directly into design
 - This stage maps to the existing elaboration sub-skills: gather, discover, decompose, criteria, DAG
+- Outputs: `outputs/DISCOVERY.md` (scope: intent)
 
 #### design
 
@@ -214,17 +237,18 @@ produces: [intent-spec, unit-specs, dependency-graph, success-criteria]
 name: design
 description: Visual and interaction design for user-facing surfaces
 hats: [designer, design-reviewer]
-review_mode: ask
-requires: [intent-spec, unit-specs]
-produces: [design-tokens, wireframes, component-specs, interaction-flows]
+review: ask
+unit_types: [design, frontend]
+inputs: [discovery]
 ---
 ```
 
 - **designer** hat: explore wireframes, define tokens, specify component structure and states, map interaction flows
 - **design-reviewer** hat: check consistency with design system, verify all states covered (default, hover, focus, active, disabled, error), confirm responsive behavior
-- Review mode `ask` — design direction needs human approval before product proceeds
+- Review `ask` — design direction needs human approval before product proceeds
 - Criteria guidance: screen layouts for all breakpoints, interactive states specified, touch targets >= 44px, design tokens only (no raw hex)
 - Design criteria are verified by visual approval, not automated tests
+- Outputs: `outputs/DESIGN-BRIEF.md` (scope: stage), `outputs/DESIGN-TOKENS.md` (scope: intent)
 
 #### product
 
@@ -233,16 +257,17 @@ produces: [design-tokens, wireframes, component-specs, interaction-flows]
 name: product
 description: Define behavioral specifications and acceptance criteria
 hats: [product-owner, specification-writer]
-review_mode: external
-requires: [intent-spec, unit-specs, design-tokens, wireframes]
-produces: [behavioral-specs, acceptance-criteria, data-contracts, api-contracts]
+review: external
+unit_types: [product, backend, frontend]
+inputs: [discovery, design-tokens]
 ---
 ```
 
 - **product-owner** hat: define user stories, prioritize, make scope decisions
 - **specification-writer** hat: write behavioral specs, define data contracts, specify API contracts
-- Review mode `external` — this is the go/no-go decision boundary where the team decides whether to actually build the thing. In practice: creates a PR or review request for team approval.
+- Review `external` — this is the go/no-go decision boundary where the team decides whether to actually build the thing. In practice: creates a PR or review request for team approval.
 - Criteria guidance: behavioral specs per user flow, data contracts defined, API contracts specified, edge cases documented
+- Outputs: `outputs/BEHAVIORAL-SPEC.md` (scope: intent), `outputs/DATA-CONTRACTS.md` (scope: intent)
 
 #### development
 
@@ -251,17 +276,18 @@ produces: [behavioral-specs, acceptance-criteria, data-contracts, api-contracts]
 name: development
 description: Implement the specification through code
 hats: [planner, builder, reviewer]
-review_mode: ask
-requires: [behavioral-specs, acceptance-criteria, data-contracts]
-produces: [implementation, test-suite, documentation]
+review: ask
+unit_types: [backend, frontend, fullstack]
+inputs: [behavioral-spec, data-contracts]
 ---
 ```
 
-- **planner** hat: read unit spec + prior stage artifacts, plan implementation approach
-- **builder** hat: write code, implement features, fix issues. Guided by behavioral specs from product stage.
+- **planner** hat: read unit spec + prior stage outputs, plan implementation approach
+- **builder** hat: write code, implement features, fix issues. Guided by behavioral spec from product stage.
 - **reviewer** hat: code review, check criteria compliance, verify test coverage. Hard-gated on criteria.
-- Review mode `ask` — pause for user review before operations
+- Review `ask` — pause for user review before operations
 - This stage maps to the existing execute skill's bolt loop: plan -> build -> quality gates -> review
+- Outputs: `outputs/CODE.md` (scope: repo), `outputs/ARCHITECTURE.md` (scope: project)
 
 #### operations
 
@@ -270,16 +296,17 @@ produces: [implementation, test-suite, documentation]
 name: operations
 description: Deployment, monitoring, and operational readiness
 hats: [ops-engineer, sre]
-review_mode: auto
-requires: [implementation, test-suite]
-produces: [deployment-config, monitoring-setup, runbook]
+review: auto
+unit_types: [ops, backend]
+inputs: [implementation, architecture]
 ---
 ```
 
 - **ops-engineer** hat: configure deployment, set up CI/CD, define infrastructure
 - **sre** hat: define SLOs, set up monitoring, write runbooks
-- Review mode `auto` — operational setup advances automatically when complete
+- Review `auto` — operational setup advances automatically when complete
 - Criteria guidance: deployment pipeline defined, monitoring covers key metrics, runbook exists for common failure modes
+- Outputs: `outputs/RUNBOOK.md` (scope: intent), `outputs/DEPLOYMENT-CONFIG.md` (scope: repo)
 
 #### security
 
@@ -288,9 +315,9 @@ produces: [deployment-config, monitoring-setup, runbook]
 name: security
 description: Threat modeling, security review, and vulnerability assessment
 hats: [threat-modeler, red-team, blue-team, security-reviewer]
-review_mode: external
-requires: [implementation, behavioral-specs, data-contracts]
-produces: [threat-model, security-requirements, vulnerability-report, mitigation-plan]
+review: external
+unit_types: [security, backend]
+inputs: [behavioral-spec, implementation]
 ---
 ```
 
@@ -298,9 +325,10 @@ produces: [threat-model, security-requirements, vulnerability-report, mitigation
 - **red-team** hat: attack surface analysis, injection testing, auth bypass attempts
 - **blue-team** hat: defense verification, security control validation, monitoring coverage
 - **security-reviewer** hat: verify all threats have mitigations, check OWASP Top 10 coverage
-- Review mode `external` — security findings require team review before the intent ships
+- Review `external` — security findings require team review before the intent ships
 - This stage is always adversarial — the hat sequence IS the review
 - Criteria guidance: OWASP Top 10 coverage, auth boundary testing, data protection requirements, input validation
+- Outputs: `outputs/THREAT-MODEL.md` (scope: intent), `outputs/VULN-REPORT.md` (scope: intent)
 
 ### Hat Section Content
 
@@ -328,10 +356,12 @@ This replaces the old `plugin/hats/*.md` files — all hat instructions live inl
 
 - [ ] All 4 ideation studio stage files exist with complete frontmatter and body
 - [ ] All 6 software studio stage files exist with complete frontmatter and body
-- [ ] Every stage has `hats`, `review_mode`, `requires`, and `produces` in frontmatter
+- [ ] Every stage has `hats`, `review`, `unit_types`, and `inputs` in frontmatter
+- [ ] Every stage has an `outputs/` directory with at least one output doc
+- [ ] Every output doc has `name`, `location`, `scope`, `format`, `required` in frontmatter
 - [ ] Every stage body has sections for each hat defined in frontmatter
 - [ ] Every stage body has `## Criteria Guidance` and `## Completion Signal` sections
-- [ ] requires/produces chains are consistent: every `requires` reference appears in a prior stage's `produces`
+- [ ] Input/output chains are consistent: every `inputs` reference appears as an output `name` in a prior stage's `outputs/` directory
 - [ ] Software stage review modes match spec: inception=auto, design=ask, product=external, development=ask, operations=auto, security=external
 - [ ] Ideation stage review modes match spec: research=auto, create=ask, review=ask, deliver=auto
 - [ ] Hat sections provide actionable guidance (not just labels)
@@ -340,9 +370,9 @@ This replaces the old `plugin/hats/*.md` files — all hat instructions live inl
 ## Risks
 
 - **Content quality**: Hat instructions need to be genuinely useful, not placeholder text. Mitigation: adapt content from existing `plugin/hats/*.md` files and `plugin/passes/*.md` (now stages) which have battle-tested guidance.
-- **requires/produces mismatch**: If stage A produces `[x, y]` but stage B requires `[x, z]`, the pipeline has a gap. Mitigation: trace the full artifact chain for each studio before writing files.
+- **Input/output mismatch**: If stage A's outputs include `x` and `y` but stage B's inputs list `[x, z]`, the pipeline has a gap. Mitigation: trace the full input/output chain for each studio before writing files.
 - **Ideation generality**: The ideation studio must work for ANY domain (marketing, hardware, legal, etc.). Mitigation: keep hat descriptions generic and outcome-focused rather than domain-specific.
 
 ## Boundaries
 
-This unit writes STAGE.md content for both studios. It does NOT create the studio infrastructure (unit-04), the orchestrator (unit-06), or remove the old hats directory (unit-07). The stage files are passive definitions — they become active when the orchestrator reads them.
+This unit writes STAGE.md content and `outputs/` directory docs for both studios. It does NOT create the studio infrastructure (unit-04), the orchestrator (unit-06), or remove the old hats directory (unit-07). The stage files and output docs are passive definitions — they become active when the orchestrator reads them.
