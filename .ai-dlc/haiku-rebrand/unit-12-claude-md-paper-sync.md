@@ -108,7 +108,7 @@ Studio -> Stage -> Unit -> Bolt
 | Stage | Lifecycle Phases | `plugin/studios/*/stages/*/STAGE.md` | stage.sh, orchestrator.sh |
 | Hat | Roles & Guidance | `## {hat-name}` sections in STAGE.md | inject-context.sh |
 | Intent | Work Items | `.haiku/intents/{slug}/intent.md` | new/SKILL.md, run/SKILL.md |
-| Unit | Work Decomposition | `.haiku/intents/{slug}/unit-NN-*.md` | orchestrator.sh (plan phase) |
+| Unit | Work Decomposition | `.haiku/intents/{slug}/stages/{stage}/units/unit-NN-*.md` | orchestrator.sh (plan phase) |
 | Bolt | Iteration Cycles | `iteration` field in iteration.json | orchestrator.sh (build phase) |
 | Review Gate | Quality Checkpoints | `review_mode:` in STAGE.md | orchestrator.sh (gate phase) |
 | Persistence | Work Persistence | `plugin/lib/adapters/*.sh` | persistence.sh |

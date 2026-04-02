@@ -145,7 +145,7 @@ Every occurrence in lib and hook files:
 | Pattern | Replacement |
 |---------|-------------|
 | `.ai-dlc/settings.yml` | `.haiku/settings.yml` |
-| `.ai-dlc/{slug}/` | `.haiku/{slug}/` |
+| `.ai-dlc/{slug}/` | `.haiku/intents/{slug}/` |
 | `.ai-dlc/knowledge/` | `.haiku/knowledge/` |
 | `.ai-dlc/providers/` | `.haiku/providers/` |
 | `.ai-dlc/worktrees/` | `.haiku/worktrees/` |

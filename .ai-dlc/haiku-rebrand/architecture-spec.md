@@ -268,7 +268,7 @@ User chooses "continuous" during elaboration:
 ```
 GATHER → DISCOVER → ELABORATE(all) → EXECUTE(all) → DELIVER
                         ↓
-                    one cycle, all disciplines merged
+                    one cycle, all stage definitions merged
 ```
 
 One elaborate ↓ execute cycle. All stage definitions from the studio are merged. Sub-skills use the union of all stages' guidance.
@@ -480,7 +480,7 @@ A company adds a security stage to the software studio:
 
 ```
 .haiku/studios/software/
-├── STUDIO.md                          # Override: stages: [design, product, security, dev]
+├── STUDIO.md                          # Override: stages: [design, product, security, development]
 └── stages/
     └── security/
         ├── STAGE.md
