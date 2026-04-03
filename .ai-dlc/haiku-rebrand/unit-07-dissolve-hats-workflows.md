@@ -14,7 +14,11 @@ hat: reviewer
 
 ## Description
 
+<<<<<<< HEAD
 Remove the `plugin/hats/` directory and `plugin/workflows.yml` file. Hat instructions now live as files in each stage's `hats/` directory (e.g., `stages/development/hats/builder.md`). Workflow definitions are replaced by the stage's `hats:` field (the hat sequence IS the workflow). Update all context injection hooks and skills that reference the old hat or workflow system.
+=======
+Remove the `plugin/hats/` directory and `plugin/workflows.yml` file. Hat instructions now live as separate `hats/{hat}.md` files within each stage directory (e.g., `stages/development/hats/builder.md`). Workflow definitions are replaced by the stage's `hats:` field (the hat sequence IS the workflow). Update all context injection hooks and skills that reference the old hat or workflow system.
+>>>>>>> 88bf3585c47301617dc53f3f900fe85e8303f2f3
 
 ## Discipline
 
@@ -53,11 +57,19 @@ All three are replaced by the stage system:
 
 | Old System | New System |
 |-----------|-----------|
+<<<<<<< HEAD
 | `plugin/hats/builder.md` | `stages/development/hats/builder.md` |
 | `plugin/hats/reviewer.md` | `stages/development/hats/reviewer.md` |
 | `plugin/hats/designer.md` | `stages/design/hats/designer.md` |
 | `plugin/workflows.yml` workflow sequences | `STAGE.md` frontmatter `hats:` field |
 | `hat.sh` `resolve_hat()` | `stage.sh` `hku_resolve_stage()` + read hat files from `hats/` dir |
+=======
+| `plugin/hats/builder.md` | `stages/development/hats/builder.md` in each stage |
+| `plugin/hats/reviewer.md` | `stages/development/hats/reviewer.md` in each stage |
+| `plugin/hats/designer.md` | `stages/design/hats/designer.md` in the design stage |
+| `plugin/workflows.yml` workflow sequences | `STAGE.md` frontmatter `hats:` field |
+| `hat.sh` `resolve_hat()` | `hat.sh` `hku_resolve_hat_instructions()` reads `{stage_dir}/hats/{hat}.md` |
+>>>>>>> 88bf3585c47301617dc53f3f900fe85e8303f2f3
 
 ### Hook Updates
 
@@ -66,9 +78,15 @@ All three are replaced by the stage system:
 Currently reads the active hat from state and injects `plugin/hats/{hat}.md` content into the agent context. Update to:
 
 1. Read the active stage from intent frontmatter (`active_stage:`)
+<<<<<<< HEAD
 2. Resolve the stage directory
 3. Read the hat file from `stages/{stage}/hats/{hat}.md`
 4. Inject that file's content as hat context
+=======
+2. Resolve the stage directory via `hku_resolve_stage`
+3. Read `{stage_dir}/hats/{hat_name}.md` for hat instructions
+4. Inject that file's body as hat context
+>>>>>>> 88bf3585c47301617dc53f3f900fe85e8303f2f3
 
 ```bash
 # Before:
@@ -78,6 +96,7 @@ if [[ -f "$hat_file" ]]; then
 fi
 
 # After:
+<<<<<<< HEAD
 stage_dir=$(hku_resolve_stage_dir "$active_stage" "$studio")
 hat_file="${stage_dir}/hats/${active_hat}.md"
 if [[ -f "$hat_file" ]]; then
@@ -90,27 +109,45 @@ Hat resolution reads the file directly from the `hats/` directory -- no markdown
 #### `subagent-context.sh`
 
 Same pattern — replace hat file reads with stage-scoped hat file reads. Subagents get the same hat context as the main agent.
+=======
+instructions=$(hku_resolve_hat_instructions "$active_hat" "$active_stage" "$studio")
+if [[ -n "$instructions" ]]; then
+  echo "$instructions"
+fi
+```
+
+#### `subagent-context.sh`
+
+Same pattern — replace hat file reads with `hku_resolve_hat_instructions`. Subagents get the same hat context as the main agent.
+>>>>>>> 88bf3585c47301617dc53f3f900fe85e8303f2f3
 
 ### Hat Library Update (`plugin/lib/hat.sh`)
 
-Replace `resolve_hat()` (or equivalent) with:
+Replace `resolve_hat()` (or equivalent) with `hku_resolve_hat_instructions`, which reads from per-hat files:
 
 ```bash
 # Resolve hat instructions from the active stage.
+# Resolution: reads {stage_dir}/hats/{hat_name}.md, with optional project
+# augmentation from .haiku/hats/{hat_name}.md.
 # Falls back to the ideation studio's "research" stage for projects with no
-# stage configured (legacy projects before migration). This ensures the
-# backwards-compat guarantee holds: agents always have hat context even
-# on unmigrated projects — it just comes from ideation/research defaults.
+# stage configured (legacy projects before migration).
 hku_resolve_hat_instructions() {
   local hat_name="$1"
   local stage_name="${2:-}"
   local studio_name="${3:-ideation}"
-  local stage_file
 
-  # Primary: resolve from the active stage if one is configured
-  if [[ -n "$stage_name" ]]; then
-    stage_file=$(hku_resolve_stage "$stage_name" "$studio_name")
+  local stage_file
+  stage_file=$(hku_resolve_stage "$stage_name" "$studio_name" 2>/dev/null) || {
+    stage_file=$(hku_resolve_stage "research" "ideation" 2>/dev/null)
+  }
+
+  # Read hat file: {stage_dir}/hats/{hat_name}.md
+  local stage_dir; stage_dir=$(dirname "$stage_file")
+  local hat_file="${stage_dir}/hats/${hat_name}.md"
+  if [[ -f "$hat_file" ]]; then
+    awk '/^---$/{n++; next} n>=2' "$hat_file"
   fi
+<<<<<<< HEAD
 
   # Fallback: if no stage is configured (legacy project with no settings file),
   # use the ideation studio's "research" stage for general-purpose hat context.
@@ -119,14 +156,18 @@ hku_resolve_hat_instructions() {
   fi
 
   cat "${stage_dir}/hats/${hat_name}.md"
+=======
+>>>>>>> 88bf3585c47301617dc53f3f900fe85e8303f2f3
 }
 
 # Get the hat sequence for a stage (replaces workflow lookup)
+# Reads hats: field from STAGE.md frontmatter
 hku_get_hat_sequence() {
   local stage_name="$1"
   local studio_name="$2"
-  # Read hats: field from STAGE.md frontmatter
-  # Returns: space-separated hat names in order
+  local stage_file
+  stage_file=$(hku_resolve_stage "$stage_name" "$studio_name") || return 1
+  yq --front-matter=extract '.hats[]' "$stage_file" 2>/dev/null | tr '\n' ' '
 }
 ```
 
@@ -175,15 +216,22 @@ grep -r 'available_workflows' plugin/ --include='*.md'                 # 0 resul
 
 - [ ] `plugin/hats/` directory deleted (all `.md` files removed)
 - [ ] `plugin/workflows.yml` deleted
+<<<<<<< HEAD
 - [ ] `inject-context.sh` reads hat instructions from active stage's `hats/` directory
 - [ ] `subagent-context.sh` reads hat instructions from active stage's `hats/` directory
 - [ ] Hat files are read directly from `stages/{stage}/hats/{hat}.md`
 - [ ] `hku_get_hat_sequence` function exists and reads from STAGE.md frontmatter
+=======
+- [ ] `inject-context.sh` calls `hku_resolve_hat_instructions` to inject hat context
+- [ ] `subagent-context.sh` calls `hku_resolve_hat_instructions` to inject hat context
+- [ ] `hku_resolve_hat_instructions` reads from `{stage_dir}/hats/{hat_name}.md`
+- [ ] `hku_get_hat_sequence` exists and reads `hats:` from STAGE.md frontmatter
+>>>>>>> 88bf3585c47301617dc53f3f900fe85e8303f2f3
 - [ ] No remaining references to `plugin/hats/` in any hook or skill file
 - [ ] No remaining references to `plugin/workflows.yml` in any file
 - [ ] Workflow selection sub-skill removed or deprecated
 - [ ] Hat transitions in execute/advance skills use stage hat sequence
-- [ ] Backward compat: `.haiku/hats/` project-level overrides still checked as fallback
+- [ ] Backward compat: `.haiku/hats/` project-level hat files checked as augmentation
 - [ ] `hku_resolve_hat_instructions` falls back to ideation studio `research` stage when no active stage is configured (legacy projects without `.haiku/settings.yml` always have hat context)
 
 ## Risks
