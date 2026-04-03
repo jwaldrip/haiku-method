@@ -3,7 +3,6 @@
 #
 # Hats define roles (builder, reviewer, planner, etc.).
 # Definitions live in per-hat files at stages/{stage}/hats/{hat}.md.
-# Fallback: inline ## {hat-name} sections in STAGE.md (backward compat).
 # Project-level overrides can be placed in .haiku/hats/*.md for augmentation.
 #
 # Usage:
@@ -23,20 +22,6 @@ HAT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 source "$HAT_SCRIPT_DIR/config.sh"
 # shellcheck source=stage.sh
 source "$HAT_SCRIPT_DIR/stage.sh"
-
-# Extract a hat section from a STAGE.md file
-# Reads from ## {hat-name} to the next ## heading or EOF
-# Usage: hku_extract_hat_section <stage_file> <hat_name>
-hku_extract_hat_section() {
-  local stage_file="$1"
-  local hat_name="$2"
-  awk -v hat="## ${hat_name}" '
-    BEGIN { found=0 }
-    $0 == hat || $0 ~ "^"hat"[[:space:]]" { found=1; next }
-    found && /^## / { exit }
-    found { print }
-  ' "$stage_file"
-}
 
 # Get the hat sequence for a stage (replaces workflow lookup)
 # Usage: hku_get_hat_sequence <stage_name> <studio_name>
@@ -80,7 +65,7 @@ hku_resolve_hat_instructions() {
 
   local merged=""
 
-  # Try file-based resolution first: {stage_dir}/hats/{hat_name}.md
+  # Resolve from file: {stage_dir}/hats/{hat_name}.md
   if [[ -n "$stage_file" && -f "$stage_file" ]]; then
     local stage_dir
     stage_dir=$(dirname "$stage_file")
@@ -88,9 +73,6 @@ hku_resolve_hat_instructions() {
     if [[ -f "$hat_file" ]]; then
       # Read hat file body (strip frontmatter)
       merged=$(awk '/^---$/{n++; next} n>=2' "$hat_file")
-    else
-      # Fallback: extract inline section from STAGE.md (backward compat)
-      merged=$(hku_extract_hat_section "$stage_file" "$hat_name")
     fi
   fi
 
@@ -157,9 +139,6 @@ load_hat_metadata() {
     if [[ -f "$hat_file" ]]; then
       # Read hat file body (strip frontmatter)
       section=$(awk '/^---$/{n++; next} n>=2' "$hat_file")
-    else
-      # Fallback: extract inline section from STAGE.md
-      section=$(hku_extract_hat_section "$stage_file" "$hat_name")
     fi
 
     if [[ -n "$section" ]]; then
