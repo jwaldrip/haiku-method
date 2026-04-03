@@ -627,86 +627,156 @@ Implement REST API endpoints for user authentication...
 				</div>
 			</section>
 
-			{/* Concrete Example: /haiku:new */}
+			{/* Concrete Walkthrough */}
 			<section className="px-4 py-16">
 				<div className="mx-auto max-w-5xl">
 					<div className="mb-10 text-center">
 						<h2 className="mb-3 text-3xl font-bold">
-							What Happens When You Run <code className="text-teal-600 dark:text-teal-400">/haiku:new</code>
+							Two Commands. That&apos;s It.
 						</h2>
 						<p className="mx-auto max-w-2xl text-stone-600 dark:text-stone-400">
-							A concrete walkthrough of the commands and what they trigger internally.
+							Everything in H·AI·K·U flows through two commands. Here&apos;s what happens under the hood.
 						</p>
 					</div>
 
-					<div className="space-y-6">
-						{/* Step 1 */}
-						<div className="rounded-xl border border-stone-200 bg-white p-6 dark:border-stone-800 dark:bg-stone-950">
-							<div className="mb-3 flex items-center gap-3">
-								<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-bold text-teal-700 dark:bg-teal-900 dark:text-teal-300">1</span>
-								<div>
-									<code className="text-sm font-bold text-teal-600 dark:text-teal-400">/haiku:new</code>
-									<span className="ml-2 text-sm text-stone-500">Create a new intent</span>
-								</div>
+					<div className="space-y-8">
+						{/* /haiku:new */}
+						<div className="rounded-xl border-2 border-teal-200 bg-teal-50/20 p-6 dark:border-teal-800 dark:bg-teal-950/10">
+							<div className="mb-5 flex items-center gap-3">
+								<code className="rounded-lg bg-teal-100 px-3 py-1.5 text-lg font-bold text-teal-700 dark:bg-teal-900 dark:text-teal-300">/haiku:new</code>
+								<span className="text-stone-500 dark:text-stone-400">Define the work</span>
 							</div>
-							<div className="rounded-lg bg-stone-50 p-4 font-mono text-xs text-stone-600 dark:bg-stone-900 dark:text-stone-400">
-								<div>1. Prompts for intent description</div>
-								<div>2. Reads project settings (<code>.haiku/settings.yml</code>)</div>
-								<div>3. Selects studio (default: ideation, or configured)</div>
-								<div>4. Creates intent slug from description</div>
-								<div>5. Initializes workspace via persistence adapter</div>
-								<div className="mt-2 text-stone-400">   git adapter: creates worktree at <code>haiku/&#123;slug&#125;/main</code></div>
-								<div className="text-stone-400">   filesystem adapter: creates directory at <code>.haiku/&#123;slug&#125;/</code></div>
-								<div className="mt-2">6. Writes <code>intent.md</code> with frontmatter and description</div>
-								<div>7. Enters the first stage of the selected studio</div>
+
+							<div className="grid gap-4 md:grid-cols-4">
+								{[
+									{
+										icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
+										label: "Describe",
+										detail: "Tell the AI what you want to accomplish",
+										who: "human",
+									},
+									{
+										icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+										label: "Discover",
+										detail: "AI explores codebase, docs, and constraints",
+										who: "ai",
+									},
+									{
+										icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>,
+										label: "Decompose",
+										detail: "AI proposes units with criteria. Human refines.",
+										who: "both",
+									},
+									{
+										icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+										label: "Approve",
+										detail: "Human validates scope, criteria, and approach",
+										who: "human",
+									},
+								].map((step) => (
+									<div key={step.label} className="rounded-lg border border-teal-200 bg-white p-4 dark:border-teal-800 dark:bg-stone-950">
+										<div className="mb-2 flex items-center gap-2">
+											<span className="text-teal-600 dark:text-teal-400">{step.icon}</span>
+											<span className="text-sm font-semibold text-stone-900 dark:text-stone-100">{step.label}</span>
+										</div>
+										<p className="mb-2 text-xs text-stone-600 dark:text-stone-400">{step.detail}</p>
+										<span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
+											step.who === "human" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
+											: step.who === "ai" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+											: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+										}`}>
+											{step.who === "both" ? "collaborative" : step.who}
+										</span>
+									</div>
+								))}
+							</div>
+
+							<div className="mt-4 rounded-lg bg-teal-100/50 p-3 text-xs text-teal-800 dark:bg-teal-900/20 dark:text-teal-200">
+								<strong>Output:</strong> An intent directory with <code>intent.md</code>, units with criteria and dependencies, discovery doc, and a workspace initialized by the persistence adapter.
 							</div>
 						</div>
 
-						{/* Step 2 */}
-						<div className="rounded-xl border border-stone-200 bg-white p-6 dark:border-stone-800 dark:bg-stone-950">
-							<div className="mb-3 flex items-center gap-3">
-								<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">2</span>
-								<div>
-									<code className="text-sm font-bold text-indigo-600 dark:text-indigo-400">/haiku:run</code>
-									<span className="ml-2 text-sm text-stone-500">Run the stage pipeline (continuous mode)</span>
-								</div>
-							</div>
-							<div className="rounded-lg bg-stone-50 p-4 font-mono text-xs text-stone-600 dark:bg-stone-900 dark:text-stone-400">
-								<div>1. Reads studio definition to get stage order</div>
-								<div>2. For each stage in order:</div>
-								<div className="ml-4">a. Loads STAGE.md — hats, review mode, requires/produces</div>
-								<div className="ml-4">b. Loads knowledge: global pool + prior stage artifacts</div>
-								<div className="ml-4">c. Runs the stage loop: Plan → Build → Review → Gate</div>
-								<div className="ml-4">d. If gate = <span className="text-green-500">advance</span>: saves artifacts, moves to next stage</div>
-								<div className="ml-4">e. If gate = <span className="text-amber-500">revise</span>: loops back within stage</div>
-								<div className="ml-4">f. If gate = <span className="text-rose-500">go back</span>: returns to previous stage</div>
-								<div className="mt-2">3. All stages complete → triggers delivery via persistence adapter</div>
-								<div className="text-stone-400">   git adapter: opens pull request</div>
-								<div className="text-stone-400">   filesystem adapter: copies to output directory</div>
-							</div>
+						{/* Arrow */}
+						<div className="flex justify-center">
+							<svg className="h-8 w-8 text-stone-300 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+							</svg>
 						</div>
 
-						{/* Step 3 */}
-						<div className="rounded-xl border border-stone-200 bg-white p-6 dark:border-stone-800 dark:bg-stone-950">
-							<div className="mb-3 flex items-center gap-3">
-								<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700 dark:bg-amber-900 dark:text-amber-300">3</span>
-								<div>
-									<code className="text-sm font-bold text-amber-600 dark:text-amber-400">/haiku:execute</code>
-									<span className="ml-2 text-sm text-stone-500">Drive unit implementations within a stage</span>
+						{/* /haiku:run */}
+						<div className="rounded-xl border-2 border-indigo-200 bg-indigo-50/20 p-6 dark:border-indigo-800 dark:bg-indigo-950/10">
+							<div className="mb-5 flex items-center gap-3">
+								<code className="rounded-lg bg-indigo-100 px-3 py-1.5 text-lg font-bold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">/haiku:run</code>
+								<span className="text-stone-500 dark:text-stone-400">Do the work</span>
+							</div>
+
+							{/* Stage pipeline visualization */}
+							<div className="mb-6 overflow-x-auto">
+								<div className="flex items-center gap-2 min-w-max pb-2">
+									{[
+										{ stage: "inception", color: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800" },
+										{ stage: "design", color: "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/40 dark:text-pink-300 dark:border-pink-800" },
+										{ stage: "product", color: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800" },
+										{ stage: "development", color: "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800" },
+										{ stage: "operations", color: "bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-300 dark:border-cyan-800" },
+										{ stage: "security", color: "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-800" },
+									].map((s, i) => (
+										<div key={s.stage} className="flex items-center gap-2">
+											<div className={`rounded-lg border px-3 py-2 text-center ${s.color}`}>
+												<div className="text-xs font-bold">{s.stage}</div>
+												<div className="mt-1 text-[9px] opacity-70">hat sequence</div>
+											</div>
+											{i < 5 && (
+												<svg className="h-4 w-4 shrink-0 text-stone-300 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+												</svg>
+											)}
+										</div>
+									))}
+									<div className="flex items-center gap-2">
+										<svg className="h-4 w-4 shrink-0 text-stone-300 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+										</svg>
+										<div className="rounded-lg border border-green-300 bg-green-100 px-3 py-2 text-center text-xs font-bold text-green-700 dark:border-green-800 dark:bg-green-900/40 dark:text-green-300">
+											deliver
+										</div>
+									</div>
 								</div>
 							</div>
-							<div className="rounded-lg bg-stone-50 p-4 font-mono text-xs text-stone-600 dark:bg-stone-900 dark:text-stone-400">
-								<div>1. Reads current stage state from <code>iteration.json</code></div>
-								<div>2. Runs DAG resolver to find next ready unit</div>
-								<div>3. For the target unit:</div>
-								<div className="ml-4">a. Spawns planner hat → reads unit, plans approach</div>
-								<div className="ml-4">b. Spawns builder hat → executes plan, produces artifacts</div>
-								<div className="ml-4">c. Spawns reviewer hat → evaluates against criteria</div>
-								<div className="ml-4">d. If criteria met: mark unit <span className="text-green-500">done</span>, increment bolt count</div>
-								<div className="ml-4">e. If criteria not met: loop back to builder (new bolt)</div>
-								<div className="mt-2">4. When all units done → stage review gate triggers</div>
-								<div>5. Persistence adapter saves after each bolt</div>
-								<div className="text-stone-400">   git adapter: commits with structured message</div>
+
+							{/* What happens inside each stage */}
+							<div className="grid gap-4 md:grid-cols-3">
+								<div className="rounded-lg border border-indigo-200 bg-white p-4 dark:border-indigo-800 dark:bg-stone-950">
+									<div className="mb-2 flex items-center gap-2">
+										<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">A</span>
+										<span className="text-sm font-semibold text-stone-900 dark:text-stone-100">Load Context</span>
+									</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Reads STAGE.md for hat sequence. Loads prior stage outputs + global knowledge. Resolves units from DAG.
+									</p>
+								</div>
+								<div className="rounded-lg border border-indigo-200 bg-white p-4 dark:border-indigo-800 dark:bg-stone-950">
+									<div className="mb-2 flex items-center gap-2">
+										<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">B</span>
+										<span className="text-sm font-semibold text-stone-900 dark:text-stone-100">Run Hats</span>
+									</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Spawns fresh agents for each hat in the stage&apos;s sequence. Each hat works on units, advancing through the DAG. Failed reviews loop back.
+									</p>
+								</div>
+								<div className="rounded-lg border border-indigo-200 bg-white p-4 dark:border-indigo-800 dark:bg-stone-950">
+									<div className="mb-2 flex items-center gap-2">
+										<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">C</span>
+										<span className="text-sm font-semibold text-stone-900 dark:text-stone-100">Gate Check</span>
+									</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										All units done. Review gate fires: <span className="text-green-600">auto</span> advances, <span className="text-amber-600">ask</span> pauses for user, <span className="text-rose-600">external</span> blocks for team.
+									</p>
+								</div>
+							</div>
+
+							<div className="mt-4 rounded-lg bg-indigo-100/50 p-3 text-xs text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200">
+								<strong>Delivery:</strong> After the final stage, the persistence adapter delivers the work &mdash; git opens a PR, filesystem copies to output.
 							</div>
 						</div>
 					</div>
