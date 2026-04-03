@@ -165,10 +165,10 @@ Without this, intents default to a single dev pass. See [Passes](/docs/concepts/
 
 **Configuring design providers:**
 
-AI-DLC supports six design providers (Canva, Figma, OpenPencil, Pencil, Penpot, Excalidraw). Set `type: auto` for automatic detection from MCP tools, or pin a specific provider:
+H·AI·K·U supports six design providers (Canva, Figma, OpenPencil, Pencil, Penpot, Excalidraw). Set `type: auto` for automatic detection from MCP tools, or pin a specific provider:
 
 ```yaml
-# .ai-dlc/settings.yml
+# .haiku/settings.yml
 providers:
   design:
     type: figma

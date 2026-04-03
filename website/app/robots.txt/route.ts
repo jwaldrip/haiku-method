@@ -4,7 +4,7 @@ export const revalidate = false
 const SITE_URL = "https://ai-dlc.dev"
 
 export async function GET() {
-	const robotsTxt = `# AI-DLC robots.txt
+	const robotsTxt = `# H·AI·K·U robots.txt
 # https://ai-dlc.dev
 
 User-agent: *

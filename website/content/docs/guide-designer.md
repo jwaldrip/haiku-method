@@ -298,7 +298,7 @@ The selection produces a **design blueprint** that:
 
 ## Using Design Providers
 
-AI-DLC supports six design providers: **Canva**, **Figma**, **OpenPencil**, **Pencil**, **Penpot**, and **Excalidraw**. When a design provider is configured, AI-DLC automatically pulls design specs during elaboration, references them during building, and cross-checks implementations during review.
+H·AI·K·U supports six design providers: **Canva**, **Figma**, **OpenPencil**, **Pencil**, **Penpot**, and **Excalidraw**. When a design provider is configured, H·AI·K·U automatically pulls design specs during elaboration, references them during building, and cross-checks implementations during review.
 
 ### Choosing a Provider
 
@@ -311,7 +311,7 @@ AI-DLC supports six design providers: **Canva**, **Figma**, **OpenPencil**, **Pe
 | Penpot | `penpot` | Self-hosted, SVG-native, components |
 | Excalidraw | `excalidraw` | Quick diagrams, architecture sketches |
 
-Or set `type: auto` and AI-DLC detects your provider from available MCP tools.
+Or set `type: auto` and H·AI·K·U detects your provider from available MCP tools.
 
 ### Design References in Units
 
@@ -327,7 +327,7 @@ These references resolve automatically during execution, so builders can pull th
 
 ### Customizing Provider Behavior
 
-Add project-specific design conventions in `.ai-dlc/providers/design.md`:
+Add project-specific design conventions in `.haiku/providers/design.md`:
 
 ```markdown
 ---
