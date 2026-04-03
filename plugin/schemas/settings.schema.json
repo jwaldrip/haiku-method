@@ -89,6 +89,12 @@
 			"default": "editorial",
 			"description": "Default design archetype for autonomous mode elaboration when no design knowledge exists."
 		},
+		"studio": {
+			"type": "string",
+			"description": "The studio (lifecycle template) for this project. Studios define the ordered sequence of stages.",
+			"default": "ideation",
+			"examples": ["ideation", "software"]
+		},
 		"model_profiles": {
 			"type": "object",
 			"description": "Map hats to model tiers for cost optimization. Defaults to inheriting the session model for all hats.",
