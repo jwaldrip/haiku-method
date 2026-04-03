@@ -216,7 +216,7 @@ The user will use the "Other" free-text input to describe the follow-up. Engage 
 
 Generate a slug for the new intent derived from the user's description (e.g., `fix-api-error-handling`, `add-pagination-support`).
 
-Create `.haiku/{new-slug}/intent.md` with the `iterates_on` field:
+Create `.haiku/intents/{new-slug}/intent.md` with the `iterates_on` field:
 
 ```markdown
 ---
@@ -277,7 +277,7 @@ After creating the intent scaffold, invoke `/haiku:elaborate {new-slug}` to let 
 **Slug:** {new-slug}
 **Iterates On:** {previous-slug} ({previous-title})
 
-The intent scaffold has been created at `.haiku/{new-slug}/intent.md`.
+The intent scaffold has been created at `.haiku/intents/{new-slug}/intent.md`.
 Transitioning to elaboration to flesh out the details...
 ```
 
