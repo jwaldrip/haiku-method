@@ -5,6 +5,8 @@ description: "A comprehensive methodology reimagining software development for t
 date: "2026-01-21"
 authors: ["Raja SP", "The Bushido Collective"]
 tags: ["methodology", "autonomous-agents", "ai-development", "sdlc", "hotl", "hitl"]
+archived: true
+superseded_by: "haiku-method"
 ---
 
 ## Acknowledgments & Attribution
