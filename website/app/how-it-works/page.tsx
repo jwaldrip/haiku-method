@@ -99,8 +99,120 @@ export default function HowItWorksPage() {
 				</div>
 			</section>
 
-			{/* The Core Loop */}
+			{/* Elaboration: The Human-AI Handshake */}
 			<section className="border-y border-stone-200 bg-stone-50 px-4 py-16 dark:border-stone-800 dark:bg-stone-900/50">
+				<div className="mx-auto max-w-5xl">
+					<div className="mb-10 text-center">
+						<h2 className="mb-3 text-3xl font-bold">
+							Elaboration: The Human-AI Handshake
+						</h2>
+						<p className="mx-auto max-w-2xl text-stone-600 dark:text-stone-400">
+							Before any autonomous work begins, human and AI collaborate to define
+							what gets built, why, and how success is measured. This is the most
+							important phase — it determines everything that follows.
+						</p>
+					</div>
+
+					<div className="grid gap-6 md:grid-cols-2">
+						{/* Human leads */}
+						<div className="rounded-xl border-2 border-teal-200 bg-teal-50/30 p-6 dark:border-teal-800 dark:bg-teal-950/10">
+							<h3 className="mb-3 text-lg font-semibold text-teal-700 dark:text-teal-300">
+								What the Human Provides
+							</h3>
+							<div className="space-y-3">
+								<div className="rounded-lg bg-white/70 p-3 dark:bg-stone-950/40">
+									<div className="mb-1 text-sm font-semibold text-teal-700 dark:text-teal-300">Intent</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Describes the problem and desired outcome in natural language. No templates required — just explain what you want to accomplish.
+									</p>
+								</div>
+								<div className="rounded-lg bg-white/70 p-3 dark:bg-stone-950/40">
+									<div className="mb-1 text-sm font-semibold text-teal-700 dark:text-teal-300">Decisions</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Studio selection, mode choice (continuous/discrete), and review gate approvals. The human controls the &ldquo;what&rdquo; and &ldquo;when&rdquo; — the AI proposes, the human decides.
+									</p>
+								</div>
+								<div className="rounded-lg bg-white/70 p-3 dark:bg-stone-950/40">
+									<div className="mb-1 text-sm font-semibold text-teal-700 dark:text-teal-300">Criteria validation</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Reviews the AI&apos;s proposed completion criteria and unit decomposition. Adjusts scope, adds constraints, removes unnecessary work.
+									</p>
+								</div>
+							</div>
+						</div>
+
+						{/* AI leads */}
+						<div className="rounded-xl border-2 border-indigo-200 bg-indigo-50/30 p-6 dark:border-indigo-800 dark:bg-indigo-950/10">
+							<h3 className="mb-3 text-lg font-semibold text-indigo-700 dark:text-indigo-300">
+								What the AI Produces
+							</h3>
+							<div className="space-y-3">
+								<div className="rounded-lg bg-white/70 p-3 dark:bg-stone-950/40">
+									<div className="mb-1 text-sm font-semibold text-indigo-700 dark:text-indigo-300">Discovery</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Explores the codebase, reads documentation, identifies patterns and constraints. Produces a discovery doc that grounds all subsequent work.
+									</p>
+								</div>
+								<div className="rounded-lg bg-white/70 p-3 dark:bg-stone-950/40">
+									<div className="mb-1 text-sm font-semibold text-indigo-700 dark:text-indigo-300">Decomposition</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Breaks the intent into units with dependencies (a DAG). Each unit has specific, verifiable completion criteria — not vague descriptions, but checkboxes the reviewer can verify.
+									</p>
+								</div>
+								<div className="rounded-lg bg-white/70 p-3 dark:bg-stone-950/40">
+									<div className="mb-1 text-sm font-semibold text-indigo-700 dark:text-indigo-300">Architecture</div>
+									<p className="text-xs text-stone-600 dark:text-stone-400">
+										Proposes the technical approach, identifies risks, and maps units to stages. The human reviews before any building starts.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* The handoff */}
+					<div className="mt-8 rounded-xl border border-stone-200 bg-white p-6 dark:border-stone-800 dark:bg-stone-950">
+						<h3 className="mb-4 font-semibold text-stone-900 dark:text-stone-100">
+							The Handoff: When Does AI Take Over?
+						</h3>
+						<div className="grid gap-6 md:grid-cols-2">
+							<div className="rounded-lg border-2 border-green-200 bg-green-50/30 p-4 dark:border-green-800 dark:bg-green-950/10">
+								<h4 className="mb-2 text-sm font-bold text-green-700 dark:text-green-300">Continuous Mode</h4>
+								<div className="space-y-2 text-xs text-stone-600 dark:text-stone-400">
+									<p>
+										<strong className="text-stone-900 dark:text-stone-100">Elaboration:</strong> Human and AI collaborate interactively — AI proposes, human refines, until criteria are approved.
+									</p>
+									<p>
+										<strong className="text-stone-900 dark:text-stone-100">Execution:</strong> AI drives autonomously through the stage pipeline. Each stage runs its own hat sequence (defined in STAGE.md), advancing to the next stage when the review gate passes. Gates set to <code className="text-green-600 dark:text-green-400">auto</code> advance immediately.
+									</p>
+									<p>
+										<strong className="text-stone-900 dark:text-stone-100">Human re-enters at:</strong> Review gates set to <code className="text-amber-600 dark:text-amber-400">ask</code> (user approves) or <code className="text-rose-600 dark:text-rose-400">external</code> (team reviews). Between gates, the AI runs unsupervised.
+									</p>
+								</div>
+							</div>
+							<div className="rounded-lg border-2 border-purple-200 bg-purple-50/30 p-4 dark:border-purple-800 dark:bg-purple-950/10">
+								<h4 className="mb-2 text-sm font-bold text-purple-700 dark:text-purple-300">Discrete Mode</h4>
+								<div className="space-y-2 text-xs text-stone-600 dark:text-stone-400">
+									<p>
+										<strong className="text-stone-900 dark:text-stone-100">Elaboration:</strong> Same interactive process — AI proposes criteria and decomposition, human validates.
+									</p>
+									<p>
+										<strong className="text-stone-900 dark:text-stone-100">Execution:</strong> Human invokes each stage manually with <code className="text-purple-600 dark:text-purple-400">/haiku:run</code>. Within a stage, the AI runs autonomously through that stage&apos;s hat sequence (e.g., planner→builder→reviewer for development, or threat-modeler→red-team→blue-team→reviewer for security), but it stops after the stage completes.
+									</p>
+									<p>
+										<strong className="text-stone-900 dark:text-stone-100">Human re-enters at:</strong> Every stage boundary. The human decides when to proceed, skip stages, or revise previous work. Maximum control over the pipeline.
+									</p>
+								</div>
+							</div>
+						</div>
+						<p className="mt-4 text-center text-sm text-stone-500 dark:text-stone-400">
+							In both modes, elaboration is always collaborative. The difference is who drives the stage transitions during execution.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			{/* The Core Loop */}
+			<section className="px-4 py-16">
 				<div className="mx-auto max-w-5xl">
 					<div className="mb-10 text-center">
 						<h2 className="mb-3 text-3xl font-bold">
@@ -668,47 +780,100 @@ Implement REST API endpoints for user authentication...
 					</div>
 
 					<div className="grid gap-6 md:grid-cols-2">
+						{/* Continuous */}
 						<div className="rounded-xl border-2 border-green-200 bg-green-50/30 p-6 dark:border-green-800 dark:bg-green-950/10">
-							<h3 className="mb-2 text-lg font-semibold text-green-700 dark:text-green-300">
+							<h3 className="mb-1 text-lg font-semibold text-green-700 dark:text-green-300">
 								Continuous (default)
 							</h3>
 							<p className="mb-4 text-sm text-stone-600 dark:text-stone-400">
-								Autopilot drives stages. User reviews at gates.
+								AI drives the pipeline. Human reviews at gates.
 							</p>
-							<div className="space-y-1 font-mono text-xs leading-relaxed">
-								<div><span className="text-blue-500">inception</span> <span className="text-stone-400">runs</span></div>
-								<div className="text-amber-500 ml-2">-- ask gate --</div>
-								<div><span className="text-pink-500">design</span> <span className="text-stone-400">runs</span></div>
-								<div className="text-amber-500 ml-2">-- ask gate --</div>
-								<div><span className="text-orange-500">product</span> <span className="text-stone-400">runs</span></div>
-								<div className="text-amber-500 ml-2">-- external gate -- <span className="text-stone-400">do we build this?</span></div>
-								<div><span className="text-green-500">development</span> <span className="text-stone-400">runs</span></div>
-								<div className="text-amber-500 ml-2">-- ask gate --</div>
-								<div><span className="text-cyan-500">operations</span> <span className="text-stone-400">runs</span></div>
-								<div className="text-stone-400 ml-2">-- auto gate --</div>
-								<div><span className="text-rose-500">security</span> <span className="text-stone-400">runs</span></div>
-								<div className="text-amber-500 ml-2">-- external gate -- <span className="text-stone-400">team signs off</span></div>
+							<div className="space-y-1.5">
+								{[
+									{ stage: "inception", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300", gate: "ask", gateLabel: "user approves" },
+									{ stage: "design", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300", gate: "ask", gateLabel: "user approves" },
+									{ stage: "product", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300", gate: "external", gateLabel: "team decides: do we build this?" },
+									{ stage: "development", color: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300", gate: "ask", gateLabel: "user approves" },
+									{ stage: "operations", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300", gate: "auto", gateLabel: "advances immediately" },
+									{ stage: "security", color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300", gate: "external", gateLabel: "team signs off" },
+								].map((s, i) => (
+									<div key={s.stage}>
+										<div className="flex items-center gap-2">
+											<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-200 dark:bg-green-800" title="AI drives">
+												<svg className="h-3 w-3 text-green-700 dark:text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+											</span>
+											<span className={`rounded-md px-2.5 py-1 text-xs font-semibold ${s.color}`}>
+												{s.stage}
+											</span>
+											<span className="text-[10px] text-stone-400">AI runs autonomously</span>
+										</div>
+										{i < 5 && (
+											<div className="ml-2.5 flex items-center gap-2 border-l-2 border-dashed border-stone-200 py-1 pl-4 dark:border-stone-700">
+												<span className={`h-2 w-2 rounded-full ${s.gate === "auto" ? "bg-green-400" : s.gate === "ask" ? "bg-amber-400" : "bg-rose-400"}`} />
+												<span className={`text-[10px] font-medium ${s.gate === "auto" ? "text-green-600 dark:text-green-400" : s.gate === "ask" ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"}`}>
+													{s.gate} &mdash; {s.gateLabel}
+												</span>
+											</div>
+										)}
+									</div>
+								))}
 							</div>
 						</div>
 
+						{/* Discrete */}
 						<div className="rounded-xl border-2 border-purple-200 bg-purple-50/30 p-6 dark:border-purple-800 dark:bg-purple-950/10">
-							<h3 className="mb-2 text-lg font-semibold text-purple-700 dark:text-purple-300">
+							<h3 className="mb-1 text-lg font-semibold text-purple-700 dark:text-purple-300">
 								Discrete
 							</h3>
 							<p className="mb-4 text-sm text-stone-600 dark:text-stone-400">
-								User invokes each stage explicitly. Full control.
+								Human drives the pipeline. Invokes each stage explicitly.
 							</p>
-							<div className="space-y-1 font-mono text-xs leading-relaxed">
-								<div><span className="text-stone-400">user:</span> <span className="text-blue-500">/haiku:stage inception</span></div>
-								<div className="text-amber-500 ml-2">-- review --</div>
-								<div><span className="text-stone-400">user:</span> <span className="text-pink-500">/haiku:stage design</span></div>
-								<div className="text-amber-500 ml-2">-- review --</div>
-								<div><span className="text-stone-400">user:</span> <span className="text-orange-500">/haiku:stage product</span></div>
-								<div className="text-amber-500 ml-2">-- review --</div>
-								<div><span className="text-stone-400">user:</span> <span className="text-green-500">/haiku:stage development</span></div>
-								<div className="text-amber-500 ml-2">-- review --</div>
-								<div><span className="text-stone-400">...</span> <span className="text-stone-400">each stage user-invoked</span></div>
+							<div className="space-y-1.5">
+								{[
+									{ stage: "inception", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+									{ stage: "design", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300" },
+									{ stage: "product", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" },
+									{ stage: "development", color: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+									{ stage: "operations", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
+									{ stage: "security", color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" },
+								].map((s, i) => (
+									<div key={s.stage}>
+										<div className="flex items-center gap-2">
+											<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-200 dark:bg-purple-800" title="Human invokes">
+												<svg className="h-3 w-3 text-purple-700 dark:text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+											</span>
+											<code className="text-[10px] text-purple-600 dark:text-purple-400">/haiku:run {s.stage}</code>
+											<span className={`rounded-md px-2.5 py-1 text-xs font-semibold ${s.color}`}>
+												{s.stage}
+											</span>
+										</div>
+										{i < 5 && (
+											<div className="ml-2.5 flex items-center gap-2 border-l-2 border-dashed border-stone-200 py-1 pl-4 dark:border-stone-700">
+												<span className="h-2 w-2 rounded-full bg-purple-400" />
+												<span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">
+													user reviews &rarr; decides next stage
+												</span>
+											</div>
+										)}
+									</div>
+								))}
 							</div>
+						</div>
+					</div>
+
+					{/* Legend */}
+					<div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-stone-500 dark:text-stone-400">
+						<div className="flex items-center gap-1.5">
+							<span className="h-2 w-2 rounded-full bg-green-400" />
+							<span>auto — advances immediately</span>
+						</div>
+						<div className="flex items-center gap-1.5">
+							<span className="h-2 w-2 rounded-full bg-amber-400" />
+							<span>ask — user approves to proceed</span>
+						</div>
+						<div className="flex items-center gap-1.5">
+							<span className="h-2 w-2 rounded-full bg-rose-400" />
+							<span>external — team review required</span>
 						</div>
 					</div>
 				</div>
