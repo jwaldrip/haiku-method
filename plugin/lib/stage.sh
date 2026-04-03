@@ -151,18 +151,46 @@ hku_resolve_stage_inputs() {
     local src_stage src_output
     src_stage=$(echo "$entry" | jq -r '.stage')
     src_output=$(echo "$entry" | jq -r '.output')
-
-    local src_outputs_dir
-    src_outputs_dir=$(hku_resolve_stage_outputs_dir "$src_stage" "$studio" 2>/dev/null || echo "")
+    local src_scope
+    src_scope=$(echo "$entry" | jq -r '.scope // "intent"')
 
     local resolved_path=""
-    if [[ -n "$src_outputs_dir" && -f "${src_outputs_dir}/${src_output}" ]]; then
-      resolved_path="${src_outputs_dir}/${src_output}"
+    local scope="$src_scope"
+
+    if [[ -n "$intent_dir" ]]; then
+      case "$scope" in
+        project)
+          # Project-scoped: look in .haiku/knowledge/
+          local repo_root
+          repo_root=$(find_repo_root 2>/dev/null || echo "")
+          if [[ -n "$repo_root" && -f "${repo_root}/.haiku/knowledge/${src_output}" ]]; then
+            resolved_path="${repo_root}/.haiku/knowledge/${src_output}"
+          fi
+          ;;
+        stage)
+          # Stage-scoped: look in intent's stages/{src_stage}/
+          if [[ -f "${intent_dir}/stages/${src_stage}/${src_output}" ]]; then
+            resolved_path="${intent_dir}/stages/${src_stage}/${src_output}"
+          fi
+          ;;
+        *)
+          # Intent-scoped (default): look in intent knowledge/ and stages/{src_stage}/outputs/
+          if [[ -f "${intent_dir}/knowledge/${src_output}" ]]; then
+            resolved_path="${intent_dir}/knowledge/${src_output}"
+          elif [[ -f "${intent_dir}/stages/${src_stage}/outputs/${src_output}" ]]; then
+            resolved_path="${intent_dir}/stages/${src_stage}/outputs/${src_output}"
+          fi
+          ;;
+      esac
     fi
 
-    local scope="intent"
-    if [[ -n "$intent_dir" && -f "${intent_dir}/${src_output}" ]]; then
-      resolved_path="${intent_dir}/${src_output}"
+    # Fallback to built-in stage output definition
+    if [[ -z "$resolved_path" ]]; then
+      local src_outputs_dir
+      src_outputs_dir=$(hku_resolve_stage_outputs_dir "$src_stage" "$studio" 2>/dev/null || echo "")
+      if [[ -n "$src_outputs_dir" && -f "${src_outputs_dir}/${src_output}" ]]; then
+        resolved_path="${src_outputs_dir}/${src_output}"
+      fi
     fi
 
     local obj

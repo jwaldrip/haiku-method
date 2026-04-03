@@ -156,6 +156,20 @@ hku_migrate_intent_frontmatter() {
   local migration_date
   migration_date=$(date +%Y-%m-%d)
 
+  # Validate interpolated values to prevent shell injection in yq expression
+  if [[ ! "$active_stage" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    echo "haiku: invalid active_stage '$active_stage', skipping frontmatter transform" >&2
+    return 1
+  fi
+  if [[ ! "$slug" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    echo "haiku: invalid slug '$slug', skipping frontmatter transform" >&2
+    return 1
+  fi
+  if [[ ! "$migration_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    echo "haiku: invalid migration_date '$migration_date', skipping frontmatter transform" >&2
+    return 1
+  fi
+
   # Transform frontmatter in-place using yq
   local tmp="${new_file}.tmp.$$"
   yq --front-matter=process '

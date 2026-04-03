@@ -82,7 +82,7 @@ yaml_get_simple() {
 DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@.*/@@' || echo "main")
 if [ "$CURRENT_BRANCH" = "$DEFAULT_BRANCH" ]; then
   REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-  for reconcile_intent_file in "$REPO_ROOT"/.haiku/*/intent.md; do
+  for reconcile_intent_file in "$REPO_ROOT"/.haiku/intents/*/intent.md; do
     [ -f "$reconcile_intent_file" ] || continue
     reconcile_dir=$(dirname "$reconcile_intent_file")
     reconcile_status=$(_state_yaml_get_simple "status" "pending" < "$reconcile_intent_file")
@@ -138,10 +138,10 @@ if [ -z "$ITERATION_JSON" ]; then
     echo ""
     echo "**Project maturity:** greenfield"
     echo ""
-    echo "No active H·AI·K·U task. This looks like a new project — run \`/ai-dlc:elaborate\` to start defining your first intent."
+    echo "No active H·AI·K·U task. This looks like a new project — run \`/haiku:elaborate\` to start defining your first intent."
     echo ""
     if [ ! -f ".haiku/settings.yml" ]; then
-      echo "> **First time?** Run \`/ai-dlc:setup\` to configure H·AI·K·U for this project (auto-detects providers, VCS settings, etc.)"
+      echo "> **First time?** Run \`/haiku:setup\` to configure H·AI·K·U for this project (auto-detects providers, VCS settings, etc.)"
       echo ""
     fi
     # Inject provider context
@@ -164,8 +164,8 @@ if [ -z "$ITERATION_JSON" ]; then
     echo "| Design decisions | None | Any |"
     echo ""
     echo "**Routing:**"
-    echo "- Simple fix/typo/rename → \`/ai-dlc:quick <task>\`"
-    echo "- New feature / multi-file / architecture → \`/ai-dlc:elaborate\`"
+    echo "- Simple fix/typo/rename → \`/haiku:quick <task>\`"
+    echo "- New feature / multi-file / architecture → \`/haiku:elaborate\`"
     echo ""
     echo "Always confirm your routing suggestion with the user before proceeding."
     echo ""
@@ -177,14 +177,14 @@ if [ -z "$ITERATION_JSON" ]; then
   declare -A BRANCH_INTENTS
 
   # 1. Check filesystem first (highest priority - source of truth)
-  for intent_file in .haiku/*/intent.md; do
+  for intent_file in .haiku/intents/*/intent.md; do
     [ -f "$intent_file" ] || continue
     dir=$(dirname "$intent_file")
     slug=$(basename "$dir")
     # Use fast yaml extraction (no subprocess)
     status=$(yaml_get_simple "status" "active" < "$intent_file")
     [ "$status" = "active" ] || continue
-    studio=$(yaml_get_simple "studio" "software" < "$intent_file")
+    studio=$(yaml_get_simple "studio" "ideation" < "$intent_file")
 
     # Get unit summary if DAG functions are available
     summary=""
@@ -260,10 +260,10 @@ if [ -z "$ITERATION_JSON" ]; then
       echo ""
     fi
 
-    echo "**To resume:** \`/ai-dlc:resume <slug>\` or \`/ai-dlc:resume\` if only one"
+    echo "**To resume:** \`/haiku:resume <slug>\` or \`/haiku:resume\` if only one"
     echo ""
     if [ ! -f ".haiku/settings.yml" ]; then
-      echo "> **Tip:** Run \`/ai-dlc:setup\` to configure providers and VCS settings. This enables automatic ticket sync during elaboration."
+      echo "> **Tip:** Run \`/haiku:setup\` to configure providers and VCS settings. This enables automatic ticket sync during elaboration."
       echo ""
     fi
     # Inject provider context for pre-elaboration awareness
@@ -281,10 +281,10 @@ if [ -z "$ITERATION_JSON" ]; then
       echo "**Project maturity:** $PROJECT_MATURITY"
       echo ""
     fi
-    echo "No active H·AI·K·U task. Run \`/ai-dlc:elaborate\` to start a new task."
+    echo "No active H·AI·K·U task. Run \`/haiku:elaborate\` to start a new task."
     echo ""
     if [ ! -f ".haiku/settings.yml" ]; then
-      echo "> **First time?** Run \`/ai-dlc:setup\` to configure H·AI·K·U for this project (auto-detects providers, VCS settings, etc.)"
+      echo "> **First time?** Run \`/haiku:setup\` to configure H·AI·K·U for this project (auto-detects providers, VCS settings, etc.)"
       echo ""
     fi
     # Inject provider context
@@ -307,8 +307,8 @@ if [ -z "$ITERATION_JSON" ]; then
     echo "| Design decisions | None | Any |"
     echo ""
     echo "**Routing:**"
-    echo "- Simple fix/typo/rename → \`/ai-dlc:quick <task>\`"
-    echo "- New feature / multi-file / architecture → \`/ai-dlc:elaborate\`"
+    echo "- Simple fix/typo/rename → \`/haiku:quick <task>\`"
+    echo "- New feature / multi-file / architecture → \`/haiku:elaborate\`"
     echo ""
     echo "Always confirm your routing suggestion with the user before proceeding."
     echo ""
@@ -318,7 +318,7 @@ fi
 
 # Validate JSON syntax
 if ! echo "$ITERATION_JSON" | hku_json_validate; then
-  echo "Warning: Invalid iteration.json format. Run /ai-dlc:reset to clear state." >&2
+  echo "Warning: Invalid iteration.json format. Run /haiku:reset to clear state." >&2
   exit 0
 fi
 
@@ -402,6 +402,7 @@ if [ -n "$INTENT_DIR" ] && [ -f "${INTENT_DIR}/intent.md" ]; then
   ACTIVE_STAGE=$(yaml_get_simple "active_stage" "" < "${INTENT_DIR}/intent.md")
   STUDIO=$(yaml_get_simple "studio" "ideation" < "${INTENT_DIR}/intent.md")
 fi
+[ -z "$ACTIVE_STAGE" ] && ACTIVE_STAGE="research"
 [ -z "$STUDIO" ] && STUDIO="ideation"
 
 # Get hat sequence from stage
@@ -446,7 +447,7 @@ if [ -d "$LEARNINGS_DIR" ]; then
     echo ""
     echo "📚 **${LEARNING_COUNT} compound learnings available** in \`docs/solutions/\`."
     echo "The Planner hat will search these automatically before planning."
-    echo "Use \`/ai-dlc:compound\` to capture new learnings."
+    echo "Use \`/haiku:compound\` to capture new learnings."
   fi
 fi
 
@@ -496,7 +497,7 @@ if [ -n "$INTENT_DIR" ] && [ -f "${INTENT_DIR}/discovery.md" ]; then
   if [ "$DISCOVERY_COUNT" -gt 0 ]; then
     echo "### Discovery Log"
     echo ""
-    echo "**${DISCOVERY_COUNT} sections** of elaboration findings available in \`.haiku/${INTENT_SLUG}/discovery.md\`"
+    echo "**${DISCOVERY_COUNT} sections** of elaboration findings available in \`.haiku/intents/${INTENT_SLUG}/discovery.md\`"
     echo ""
   fi
 fi
@@ -596,7 +597,7 @@ fi
 
 # Display Agent Teams status if enabled
 if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
-  TEAM_NAME="ai-dlc-${INTENT_SLUG}"
+  TEAM_NAME="haiku-${INTENT_SLUG}"
   TEAM_CONFIG="${CLAUDE_CONFIG_DIR}/teams/${TEAM_NAME}/config.json"
   if [ -f "$TEAM_CONFIG" ]; then
     echo "### Agent Teams"
@@ -763,7 +764,7 @@ fi
 
 echo "---"
 echo ""
-echo "**Commands:** \`/ai-dlc:execute\` (continue loop) | \`/ai-dlc:construct\` (deprecated alias) | \`/ai-dlc:reset\` (abandon task)"
+echo "**Commands:** \`/haiku:execute\` (continue loop) | \`/haiku:construct\` (deprecated alias) | \`/haiku:reset\` (abandon task)"
 echo ""
 echo "> **No file changes?** If this hat's work is complete but no files were modified,"
 echo "> save findings to scratchpad and read \`plugin/skills/execute/subskills/advance/SKILL.md\` then execute it to continue."

@@ -33,7 +33,8 @@ _persistence_git_create_workspace() {
   done
 
   local repo_root
-  repo_root=$(git rev-parse --show-toplevel 2>/dev/null || git worktree list --porcelain | head -1 | sed 's/^worktree //')
+  repo_root=$(git worktree list --porcelain 2>/dev/null | head -1 | sed 's/^worktree //')
+  repo_root="${repo_root:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 
   # Resolve default branch
   local default_branch
@@ -53,11 +54,10 @@ _persistence_git_create_workspace() {
 
     mkdir -p "${repo_root}/.haiku/worktrees"
 
-    # Ensure .haiku/worktrees/ is gitignored
+    # Ensure .haiku/worktrees/ is gitignored (added to .gitignore, committed by user or next explicit commit)
     if ! grep -q '\.haiku/worktrees/' "${repo_root}/.gitignore" 2>/dev/null; then
       echo '.haiku/worktrees/' >> "${repo_root}/.gitignore"
-      git add "${repo_root}/.gitignore"
-      git commit -m "chore: gitignore .haiku/worktrees" 2>/dev/null || true
+      echo "haiku: added .haiku/worktrees/ to .gitignore (will be included in next commit)" >&2
     fi
 
     if [ ! -d "$intent_worktree" ]; then
@@ -210,7 +210,8 @@ _persistence_git_cleanup() {
   done
 
   local repo_root
-  repo_root=$(git rev-parse --show-toplevel 2>/dev/null || git worktree list --porcelain | head -1 | sed 's/^worktree //')
+  repo_root=$(git worktree list --porcelain 2>/dev/null | head -1 | sed 's/^worktree //')
+  repo_root="${repo_root:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 
   if [ -n "$unit_slug" ]; then
     local unit_worktree="${repo_root}/.haiku/worktrees/${intent_slug}-${unit_slug}"

@@ -60,7 +60,7 @@ _persistence_filesystem_save() {
   else
     # Copy entire workspace into snapshot
     if [ -d "${base_dir}/workspace" ]; then
-      cp -r "${base_dir}/workspace/"* "$snapshot_dir/" 2>/dev/null || true
+      cp -r "${base_dir}/workspace/." "$snapshot_dir/" 2>/dev/null || true
     fi
   fi
 

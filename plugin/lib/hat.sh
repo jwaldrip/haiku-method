@@ -67,9 +67,9 @@ hku_resolve_hat_instructions() {
     return 1
   fi
 
-  # Default fallback: development stage in software studio
-  [ -z "$stage_name" ] && stage_name="development"
-  [ -z "$studio_name" ] && studio_name="software"
+  # Default fallback: research stage in ideation studio
+  [ -z "$stage_name" ] && stage_name="research"
+  [ -z "$studio_name" ] && studio_name="ideation"
 
   local stage_file
   stage_file=$(hku_resolve_stage "$stage_name" "$studio_name" 2>/dev/null) || {
@@ -131,8 +131,8 @@ load_hat_metadata() {
   fi
 
   # Default fallback
-  [ -z "$stage_name" ] && stage_name="development"
-  [ -z "$studio_name" ] && studio_name="software"
+  [ -z "$stage_name" ] && stage_name="research"
+  [ -z "$studio_name" ] && studio_name="ideation"
 
   local description=""
   local stage_file
