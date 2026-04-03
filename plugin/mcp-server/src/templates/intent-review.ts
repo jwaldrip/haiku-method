@@ -1,4 +1,4 @@
-import type { ParsedIntent, ParsedUnit, CriterionItem, Section } from "@ai-dlc/shared";
+import type { ParsedIntent, ParsedUnit, CriterionItem, Section } from "@haiku/shared";
 import type { MockupInfo } from "./types.js";
 import { escapeHtml } from "./layout.js";
 import {

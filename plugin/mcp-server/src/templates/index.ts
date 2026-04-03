@@ -1,4 +1,4 @@
-import type { ParsedIntent, ParsedUnit, CriterionItem } from "@ai-dlc/shared";
+import type { ParsedIntent, ParsedUnit, CriterionItem } from "@haiku/shared";
 import { renderLayout } from "./layout.js";
 import { renderIntentReview } from "./intent-review.js";
 import { renderUnitReview } from "./unit-review.js";

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { getAllBlogPosts } from "@/lib/blog"
+import { getStudiosGrouped } from "@/lib/studios"
 
 const phases = [
 	{
@@ -54,40 +55,15 @@ const phases = [
 	},
 ]
 
-const studios = [
-	{
-		name: "Software",
-		domain: "Software Development",
-		stages: "Inception, Design, Product, Development, Operations, Security",
-		description:
-			"Git integration, test suites, CI/CD pipelines, deployment gates. The full software lifecycle with quality enforcement at every stage.",
-		color: "border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/30",
-	},
-	{
-		name: "Ideation",
-		domain: "Universal Default",
-		stages: "Research, Create, Review, Deliver",
-		description:
-			"The general-purpose studio. Works for any structured initiative — strategy, research, planning, or creative work.",
-		color: "border-teal-200 bg-teal-50 dark:border-teal-800 dark:bg-teal-950/30",
-	},
-	{
-		name: "Marketing",
-		domain: "Campaigns & Content",
-		stages: "Research, Creative, Review, Publish",
-		description:
-			"Brand guidelines, content calendars, audience targeting, performance analytics. Campaign planning through publication.",
-		color: "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30",
-	},
-	{
-		name: "Custom",
-		domain: "Your Domain",
-		stages: "Define your own stages",
-		description:
-			"Operations, research, legal, finance — create a studio for any domain with custom stages, roles, and quality gates.",
-		color: "border-stone-200 bg-stone-50 dark:border-stone-800 dark:bg-stone-950/30",
-	},
-]
+const categoryColors: Record<string, string> = {
+	Engineering: "border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/30",
+	"Go-to-Market": "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30",
+	"General Purpose": "border-teal-200 bg-teal-50 dark:border-teal-800 dark:bg-teal-950/30",
+}
+
+function titleCase(s: string): string {
+	return s.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+}
 
 const principles = [
 	{
@@ -114,6 +90,7 @@ const principles = [
 
 export default function Home() {
 	const recentPosts = getAllBlogPosts().slice(0, 3)
+	const studioGroups = getStudiosGrouped()
 
 	return (
 		<div>
@@ -125,7 +102,7 @@ export default function Home() {
 						H·AI·K·U
 					</h1>
 					<p className="mb-2 text-lg font-medium text-stone-500 dark:text-stone-400">
-						Structured Human-AI Collaboration
+						Human / AI Knowledge Unification
 					</p>
 					<p className="mx-auto mb-10 max-w-2xl text-lg text-stone-600 dark:text-stone-400">
 						A lifecycle orchestration system for any structured work.
@@ -213,24 +190,31 @@ export default function Home() {
 						</p>
 					</div>
 
-					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-						{studios.map((studio) => (
-							<div
-								key={studio.name}
-								className={`rounded-xl border p-6 ${studio.color}`}
-							>
-								<div className="mb-1 text-xs font-medium uppercase tracking-wider text-stone-400 dark:text-stone-500">
-									{studio.domain}
-								</div>
-								<h3 className="mb-2 text-lg font-semibold text-stone-900 dark:text-stone-100">
-									{studio.name}
+					<div className="space-y-8">
+						{Array.from(studioGroups.entries()).map(([category, studios]) => (
+							<div key={category}>
+								<h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+									{category}
 								</h3>
-								<p className="mb-3 text-xs text-stone-500 dark:text-stone-400">
-									{studio.stages}
-								</p>
-								<p className="text-sm text-stone-600 dark:text-stone-400">
-									{studio.description}
-								</p>
+								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+									{studios.map((studio) => (
+										<Link
+											key={studio.slug}
+											href={`/studios/${studio.slug}/`}
+											className={`rounded-xl border p-5 transition hover:shadow-md ${categoryColors[category] || categoryColors["General Purpose"]}`}
+										>
+											<h4 className="mb-1 text-base font-semibold text-stone-900 dark:text-stone-100">
+												{titleCase(studio.name)}
+											</h4>
+											<p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
+												{studio.stages.map(titleCase).join(" \u2192 ")}
+											</p>
+											<p className="text-sm text-stone-600 dark:text-stone-400 line-clamp-2">
+												{studio.description}
+											</p>
+										</Link>
+									))}
+								</div>
 							</div>
 						))}
 					</div>

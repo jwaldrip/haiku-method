@@ -16,51 +16,123 @@ When you create an intent with `/haiku:new`, H·AI·K·U selects or prompts for 
 
 ## Built-in Studios
 
-### Software Studio
+### Engineering
+
+#### Software
 
 The default for code-producing work. Full software development lifecycle from inception through security review.
 
 | Property | Value |
 |----------|-------|
 | **Stages** | inception, design, product, development, operations, security |
-| **Persistence** | git (branches + pull requests) |
+| **Persistence** | git |
 | **Delivery** | Pull request |
 
-```yaml
-# STUDIO.md frontmatter
----
-name: software
-description: Standard software development lifecycle
-stages: [inception, design, product, development, operations, security]
-persistence:
-  type: git
-  delivery: pull-request
----
-```
+Supports both single-stage (all disciplines merged) and multi-stage (sequential progression) execution modes.
 
-Supports both single-stage (all disciplines merged into one pass) and multi-stage (sequential discipline progression) execution modes. Single-stage is the default for most work.
+#### Data Pipeline
 
-### Ideation Studio
+Data engineering lifecycle for ETL pipelines, data warehouses, and analytics workflows.
 
-General-purpose lifecycle for creative, analytical, or exploratory work that doesn't fit a specialized domain. Works for content creation, research projects, documentation initiatives, or any work that follows a gather-create-review-deliver pattern.
+| Property | Value |
+|----------|-------|
+| **Stages** | discovery, extraction, transformation, validation, deployment |
+| **Persistence** | git |
+| **Delivery** | Pull request |
+
+#### Migration
+
+System and data migration lifecycle for platform transitions, version upgrades, and data moves.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | assessment, mapping, migrate, validation, cutover |
+| **Persistence** | git |
+| **Delivery** | Pull request |
+
+#### Incident Response
+
+Incident response lifecycle optimized for fast response with structured follow-through.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | triage, investigate, mitigate, resolve, postmortem |
+| **Persistence** | git |
+| **Delivery** | Pull request |
+
+#### Compliance
+
+Regulatory compliance lifecycle for audits, certifications (SOC2, HIPAA, GDPR, ISO 27001), and policy management.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | scope, assess, remediate, document, certify |
+| **Persistence** | git |
+| **Delivery** | Pull request |
+
+### Go-to-Market
+
+#### Sales
+
+Sales cycle lifecycle for managing deals from prospect research through close and handoff.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | research, qualification, proposal, negotiation, close |
+| **Persistence** | filesystem |
+| **Delivery** | Local |
+
+#### Marketing
+
+Campaign and content marketing lifecycle from audience research through launch and measurement.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | research, strategy, content, launch, measure |
+| **Persistence** | filesystem |
+| **Delivery** | Local |
+
+#### Customer Success
+
+Customer success lifecycle from onboarding through adoption, health monitoring, expansion, and renewal.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | onboarding, adoption, health-check, expansion, renewal |
+| **Persistence** | filesystem |
+| **Delivery** | Local |
+
+#### Product Strategy
+
+Product strategy lifecycle for defining what to build and why — discovery through stakeholder alignment.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | discovery, user-research, prioritization, roadmap, stakeholder-review |
+| **Persistence** | filesystem |
+| **Delivery** | Local |
+
+### General Purpose
+
+#### Ideation
+
+Universal lifecycle for creative, analytical, or exploratory work that doesn't fit a specialized domain.
 
 | Property | Value |
 |----------|-------|
 | **Stages** | research, create, review, deliver |
-| **Persistence** | filesystem (version snapshots) |
+| **Persistence** | filesystem |
 | **Delivery** | Local |
 
-```yaml
-# STUDIO.md frontmatter
----
-name: ideation
-description: Universal lifecycle for any creative or analytical work
-stages: [research, create, review, deliver]
-persistence:
-  type: filesystem
-  delivery: local
----
-```
+#### Documentation
+
+Technical documentation lifecycle for API docs, guides, runbooks, and knowledge bases.
+
+| Property | Value |
+|----------|-------|
+| **Stages** | audit, outline, draft, review, publish |
+| **Persistence** | git |
+| **Delivery** | Pull request |
 
 ## Configuring the Default Studio
 

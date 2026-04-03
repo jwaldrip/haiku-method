@@ -1,0 +1,28 @@
+---
+name: content
+description: Create campaign assets — copy, visuals, landing pages, emails
+hats: [content-creator, copy-editor]
+review: ask
+unit_types: [copy, visual, landing-page, email]
+inputs:
+  - stage: strategy
+    output: messaging-framework
+---
+
+# Content
+
+## Criteria Guidance
+
+Good criteria examples:
+- "All copy follows the messaging framework's tone guidelines and uses approved value propositions"
+- "Each asset includes a clear call-to-action aligned with the campaign goal"
+- "Landing page copy addresses at least 2 objections identified in audience research"
+
+Bad criteria examples:
+- "Content is written"
+- "Assets look good"
+- "Copy is on-brand"
+
+## Completion Signal
+
+Campaign assets exist for all planned channels. Copy follows the messaging framework and tone guidelines. Each asset has a clear call-to-action. Copy editor has refined all assets for clarity, consistency, and audience fit. Assets are ready for multi-channel distribution.

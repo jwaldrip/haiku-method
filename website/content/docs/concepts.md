@@ -411,7 +411,7 @@ If you `/clear` without the stop hook:
 
 1. Committed artifacts (`.haiku/`) are safe
 2. Ephemeral state persists in `.haiku/{slug}/state/` files
-3. Run `/haiku:execute` to continue
+3. Run `/haiku:run` to continue
 
 ## Iteration Through Stages
 

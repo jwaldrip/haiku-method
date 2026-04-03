@@ -24340,7 +24340,7 @@ function renderLayout(title, bodyContent, reviewDataJson) {
   <!-- Dark mode: system\u2192dark\u2192light\u2192system toggle -->
   <script>
     (function() {
-      const KEY = 'ai-dlc-review-theme';
+      const KEY = 'haiku-review-theme';
       function getEffective() {
         const s = localStorage.getItem(KEY);
         if (s === 'dark' || s === 'light') return s;
@@ -25358,7 +25358,7 @@ function renderDesignDirectionPage(data) {
 
 // src/server.ts
 var OpenReviewInput = external_exports.object({
-  intent_dir: external_exports.string().describe("Path to the intent directory (e.g., .ai-dlc/my-intent)"),
+  intent_dir: external_exports.string().describe("Path to the intent directory (e.g., .haiku/intents/my-intent)"),
   review_type: external_exports.enum(["intent", "unit"]).describe("Type of review: intent-level or unit-level"),
   target: external_exports.string().optional().describe("Unit slug to review (required for unit reviews)")
 });
@@ -25408,7 +25408,7 @@ var PickDesignDirectionInput = external_exports.object({
   title: external_exports.string().optional().describe("Optional page title (default: 'Design Direction')")
 });
 var server = new Server(
-  { name: "ai-dlc-review", version: "0.1.0" },
+  { name: "haiku-review", version: "0.1.0" },
   {
     capabilities: {
       tools: {},
@@ -25424,13 +25424,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "open_review",
-      description: "Open a visual review page in the browser for an AI-DLC intent or unit. Parses intent/unit data and serves an interactive HTML review page.",
+      description: "Open a visual review page in the browser for an H\xB7AI\xB7K\xB7U intent or unit. Parses intent/unit data and serves an interactive HTML review page.",
       inputSchema: {
         type: "object",
         properties: {
           intent_dir: {
             type: "string",
-            description: "Path to the intent directory (e.g., .ai-dlc/my-intent)"
+            description: "Path to the intent directory (e.g., .haiku/intents/my-intent)"
           },
           review_type: {
             type: "string",
@@ -25593,14 +25593,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   if (name === "open_review") {
     const input = OpenReviewInput.parse(args);
-    const allowedBase = resolve2(process.cwd(), ".ai-dlc");
+    const allowedBase = resolve2(process.cwd(), ".haiku");
     const intentDir = resolve2(process.cwd(), input.intent_dir);
     if (!intentDir.startsWith(`${allowedBase}/`) && intentDir !== allowedBase) {
       return {
         content: [
           {
             type: "text",
-            text: `Error: intent_dir must be within .ai-dlc/ (got: ${input.intent_dir})`
+            text: `Error: intent_dir must be within .haiku/ (got: ${input.intent_dir})`
           }
         ],
         isError: true
@@ -25878,7 +25878,7 @@ Parameters: ${parameters.length}`
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("AI-DLC Review MCP server running on stdio");
+  console.error("H\xB7AI\xB7K\xB7U Review MCP server running on stdio");
 }
 process.on("SIGINT", async () => {
   console.error("Shutting down...");

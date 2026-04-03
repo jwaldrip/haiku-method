@@ -1,0 +1,26 @@
+---
+name: triage
+description: Assess severity, identify blast radius, and assign ownership
+hats: [incident-commander, first-responder]
+review: auto
+unit_types: [triage, communication]
+inputs: []
+---
+
+# Triage
+
+## Criteria Guidance
+
+Good criteria examples:
+- "Incident brief includes severity level (SEV1-4) with justification based on user impact"
+- "Blast radius assessment identifies all affected services, regions, and customer segments"
+- "Communication plan specifies who has been notified and through which channels"
+
+Bad criteria examples:
+- "Severity is assessed"
+- "People are notified"
+- "Incident is triaged"
+
+## Completion Signal
+
+Incident brief exists with severity classification, blast radius assessment, and ownership assignment. Affected systems and user impact are documented. Initial communication has been sent to stakeholders. First-responder has confirmed the incident is reproducible and captured initial diagnostic data.

@@ -1,5 +1,5 @@
 {
-  "name": "@ai-dlc/mcp-server",
+  "name": "@haiku/mcp-server",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -8,7 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-dlc/shared": "workspace:*",
+    "@haiku/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.28.0",
     "zod": "^3.23.0"
   },

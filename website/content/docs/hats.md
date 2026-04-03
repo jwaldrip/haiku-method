@@ -254,6 +254,22 @@ Prepares content for distribution and publication.
 - Creates metadata, tags, and descriptions
 - Manages publication workflow and scheduling
 
+## Other Studio Hats
+
+H·AI·K·U ships with hats for all built-in studios. Each studio's stages define their own hat sequences tailored to the domain:
+
+- **Data Pipeline**: data-architect, schema-analyst, extractor, transformer, data-modeler, validator, pipeline-engineer, sre
+- **Migration**: migration-analyst, risk-assessor, schema-mapper, migration-engineer, validator, cutover-coordinator, rollback-engineer
+- **Incident Response**: incident-commander, first-responder, investigator, log-analyst, mitigator, verifier, engineer, postmortem-author
+- **Compliance**: compliance-analyst, auditor, risk-assessor, remediation-engineer, policy-writer, evidence-collector, audit-liaison
+- **Sales**: prospect-researcher, qualifier, deal-strategist, proposal-writer, solution-architect, negotiator, closer
+- **Marketing**: market-researcher, audience-analyst, strategist, content-creator, copy-editor, campaign-manager, analyst
+- **Customer Success**: onboarding-lead, adoption-coach, health-monitor, growth-strategist, renewal-manager
+- **Product Strategy**: market-explorer, user-researcher, prioritizer, roadmap-architect, presenter
+- **Documentation**: auditor, gap-analyst, architect, writer, editor, subject-matter-expert, publisher
+
+See [Studios](/docs/studios/) for the full stage pipelines and [Customization](/docs/customization/) for creating your own hats.
+
 ## Cross-Stage Hats
 
 Some hats operate across stages or at the intent level.

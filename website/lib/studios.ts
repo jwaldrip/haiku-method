@@ -1,0 +1,155 @@
+import fs from "node:fs"
+import path from "node:path"
+import matter from "gray-matter"
+
+const pluginStudiosDir = path.join(process.cwd(), "..", "plugin", "studios")
+
+export interface HatDefinition {
+	name: string
+	stage: string
+	studio: string
+	content: string
+}
+
+export interface StageDefinition {
+	name: string
+	description: string
+	hats: string[]
+	review: string
+	unitTypes: string[]
+	inputs: Array<{ stage: string; output: string }>
+	content: string
+	hatDefinitions: HatDefinition[]
+}
+
+export interface StudioDefinition {
+	slug: string
+	name: string
+	description: string
+	stages: string[]
+	persistence: { type: string; delivery: string }
+	content: string
+	stageDefinitions: StageDefinition[]
+	category: string
+}
+
+// Categorize studios by domain
+function categorizeStudio(slug: string, persistence: { type: string }): string {
+	const engineering = ["software", "data-pipeline", "migration", "incident-response", "compliance", "security-assessment"]
+	const gtm = ["sales", "marketing", "customer-success", "product-strategy"]
+	if (engineering.includes(slug)) return "Engineering"
+	if (gtm.includes(slug)) return "Go-to-Market"
+	return "General Purpose"
+}
+
+function parseHat(hatPath: string): HatDefinition | null {
+	if (!fs.existsSync(hatPath)) return null
+	const raw = fs.readFileSync(hatPath, "utf8")
+	const { data, content } = matter(raw)
+	return {
+		name: data.name || path.basename(hatPath, ".md"),
+		stage: data.stage || "",
+		studio: data.studio || "",
+		content: content.trim(),
+	}
+}
+
+function parseStage(stageDir: string): StageDefinition | null {
+	const stagePath = path.join(stageDir, "STAGE.md")
+	if (!fs.existsSync(stagePath)) return null
+	const raw = fs.readFileSync(stagePath, "utf8")
+	const { data, content } = matter(raw)
+
+	// Parse hats
+	const hatsDir = path.join(stageDir, "hats")
+	const hatDefinitions: HatDefinition[] = []
+	if (fs.existsSync(hatsDir)) {
+		const hatFiles = fs.readdirSync(hatsDir).filter((f) => f.endsWith(".md")).sort()
+		for (const hatFile of hatFiles) {
+			const hat = parseHat(path.join(hatsDir, hatFile))
+			if (hat) hatDefinitions.push(hat)
+		}
+	}
+
+	return {
+		name: data.name || path.basename(stageDir),
+		description: data.description || "",
+		hats: data.hats || [],
+		review: Array.isArray(data.review) ? data.review.join(", ") : data.review || "ask",
+		unitTypes: data.unit_types || [],
+		inputs: (data.inputs || []).map((i: { stage: string; output: string }) => ({
+			stage: i.stage,
+			output: i.output,
+		})),
+		content: content.trim(),
+		hatDefinitions,
+	}
+}
+
+function parseStudio(studioDir: string): StudioDefinition | null {
+	const studioPath = path.join(studioDir, "STUDIO.md")
+	if (!fs.existsSync(studioPath)) return null
+	const raw = fs.readFileSync(studioPath, "utf8")
+	const { data, content } = matter(raw)
+	const slug = path.basename(studioDir)
+
+	// Parse stages in order defined by frontmatter
+	const stageNames: string[] = data.stages || []
+	const stageDefinitions: StageDefinition[] = []
+	for (const stageName of stageNames) {
+		const stageDir = path.join(studioDir, "stages", stageName)
+		const stage = parseStage(stageDir)
+		if (stage) stageDefinitions.push(stage)
+	}
+
+	const persistence = data.persistence || { type: "filesystem", delivery: "local" }
+
+	return {
+		slug,
+		name: data.name || slug,
+		description: data.description || "",
+		stages: stageNames,
+		persistence,
+		content: content.trim(),
+		stageDefinitions,
+		category: categorizeStudio(slug, persistence),
+	}
+}
+
+export function getAllStudios(): StudioDefinition[] {
+	if (!fs.existsSync(pluginStudiosDir)) return []
+	const dirs = fs.readdirSync(pluginStudiosDir).filter((d) => {
+		const fullPath = path.join(pluginStudiosDir, d)
+		return fs.statSync(fullPath).isDirectory()
+	})
+	return dirs
+		.map((d) => parseStudio(path.join(pluginStudiosDir, d)))
+		.filter((s): s is StudioDefinition => s !== null)
+		.sort((a, b) => {
+			// Sort: Engineering first, then Go-to-Market, then General Purpose
+			const catOrder = ["Engineering", "Go-to-Market", "General Purpose"]
+			const catDiff = catOrder.indexOf(a.category) - catOrder.indexOf(b.category)
+			if (catDiff !== 0) return catDiff
+			return a.name.localeCompare(b.name)
+		})
+}
+
+export function getStudioBySlug(slug: string): StudioDefinition | null {
+	const studioDir = path.join(pluginStudiosDir, slug)
+	return parseStudio(studioDir)
+}
+
+export function getStudioSlugs(): string[] {
+	return getAllStudios().map((s) => s.slug)
+}
+
+export function getStudiosGrouped(): Map<string, StudioDefinition[]> {
+	const studios = getAllStudios()
+	const groups = new Map<string, StudioDefinition[]>()
+	for (const studio of studios) {
+		const existing = groups.get(studio.category) || []
+		existing.push(studio)
+		groups.set(studio.category, existing)
+	}
+	return groups
+}

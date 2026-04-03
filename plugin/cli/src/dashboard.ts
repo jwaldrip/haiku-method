@@ -7,9 +7,9 @@ import { generateSite } from "./generator.js"
 
 const { values } = parseArgs({
 	options: {
-		input: { type: "string", short: "i", default: ".ai-dlc/" },
-		output: { type: "string", short: "o", default: ".ai-dlc/dashboard/" },
-		title: { type: "string", short: "t", default: "AI-DLC Dashboard" },
+		input: { type: "string", short: "i", default: ".haiku/" },
+		output: { type: "string", short: "o", default: ".haiku/dashboard/" },
+		title: { type: "string", short: "t", default: "H·AI·K·U Dashboard" },
 		help: { type: "boolean", short: "h", default: false },
 	},
 	strict: true,
@@ -17,15 +17,15 @@ const { values } = parseArgs({
 
 if (values.help) {
 	console.log(`
-ai-dlc-dashboard - Generate a static HTML dashboard from .ai-dlc/ data
+haiku-dashboard - Generate a static HTML dashboard from .haiku/ data
 
 Usage:
-  ai-dlc-dashboard [options]
+  haiku-dashboard [options]
 
 Options:
-  -i, --input <dir>    Input directory (default: .ai-dlc/)
-  -o, --output <dir>   Output directory (default: .ai-dlc/dashboard/)
-  -t, --title <title>  Dashboard title (default: "AI-DLC Dashboard")
+  -i, --input <dir>    Input directory (default: .haiku/)
+  -o, --output <dir>   Output directory (default: .haiku/dashboard/)
+  -t, --title <title>  Dashboard title (default: "H·AI·K·U Dashboard")
   -h, --help           Show this help message
 `)
 	process.exit(0)
@@ -33,7 +33,7 @@ Options:
 
 const inputDir = resolve(values.input ?? "")
 const outputDir = resolve(values.output ?? "")
-const title = values.title ?? "AI-DLC Dashboard"
+const title = values.title ?? "H·AI·K·U Dashboard"
 
 if (!existsSync(inputDir)) {
 	console.error(`Error: Input directory not found: ${inputDir}`)

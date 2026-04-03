@@ -22,11 +22,9 @@ Create a new intent with studio and stage configuration.
 
 Run the stage pipeline for the current intent. Progresses through each stage in order, transitioning through the hats defined in each stage's `STAGE.md`.
 
-### `/haiku:execute`
+### `/haiku:execute` *(deprecated)*
 
-Drive unit implementations through builder hats. Executes the development stage: spawns builder subagents for each unit in DAG order, handles dependencies, commits after each unit, and invokes `/haiku:review` before completion.
-
-**Arguments:** `[unit-slug]` — optional, to continue from a specific unit.
+Legacy alias for `/haiku:run`. Kept for backward compatibility with intents that don't use studio/stage configuration. Use `/haiku:run` for all new work.
 
 ### `/haiku:review`
 
@@ -163,4 +161,5 @@ Show the project changelog and release notes.
 | Command | Replacement |
 |---------|-------------|
 | `/haiku:elaborate` | `/haiku:run` (plan phase) |
-| `/haiku:construct` | `/haiku:execute` |
+| `/haiku:execute` | `/haiku:run` |
+| `/haiku:construct` | `/haiku:run` |

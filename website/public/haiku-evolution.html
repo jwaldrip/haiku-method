@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>From AI-DLC to H·AI·K·U — Evolution of a Methodology</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --fg: #1c1917;
+    --muted: #78716c;
+    --accent: #0d9488;
+    --accent-bg: #f0fdfa;
+    --border: #e7e5e4;
+    --card-bg: #ffffff;
+    --slide-max: 960px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09;
+      --fg: #e7e5e4;
+      --muted: #a8a29e;
+      --accent: #2dd4bf;
+      --accent-bg: #042f2e;
+      --border: #292524;
+      --card-bg: #1c1917;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.6;
+  }
+  .slide {
+    display: none;
+    min-height: 100vh;
+    padding: 3rem 2rem;
+    align-items: center;
+    justify-content: center;
+  }
+  .slide.active { display: flex; }
+  .slide-inner {
+    max-width: var(--slide-max);
+    width: 100%;
+  }
+  h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; }
+  h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+  p, li { color: var(--muted); font-size: 1.1rem; }
+  p + p { margin-top: 0.75rem; }
+  .accent { color: var(--accent); }
+  .tag {
+    display: inline-block;
+    padding: 0.2em 0.6em;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+  @media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .pipeline-step {
+    padding: 0.4em 0.8em;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+  .pipeline-arrow { color: var(--border); font-size: 1.2rem; }
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.5rem;
+    align-items: start;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 640px) { .compare { grid-template-columns: 1fr; } }
+  .compare-arrow {
+    font-size: 2rem;
+    color: var(--accent);
+    align-self: center;
+    text-align: center;
+  }
+  .dim { opacity: 0.5; }
+  .strike { text-decoration: line-through; opacity: 0.5; }
+  ul { padding-left: 1.5rem; margin-top: 0.5rem; }
+  li { margin-top: 0.35rem; }
+  li strong { color: var(--fg); }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--fg); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { color: var(--muted); }
+  .number { font-size: 3rem; font-weight: 800; color: var(--accent); line-height: 1; }
+  .subtitle { font-size: 1.25rem; color: var(--muted); margin-bottom: 2rem; }
+
+  /* Controls */
+  .controls {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 100;
+  }
+  .controls button {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--card-bg);
+    color: var(--fg);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.15s;
+  }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    transition: width 0.3s;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<!-- Slide 1: Title -->
+<div class="slide active" data-slide="0">
+<div class="slide-inner" style="text-align:center">
+  <p class="tag" style="margin-bottom:1.5rem">The Bushido Collective</p>
+  <h1>From <span class="strike">AI-DLC</span> to <span class="accent">H·AI·K·U</span></h1>
+  <p class="subtitle">How building a methodology taught us what a methodology actually needs</p>
+  <p style="font-size:0.9rem; margin-top:2rem">Human AI Knowledge Unification</p>
+</div>
+</div>
+
+<!-- Slide 2: Where We Started -->
+<div class="slide" data-slide="1">
+<div class="slide-inner">
+  <p class="tag">Where We Started</p>
+  <h2>AI-DLC was born from frustration</h2>
+  <p>AI assistants were powerful but chaotic. Without structure, every session was a blank page. Work was lost between conversations. There was no lifecycle, no quality gates, no way to know where you left off.</p>
+  <div class="card">
+    <h3>The Original Vision</h3>
+    <p>Map the software development lifecycle to AI-assisted workflows. Give agents roles (hats), structure (phases), and persistence (state files). Call it AI-DLC — the AI Development Lifecycle.</p>
+  </div>
+  <div class="card">
+    <h3>What We Built (v1.0)</h3>
+    <ul>
+      <li><strong>Elaborate</strong> — gather intent, decompose into units</li>
+      <li><strong>Execute</strong> — build with planner/builder/reviewer hats</li>
+      <li><strong>Review</strong> — multi-agent code review</li>
+      <li><strong>Operate</strong> — post-deployment lifecycle</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<!-- Slide 3: What We Learned — Passes -->
+<div class="slide" data-slide="2">
+<div class="slide-inner">
+  <p class="tag">Lesson 1</p>
+  <h2>Software isn't the only discipline</h2>
+  <p>Users wanted design passes, product passes, security passes. The hard-coded elaborate→execute pipeline assumed software development. Reality demanded cross-functional iteration.</p>
+  <div class="compare">
+    <div class="card">
+      <h3 class="dim">Before: Fixed Pipeline</h3>
+      <div class="pipeline">
+        <span class="pipeline-step dim">Elaborate</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step dim">Execute</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step dim">Review</span>
+      </div>
+      <p style="margin-top:0.5rem; font-size:0.85rem">One path. Software only.</p>
+    </div>
+    <div class="compare-arrow">&rarr;</div>
+    <div class="card">
+      <h3 class="accent">After: Multi-Pass</h3>
+      <div class="pipeline">
+        <span class="pipeline-step">Design</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Product</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Dev</span>
+      </div>
+      <p style="margin-top:0.5rem; font-size:0.85rem">Each discipline gets its own iteration.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Slide 4: What We Learned — Stages -->
+<div class="slide" data-slide="3">
+<div class="slide-inner">
+  <p class="tag">Lesson 2</p>
+  <h2>Passes became stages, and stages need hats</h2>
+  <p>Passes were just typed iterations — but they needed their own roles, review gates, inputs, and outputs. A "design pass" needed a designer hat and a design-reviewer hat, not the builder hat. The pass model evolved into a full <strong>stage</strong> model with a collapsible FSM.</p>
+  <div class="card">
+    <h3>The Stage Architecture</h3>
+    <table>
+      <tr><th>Concept</th><th>What It Is</th><th>What It Replaced</th></tr>
+      <tr><td><strong>Studio</strong></td><td>Named lifecycle template</td><td>Hard-coded pipeline</td></tr>
+      <tr><td><strong>Stage</strong></td><td>Phase with its own hats + review gate</td><td>Passes</td></tr>
+      <tr><td><strong>Hat</strong></td><td>Behavioral role scoped to a stage</td><td>Global hat definitions</td></tr>
+      <tr><td><strong>Review Gate</strong></td><td>auto / ask / external per stage</td><td>Single review step</td></tr>
+    </table>
+  </div>
+  <p style="margin-top:1rem">Key insight: <strong>single-stage collapses to the old behavior</strong>. The FSM is additive, not breaking.</p>
+</div>
+</div>
+
+<!-- Slide 5: What We Learned — Beyond Software -->
+<div class="slide" data-slide="4">
+<div class="slide-inner">
+  <p class="tag">Lesson 3</p>
+  <h2>The lifecycle isn't just for code</h2>
+  <p>Once we had stages and hats as composable primitives, the methodology stopped being software-specific. Sales has a lifecycle. Marketing has a lifecycle. Incident response, compliance, customer success — they all follow the same pattern: focused phases, specialized roles, quality gates between transitions.</p>
+  <div class="grid-3">
+    <div class="card" style="text-align:center">
+      <div class="number">12</div>
+      <p style="font-size:0.9rem; margin-top:0.5rem">Built-in Studios</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="number">60</div>
+      <p style="font-size:0.9rem; margin-top:0.5rem">Stages</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="number">120+</div>
+      <p style="font-size:0.9rem; margin-top:0.5rem">Hat Definitions</p>
+    </div>
+  </div>
+  <p style="margin-top:1.5rem">This is why it's no longer "AI-DLC." It's not a development lifecycle — it's a <strong>knowledge unification</strong> framework.</p>
+</div>
+</div>
+
+<!-- Slide 6: The Rebrand -->
+<div class="slide" data-slide="5">
+<div class="slide-inner">
+  <p class="tag">The Rebrand</p>
+  <h2><span class="accent">H·AI·K·U</span> — Human AI Knowledge Unification</h2>
+  <p>The name captures what the methodology actually does: unify human domain expertise with AI execution capability through structured, iterative collaboration.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>What Changed</h3>
+      <ul>
+        <li><strong>.ai-dlc/</strong> &rarr; <strong>.haiku/</strong></li>
+        <li><strong>/ai-dlc:*</strong> &rarr; <strong>/haiku:*</strong></li>
+        <li><strong>/haiku:execute</strong> &rarr; <strong>/haiku:run</strong></li>
+        <li><strong>ai-dlc-review</strong> MCP &rarr; <strong>haiku-review</strong></li>
+        <li><strong>@ai-dlc/*</strong> packages &rarr; <strong>@haiku/*</strong></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What Stayed</h3>
+      <ul>
+        <li><strong>Intent / Unit / Bolt</strong> hierarchy</li>
+        <li><strong>Backpressure</strong> as the quality model</li>
+        <li><strong>Hat-based</strong> role separation</li>
+        <li><strong>Completion criteria</strong> as exit conditions</li>
+        <li><strong>/haiku:migrate</strong> for seamless transition</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Slide 7: Studios Overview -->
+<div class="slide" data-slide="6">
+<div class="slide-inner">
+  <p class="tag">Studio Library</p>
+  <h2>Every function in a company, structured</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--accent)">Engineering</h3>
+      <ul>
+        <li><strong>Software</strong> — inception &rarr; design &rarr; product &rarr; development &rarr; operations &rarr; security</li>
+        <li><strong>Data Pipeline</strong> — discovery &rarr; extraction &rarr; transformation &rarr; validation &rarr; deployment</li>
+        <li><strong>Migration</strong> — assessment &rarr; mapping &rarr; migrate &rarr; validation &rarr; cutover</li>
+        <li><strong>Incident Response</strong> — triage &rarr; investigate &rarr; mitigate &rarr; resolve &rarr; postmortem</li>
+        <li><strong>Compliance</strong> — scope &rarr; assess &rarr; remediate &rarr; document &rarr; certify</li>
+        <li><strong>Security Assessment</strong> — reconnaissance &rarr; enumeration &rarr; exploitation &rarr; post-exploitation &rarr; reporting</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--accent)">Go-to-Market</h3>
+      <ul>
+        <li><strong>Sales</strong> — research &rarr; qualification &rarr; proposal &rarr; negotiation &rarr; close</li>
+        <li><strong>Marketing</strong> — research &rarr; strategy &rarr; content &rarr; launch &rarr; measure</li>
+        <li><strong>Customer Success</strong> — onboarding &rarr; adoption &rarr; health-check &rarr; expansion &rarr; renewal</li>
+        <li><strong>Product Strategy</strong> — discovery &rarr; user-research &rarr; prioritization &rarr; roadmap &rarr; stakeholder-review</li>
+      </ul>
+      <h3 style="color:var(--accent); margin-top:1.5rem">General Purpose</h3>
+      <ul>
+        <li><strong>Ideation</strong> — research &rarr; create &rarr; review &rarr; deliver</li>
+        <li><strong>Documentation</strong> — audit &rarr; outline &rarr; draft &rarr; review &rarr; publish</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Slide 8: Customization -->
+<div class="slide" data-slide="7">
+<div class="slide-inner">
+  <p class="tag">Extensibility</p>
+  <h2>Everything is customizable</h2>
+  <p>Studios, stages, hats, and providers are all file-based and overridable at the project level. The plugin ships defaults; your project shapes them.</p>
+  <div class="card">
+    <table>
+      <tr><th>Artifact</th><th>Location</th><th>Purpose</th></tr>
+      <tr><td>Studio</td><td><code>.haiku/studios/{name}/STUDIO.md</code></td><td>Define a new lifecycle</td></tr>
+      <tr><td>Stage</td><td><code>.haiku/studios/{name}/stages/{stage}/STAGE.md</code></td><td>Add a phase to a studio</td></tr>
+      <tr><td>Hat</td><td><code>.haiku/studios/{name}/stages/{stage}/hats/{hat}.md</code></td><td>Define agent behavior</td></tr>
+      <tr><td>Provider</td><td><code>.haiku/providers/{type}.md</code></td><td>Customize tool integration</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Scaffold anything</h3>
+    <div style="font-family:monospace; font-size:0.9rem; color:var(--accent); margin-top:0.5rem">
+      /haiku:scaffold studio my-domain<br/>
+      /haiku:scaffold stage my-domain my-phase<br/>
+      /haiku:scaffold hat my-domain my-phase my-role
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Slide 9: Philosophy -->
+<div class="slide" data-slide="8">
+<div class="slide-inner">
+  <p class="tag">Philosophy</p>
+  <h2>What we believe now</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Single-pass is the ideal</h3>
+      <p>All disciplines collaborating simultaneously during elaboration. One hive mind. No handoffs. Multi-stage exists as a concession for teams with siloed SMEs — not because it's better.</p>
+    </div>
+    <div class="card">
+      <h3>Design is a thinking tool</h3>
+      <p>Design artifacts are elaboration outputs, not construction deliverables. They emerge from collaborative exploration, not a separate "design phase."</p>
+    </div>
+    <div class="card">
+      <h3>Backpressure over prescription</h3>
+      <p>Don't tell the agent how to build. Define constraints that must be satisfied — tests pass, types check, criteria met. The agent iterates until all gates clear.</p>
+    </div>
+    <div class="card">
+      <h3>Metadata drives behavior</h3>
+      <p>No conditional logic per stage. The stage definition's metadata (hats, review mode, unit types) constrains what the agent does. Same code, different behavior.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Slide 10: What's Next -->
+<div class="slide" data-slide="9">
+<div class="slide-inner" style="text-align:center">
+  <p class="tag" style="margin-bottom:1.5rem">What's Next</p>
+  <h1><span class="accent">H·AI·K·U</span> is a universal lifecycle</h1>
+  <p class="subtitle">Any structured work. Any domain. Any team.</p>
+  <div class="grid-3" style="text-align:left; margin-top:2rem">
+    <div class="card">
+      <h3>Studio Browser</h3>
+      <p>Browse all 12 built-in studios, 60 stages, and 120+ hats on the website. Every artifact rendered from the plugin source of truth.</p>
+    </div>
+    <div class="card">
+      <h3>Custom Studios</h3>
+      <p>Your team's workflow doesn't fit a built-in? Scaffold your own studio in minutes with /haiku:scaffold.</p>
+    </div>
+    <div class="card">
+      <h3>Full Backwards Compat</h3>
+      <p>Existing .ai-dlc/ projects migrate seamlessly with /haiku:migrate. Symlinks preserve old paths.</p>
+    </div>
+  </div>
+  <p style="margin-top:3rem; font-size:1.1rem; color:var(--accent); font-weight:600">thebushido.co/haiku</p>
+</div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button onclick="prev()" id="prevBtn">&larr; Prev</button>
+  <button onclick="next()" id="nextBtn">Next &rarr;</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const progress = document.getElementById('progress');
+  let current = 0;
+
+  function show(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides[current].classList.add('active');
+    progress.style.width = ((current + 1) / slides.length * 100) + '%';
+  }
+
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const diff = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(diff) > 50) { diff < 0 ? next() : prev(); }
+  });
+
+  show(0);
+</script>
+</body>
+</html>

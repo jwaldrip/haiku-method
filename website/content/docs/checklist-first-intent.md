@@ -76,10 +76,10 @@ Use `/haiku:elaborate` to define your intent collaboratively with Claude.
 
 ## Phase 2: First Unit
 
-Work through your first unit using `/haiku:execute`.
+Work through your first unit using `/haiku:run`.
 
 ### Start Execution
-- [ ] Run `/haiku:execute`
+- [ ] Run `/haiku:run`
 - [ ] Verify Claude loaded the correct unit
 
 ### Planner Hat
@@ -137,7 +137,7 @@ Continue with remaining units.
 
 ### For Each Remaining Unit
 
-- [ ] Run `/haiku:execute` to load next unit
+- [ ] Run `/haiku:run` to load next unit
 - [ ] Review any dependencies are satisfied
 - [ ] Complete Planner → Builder → Reviewer cycle
 - [ ] Commit with unit reference
@@ -146,7 +146,7 @@ Continue with remaining units.
 ### Between Units
 
 - [ ] Check if context is getting heavy
-- [ ] `/clear` if needed, then `/haiku:execute` to continue
+- [ ] `/clear` if needed, then `/haiku:run` to continue
 - [ ] Verify committed artifacts reflect current state
 
 ### Handling Blockers
@@ -214,7 +214,7 @@ Answer these questions honestly:
 
 **Tooling:**
 - [ ] Any friction with the commands?
-- [ ] Did `/clear` + `/haiku:execute` work smoothly?
+- [ ] Did `/clear` + `/haiku:run` work smoothly?
 - [ ] Were artifacts helpful?
 
 ### Metrics to Note
@@ -240,7 +240,7 @@ Based on this experience:
 | Command | When to Use |
 |---------|-------------|
 | `/haiku:elaborate` | Start new intent |
-| `/haiku:execute` | Continue/start unit work |
+| `/haiku:run` | Continue/start unit work |
 | `/researcher` | Need more understanding |
 | `/planner` | Need to redesign approach |
 | `/builder` | Ready to implement |

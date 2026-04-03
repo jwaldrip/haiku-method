@@ -24,7 +24,7 @@ This guide covers migrating from AI-DLC to H·AI·K·U. Most migration is automa
 | Old Command | New Command |
 |-------------|-------------|
 | `/ai-dlc:elaborate` | `/haiku:new` + `/haiku:run` |
-| `/ai-dlc:execute` | `/haiku:execute` or `/haiku:run` |
+| `/ai-dlc:execute` | `/haiku:run` |
 | `/ai-dlc:review` | `/haiku:review` |
 | `/ai-dlc:autopilot` | `/haiku:autopilot` |
 | `/ai-dlc:quick` | `/haiku:quick` |

@@ -7,7 +7,7 @@ import {
   buildDAG,
   toMermaidDefinition,
   parseCriteria,
-} from "@ai-dlc/shared";
+} from "@haiku/shared";
 import { renderStaticLayout } from "./templates/layout.js";
 import { renderIndexPage, type IntentSummary } from "./templates/index-page.js";
 import { renderIntentPage, type MockupRef } from "./templates/intent-page.js";
@@ -151,7 +151,7 @@ export async function generateSite(
         const resolvedWireframe = resolve(wireframePath);
         const resolvedIntentDir = resolve(intentDir);
         if (!resolvedWireframe.startsWith(resolvedIntentDir + "/") && resolvedWireframe !== resolvedIntentDir) {
-          console.warn(`[ai-dlc/cli] Skipping wireframe outside intent dir: ${unit.frontmatter.wireframe}`);
+          console.warn(`[haiku/cli] Skipping wireframe outside intent dir: ${unit.frontmatter.wireframe}`);
         } else {
           const wireframeName = basename(unit.frontmatter.wireframe);
           try {

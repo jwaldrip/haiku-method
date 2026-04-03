@@ -16,7 +16,7 @@ This guide covers the day-to-day workflow of using H·AI·K·U. It assumes you'v
    - Review any blockers from previous sessions
 
 2. **Load context**
-   - Run `/haiku:execute` if continuing existing work
+   - Run `/haiku:run` if continuing existing work
    - Run `/haiku:elaborate` if starting new work
 
 3. **Announce your hat**
@@ -52,7 +52,7 @@ This guide covers the day-to-day workflow of using H·AI·K·U. It assumes you'v
 You left off mid-unit or a colleague handed you an intent.
 
 ```
-/haiku:execute
+/haiku:run
 ```
 
 This loads the intent and current unit state. Review what's been done:
@@ -92,7 +92,7 @@ Solution:
 /clear
 ```
 
-Then `/haiku:execute` to reload from committed state. The hat system ensures your progress is captured in files, not just context.
+Then `/haiku:run` to reload from committed state. The hat system ensures your progress is captured in files, not just context.
 
 ### Getting Stuck
 

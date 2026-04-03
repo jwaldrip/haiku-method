@@ -122,7 +122,7 @@ User: Yes, looks good.
 ### Starting the First Unit
 
 ```
-User: /haiku:execute
+User: /haiku:run
 ```
 
 ### Planner Hat (HITL)

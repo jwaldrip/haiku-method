@@ -1,0 +1,30 @@
+---
+name: publish
+description: Format, validate links, and publish the documentation
+hats: [publisher]
+review: auto
+unit_types: [delivery]
+inputs:
+  - stage: draft
+    output: draft-documentation
+  - stage: review
+    output: review-report
+---
+
+# Publish
+
+## Criteria Guidance
+
+Good criteria examples:
+- "All internal and external links resolve to valid targets"
+- "All critical and major review findings are addressed in the final version"
+- "Documentation renders correctly in the target platform (site, wiki, PDF)"
+
+Bad criteria examples:
+- "Documentation is published"
+- "Links work"
+- "Formatting is done"
+
+## Completion Signal
+
+Final documentation exists with all review findings addressed. Links are validated. Formatting is correct for the target platform. Metadata (title, description, last-updated date) is populated. Documentation is published or staged for publication.

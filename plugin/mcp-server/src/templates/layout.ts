@@ -60,7 +60,7 @@ export function renderLayout(
   <!-- Dark mode: system→dark→light→system toggle -->
   <script>
     (function() {
-      const KEY = 'ai-dlc-review-theme';
+      const KEY = 'haiku-review-theme';
       function getEffective() {
         const s = localStorage.getItem(KEY);
         if (s === 'dark' || s === 'light') return s;

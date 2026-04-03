@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "ai-dlc-review": {
+    "haiku-review": {
       "command": "bash",
       "args": [
         "-c",

@@ -7,7 +7,7 @@ import {
 	parseCriteria,
 	parseIntent,
 	toMermaidDefinition,
-} from "@ai-dlc/shared"
+} from "@haiku/shared"
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
@@ -25,7 +25,7 @@ import { renderDesignDirectionPage } from "./templates/design-direction.js"
 const OpenReviewInput = z.object({
 	intent_dir: z
 		.string()
-		.describe("Path to the intent directory (e.g., .ai-dlc/my-intent)"),
+		.describe("Path to the intent directory (e.g., .haiku/intents/my-intent)"),
 	review_type: z
 		.enum(["intent", "unit"])
 		.describe("Type of review: intent-level or unit-level"),
@@ -113,7 +113,7 @@ const PickDesignDirectionInput = z.object({
 })
 
 const server = new Server(
-	{ name: "ai-dlc-review", version: "0.1.0" },
+	{ name: "haiku-review", version: "0.1.0" },
 	{
 		capabilities: {
 			tools: {},
@@ -134,7 +134,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 		{
 			name: "open_review",
 			description:
-				"Open a visual review page in the browser for an AI-DLC intent or unit. " +
+				"Open a visual review page in the browser for an H·AI·K·U intent or unit. " +
 				"Parses intent/unit data and serves an interactive HTML review page.",
 			inputSchema: {
 				type: "object" as const,
@@ -142,7 +142,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 					intent_dir: {
 						type: "string",
 						description:
-							"Path to the intent directory (e.g., .ai-dlc/my-intent)",
+							"Path to the intent directory (e.g., .haiku/intents/my-intent)",
 					},
 					review_type: {
 						type: "string",
@@ -318,19 +318,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 		const input = OpenReviewInput.parse(args)
 
 		// Resolve intent_dir to an absolute path. When a relative path is provided
-		// (e.g., ".ai-dlc/my-intent"), it resolves against process.cwd(), which is
-		// expected to be the project root. MCP servers inherit cwd from the client
-		// that spawned them (e.g., Claude Code), so this is normally correct.
-		// Additionally validate that the path stays within .ai-dlc/ to prevent
-		// path traversal.
-		const allowedBase = resolve(process.cwd(), ".ai-dlc")
+		// (e.g., ".haiku/intents/my-intent"), it resolves against process.cwd(),
+		// which is expected to be the project root. MCP servers inherit cwd from
+		// the client that spawned them (e.g., Claude Code), so this is normally
+		// correct. Additionally validate that the path stays within .haiku/ to
+		// prevent path traversal.
+		const allowedBase = resolve(process.cwd(), ".haiku")
 		const intentDir = resolve(process.cwd(), input.intent_dir)
 		if (!intentDir.startsWith(`${allowedBase}/`) && intentDir !== allowedBase) {
 			return {
 				content: [
 					{
 						type: "text" as const,
-						text: `Error: intent_dir must be within .ai-dlc/ (got: ${input.intent_dir})`,
+						text: `Error: intent_dir must be within .haiku/ (got: ${input.intent_dir})`,
 					},
 				],
 				isError: true,
@@ -672,7 +672,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
 	const transport = new StdioServerTransport()
 	await server.connect(transport)
-	console.error("AI-DLC Review MCP server running on stdio")
+	console.error("H·AI·K·U Review MCP server running on stdio")
 }
 
 // Graceful shutdown

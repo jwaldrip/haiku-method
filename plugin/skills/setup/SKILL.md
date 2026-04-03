@@ -184,7 +184,7 @@ Use `AskUserQuestion`:
 ```json
 {
   "questions": [{
-    "question": "Enable browser-based visual review for elaboration gates? (Requires the ai-dlc-review MCP server, which is bundled with the plugin.)",
+    "question": "Enable browser-based visual review for elaboration gates? (Requires the haiku-review MCP server, which is bundled with the plugin.)",
     "header": "Visual Review",
     "options": [
       {"label": "Enable", "description": "Use the browser-based review UI at elaboration gates"},
@@ -196,7 +196,7 @@ Use `AskUserQuestion`:
 ```
 
 - If the MCP tool was detected, append `(MCP server detected)` to the Enable description.
-- If NOT detected, append `(MCP server NOT detected — ensure ai-dlc-review is registered in .mcp.json)` to the Enable description.
+- If NOT detected, append `(MCP server NOT detected — ensure haiku-review is registered in .mcp.json)` to the Enable description.
 
 Store the result as `VISUAL_REVIEW_ENABLED` (`true` or `false`).
 
@@ -359,52 +359,50 @@ Ask the user about their preferred workflow intensity:
 
 ---
 
-## Phase 5b: Default Iteration Passes
+## Phase 5b: Default Studio
 
-Ask the user about their default cross-functional iteration passes for new intents. Most teams only need a single dev pass.
+Ask the user which studio to use as the default for new intents.
 
-First, discover all available passes (built-in + project-defined) by running:
-
-```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/pass.sh"
-list_available_passes
-```
-
-This returns pass names one per line (e.g., `design`, `dev`, `product`). For each discovered pass, load its metadata to get a description:
+First, discover all available studios (built-in + project-defined) by running:
 
 ```bash
-load_pass_metadata "<pass_name>"
+source "${CLAUDE_PLUGIN_ROOT}/lib/studio.sh"
+hku_list_studios
 ```
 
-Build the `AskUserQuestion` options dynamically from the discovered passes:
+This returns studio names. For each, load its metadata to show the stage pipeline:
+
+```bash
+hku_load_studio_metadata "<studio_name>"
+```
 
 Use `AskUserQuestion`:
 
 ```json
 {
   "questions": [{
-    "question": "What iteration passes should new intents use by default?",
-    "header": "Default Iteration Passes",
+    "question": "Which studio should new intents use by default?",
+    "header": "Default Studio",
     "options": [
-      {"label": "Dev only", "description": "Single pass — elaborate and build (default for most work)"},
-      {"label": "Select passes", "description": "Choose from available passes: <list discovered pass names with descriptions>"},
-      {"label": "Custom", "description": "Enter a comma-separated list of pass names"}
+      {"label": "Software", "description": "Full SDLC: inception → design → product → development → operations → security"},
+      {"label": "Ideation", "description": "Universal: research → create → review → deliver"},
+      {"label": "Custom", "description": "Select from project-defined studios"}
     ],
     "multiSelect": false
   }]
 }
 ```
 
-For "Select passes", present a follow-up multi-select with all discovered passes (built-in and project-defined), each showing its description from the pass metadata. For "Custom", ask the user to type a comma-separated list of pass names.
+Build the options dynamically from discovered studios. Include any project-defined studios found at `.haiku/studios/*/STUDIO.md`.
 
-To add custom passes, users can create `.haiku/passes/{name}.md` files before running setup.
+For "Custom", present a follow-up with all discovered custom studios. To create custom studios, users can run `/haiku:scaffold studio <name>`.
 
-Map selections to `default_passes` in settings.yml:
-- "Dev only" → `default_passes: []`
-- "Select passes" → `default_passes: [<selected pass names>]`
-- "Custom" → `default_passes: [<user-typed pass names>]`
+Map selections to `studio` in settings.yml:
+- "Software" → `studio: software`
+- "Ideation" → `studio: ideation`
+- "Custom" → `studio: <selected studio name>`
 
-Pre-fill from existing `settings.yml` `default_passes` if available.
+Pre-fill from existing `settings.yml` `studio` if available.
 
 ---
 
@@ -529,11 +527,11 @@ git:  # or jj:
 # Visual review: browser-based review UI for elaboration gates
 visual_review: true  # or false
 
+# Default studio for new intents (default: auto-detected)
+studio: software
+
 # Announcement formats for intent completion (default: [changelog])
 default_announcements: [changelog]
-
-# Only include if non-default (non-empty)
-default_passes: [design, dev]
 
 # Only include providers that were confirmed
 providers:
