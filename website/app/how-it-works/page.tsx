@@ -866,7 +866,7 @@ Implement REST API endpoints for user authentication...
 									{ stage: "development", color: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300", gate: "ask", gateLabel: "user approves" },
 									{ stage: "operations", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300", gate: "auto", gateLabel: "advances immediately" },
 									{ stage: "security", color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300", gate: "external", gateLabel: "team signs off" },
-								].map((s, i) => (
+								].map((s) => (
 									<div key={s.stage}>
 										<div className="flex items-center gap-2">
 											<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-200 dark:bg-green-800" title="AI drives">
@@ -877,16 +877,24 @@ Implement REST API endpoints for user authentication...
 											</span>
 											<span className="text-[10px] text-stone-400">AI runs autonomously</span>
 										</div>
-										{i < 5 && (
-											<div className="ml-2.5 flex items-center gap-2 border-l-2 border-dashed border-stone-200 py-1 pl-4 dark:border-stone-700">
-												<span className={`h-2 w-2 rounded-full ${s.gate === "auto" ? "bg-green-400" : s.gate === "ask" ? "bg-amber-400" : "bg-rose-400"}`} />
-												<span className={`text-[10px] font-medium ${s.gate === "auto" ? "text-green-600 dark:text-green-400" : s.gate === "ask" ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"}`}>
-													{s.gate} &mdash; {s.gateLabel}
-												</span>
-											</div>
-										)}
+										<div className="ml-2.5 flex items-center gap-2 border-l-2 border-dashed border-stone-200 py-1 pl-4 dark:border-stone-700">
+											<span className={`h-2 w-2 rounded-full ${s.gate === "auto" ? "bg-green-400" : s.gate === "ask" ? "bg-amber-400" : "bg-rose-400"}`} />
+											<span className={`text-[10px] font-medium ${s.gate === "auto" ? "text-green-600 dark:text-green-400" : s.gate === "ask" ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"}`}>
+												{s.gate} &mdash; {s.gateLabel}
+											</span>
+										</div>
 									</div>
 								))}
+								{/* Delivery progression */}
+								<div className="flex items-center gap-2 pt-1">
+									<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-200 dark:bg-teal-800">
+										<svg className="h-3 w-3 text-teal-700 dark:text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+									</span>
+									<span className="rounded-md bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+										delivery
+									</span>
+									<span className="text-[10px] text-stone-400">persistence adapter delivers (PR, copy, publish)</span>
+								</div>
 							</div>
 						</div>
 
@@ -906,7 +914,7 @@ Implement REST API endpoints for user authentication...
 									{ stage: "development", color: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
 									{ stage: "operations", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
 									{ stage: "security", color: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" },
-								].map((s, i) => (
+								].map((s) => (
 									<div key={s.stage}>
 										<div className="flex items-center gap-2">
 											<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-200 dark:bg-purple-800" title="Human invokes">
@@ -917,16 +925,24 @@ Implement REST API endpoints for user authentication...
 												{s.stage}
 											</span>
 										</div>
-										{i < 5 && (
-											<div className="ml-2.5 flex items-center gap-2 border-l-2 border-dashed border-stone-200 py-1 pl-4 dark:border-stone-700">
-												<span className="h-2 w-2 rounded-full bg-purple-400" />
-												<span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">
-													user reviews &rarr; decides next stage
-												</span>
-											</div>
-										)}
+										<div className="ml-2.5 flex items-center gap-2 border-l-2 border-dashed border-stone-200 py-1 pl-4 dark:border-stone-700">
+											<span className="h-2 w-2 rounded-full bg-purple-400" />
+											<span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">
+												user reviews &rarr; decides next stage
+											</span>
+										</div>
 									</div>
 								))}
+								{/* Delivery progression */}
+								<div className="flex items-center gap-2 pt-1">
+									<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-200 dark:bg-teal-800">
+										<svg className="h-3 w-3 text-teal-700 dark:text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+									</span>
+									<span className="rounded-md bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+										delivery
+									</span>
+									<span className="text-[10px] text-stone-400">persistence adapter delivers (PR, copy, publish)</span>
+								</div>
 							</div>
 						</div>
 					</div>
