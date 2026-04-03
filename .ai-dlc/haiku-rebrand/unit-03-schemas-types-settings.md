@@ -1,6 +1,6 @@
 ---
-status: in_progress
-last_updated: "2026-04-03T01:18:04Z"
+status: completed
+last_updated: "2026-04-03T01:35:22Z"
 depends_on: [unit-01-lib-hooks-rename]
 branch: ai-dlc/haiku-rebrand/03-schemas-types-settings
 discipline: backend
