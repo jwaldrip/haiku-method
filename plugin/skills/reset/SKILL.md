@@ -49,7 +49,7 @@ If the task is not complete, warn:
 
 ```bash
 # Intent-level state is on current branch (intent branch)
-STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json" 2>/dev/null || echo "{}")
+STATE=$(hku_state_load "$INTENT_DIR" "iteration.json" 2>/dev/null || echo "{}")
 
 # If status is not "completed", warn the user
 # "Warning: Task is not complete. Current hat: $HAT"
@@ -61,7 +61,7 @@ STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json" 2>/dev/null || echo "{}")
 If `teamName` exists in `iteration.json` and `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is set:
 
 ```bash
-TEAM_NAME=$(echo "$STATE" | dlc_json_get "teamName" "")
+TEAM_NAME=$(echo "$STATE" | hku_json_get "teamName" "")
 AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
 ```
 
@@ -94,8 +94,8 @@ TeamDelete()
 Remove the intent worktree and any unit worktrees for this intent:
 
 ```bash
-# Intent slug is derived from .ai-dlc directory structure
-INTENT_SLUG=$(basename "$(find .ai-dlc -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)" 2>/dev/null || echo "")
+# Intent slug is derived from .haiku directory structure
+INTENT_SLUG=$(basename "$(find .haiku -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)" 2>/dev/null || echo "")
 REPO_ROOT=$(git worktree list --porcelain | head -1 | sed 's/^worktree //')
 
 if [ -n "$INTENT_SLUG" ]; then

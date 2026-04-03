@@ -114,7 +114,7 @@ Show the user what was found:
 {list of orphaned worktree names, if any}
 
 **Merged worktrees (safe to remove):** {count}
-{list of merged worktree names with branch names, e.g. "slug (ai-dlc/slug/main)"}
+{list of merged worktree names with branch names, e.g. "slug (haiku/slug/main)"}
 
 **Active worktrees:** {count}
 {list of active worktree names, if any}
@@ -170,8 +170,8 @@ git worktree prune
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_cleanup "${#ORPHANED[@]}" "${#MERGED[@]}"
+haiku_telemetry_init
+haiku_record_cleanup "${#ORPHANED[@]}" "${#MERGED[@]}"
 ```
 
 ### Step 5: Confirm

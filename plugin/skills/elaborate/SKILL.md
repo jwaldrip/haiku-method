@@ -163,7 +163,7 @@ Before any elaboration, verify the working environment:
 
    **In autonomous mode:** If settings.yml is missing during autopilot, use all defaults without running setup — create a minimal settings file with sensible defaults instead of blocking:
    ```bash
-   mkdir -p .ai-dlc
+   mkdir -p .haiku
    cat > .haiku/settings.yml << 'SETTINGS_EOF'
    git:
      change_strategy: intent
@@ -200,7 +200,7 @@ Before any elaboration, verify the working environment:
       - Ask the user: "What repository should this work target?" If VCS MCP tools are available (e.g., GitHub MCP), offer discovered repos as options.
       - Clone directly — the user's home directory credentials (SSH keys, git credential helpers, `gh`/`glab` auth) are typically available:
         ```bash
-        WORKSPACE="/tmp/ai-dlc-workspace-<slug>"
+        WORKSPACE="/tmp/haiku-workspace-<slug>"
         git clone <url> "$WORKSPACE" 2>&1
         ```
       - **If clone fails** (authentication error, permission denied) — tell the user the clone failed and show the error output. Ask them to ensure their git credentials are configured (e.g., SSH keys in `~/.ssh`, `gh auth login`, `glab auth login`, or a git credential helper) and to grant the cowork session access to their home directory if they haven't already. Then retry once.
@@ -303,7 +303,7 @@ INTENT_SLUG="{slug}"
 
 # Check if intent.md exists and has iterates_on
 if [ -f ".haiku/intents/${INTENT_SLUG}/intent.md" ]; then
-  ITERATES_ON=$(dlc_frontmatter_get "iterates_on" ".haiku/intents/${INTENT_SLUG}/intent.md" 2>/dev/null || echo "")
+  ITERATES_ON=$(hku_frontmatter_get "iterates_on" ".haiku/intents/${INTENT_SLUG}/intent.md" 2>/dev/null || echo "")
 fi
 ```
 
@@ -369,7 +369,7 @@ This intent iterates on **{previous title}** (`{previous-slug}`).
 **Store this context** — it will be referenced in Phase 2, Phase 2.5, and Phase 5. Save to state:
 
 ```bash
-dlc_state_save "$INTENT_DIR" "previous-intent-context" "{JSON summary of previous intent}"
+hku_state_save "$INTENT_DIR" "previous-intent-context" "{JSON summary of previous intent}"
 ```
 
 **When `iterates_on` is set, the following phases are modified:**
@@ -544,8 +544,8 @@ Before domain discovery, check whether knowledge artifacts already exist. If thi
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
 PROJECT_MATURITY=$(detect_project_maturity)
-HAS_DESIGN_KNOWLEDGE=$(dlc_knowledge_exists "design" && echo "true" || echo "false")
-KNOWLEDGE_COUNT=$(dlc_knowledge_list | wc -l | tr -d ' ')
+HAS_DESIGN_KNOWLEDGE=$(hku_knowledge_exists "design" && echo "true" || echo "false")
+KNOWLEDGE_COUNT=$(hku_knowledge_list | wc -l | tr -d ' ')
 ```
 
 ### Step 2: Knowledge Synthesis (first elaboration or missing knowledge)
@@ -561,7 +561,7 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
 
 SCAFFOLD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-dlc_knowledge_write "domain" "$(cat <<SCAFFOLD_EOF
+hku_knowledge_write "domain" "$(cat <<SCAFFOLD_EOF
 ---
 type: domain
 version: 1
@@ -586,7 +586,7 @@ project_maturity: greenfield
 SCAFFOLD_EOF
 )"
 
-dlc_knowledge_write "product" "$(cat <<SCAFFOLD_EOF
+hku_knowledge_write "product" "$(cat <<SCAFFOLD_EOF
 ---
 type: product
 version: 1
@@ -705,16 +705,16 @@ provider_config: {JSON of PROVIDERS object}
 
 {For each knowledge artifact that exists (from Phase 2.3 or prior intents),
 include its full content here. Load the list of artifacts via
-`dlc_knowledge_list` and read each one via `dlc_knowledge_read "$type"`.
+`hku_knowledge_list` and read each one via `hku_knowledge_read "$type"`.
 
 **Filter out scaffold artifacts:** Before including an artifact, check its
-frontmatter confidence level via `dlc_frontmatter_get "confidence"`. Skip
+frontmatter confidence level via `hku_frontmatter_get "confidence"`. Skip
 any artifact with `confidence: low` — these are greenfield scaffolds with
 no real content. Also skip artifacts whose body sections contain only
 placeholder text like `(none yet)`.
 
 ```bash
-CONFIDENCE=$(dlc_frontmatter_get "confidence" ".haiku/knowledge/${artifact_type}.md" 2>/dev/null || echo "")
+CONFIDENCE=$(hku_frontmatter_get "confidence" ".haiku/knowledge/${artifact_type}.md" 2>/dev/null || echo "")
 if [ "$CONFIDENCE" = "low" ]; then
   continue  # Skip low-confidence scaffolds in discovery brief
 fi
@@ -901,7 +901,7 @@ For greenfield and early-stage projects without existing design knowledge, prese
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
-HAS_DESIGN_KNOWLEDGE=$(dlc_knowledge_exists "design" && echo "true" || echo "false")
+HAS_DESIGN_KNOWLEDGE=$(hku_knowledge_exists "design" && echo "true" || echo "false")
 ```
 
 ### Step 2: Design Direction (greenfield/early only)
@@ -923,7 +923,7 @@ Try calling `pick_design_direction` with the archetype and parameter data. If th
 source "${CLAUDE_PLUGIN_ROOT}/lib/design-blueprint.sh"
 SELECTED_ARCHETYPE="{archetype id from picker}"
 SELECTED_PARAMS='{JSON parameters from picker}'
-dlc_generate_design_blueprint "${INTENT_SLUG}" "${SELECTED_ARCHETYPE}" "${SELECTED_PARAMS}"
+hku_generate_design_blueprint "${INTENT_SLUG}" "${SELECTED_ARCHETYPE}" "${SELECTED_PARAMS}"
 ```
 
 5. Seed the design knowledge artifact from the blueprint:
@@ -932,14 +932,14 @@ dlc_generate_design_blueprint "${INTENT_SLUG}" "${SELECTED_ARCHETYPE}" "${SELECT
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
 
 # Read blueprint details
-ARCHETYPE_NAME=$(dlc_frontmatter_get "archetype_name" ".haiku/intents/${INTENT_SLUG}/design-blueprint.md" 2>/dev/null || dlc_frontmatter_get "archetype" ".haiku/intents/${INTENT_SLUG}/design-blueprint.md" 2>/dev/null || echo "unknown")
+ARCHETYPE_NAME=$(hku_frontmatter_get "archetype_name" ".haiku/intents/${INTENT_SLUG}/design-blueprint.md" 2>/dev/null || hku_frontmatter_get "archetype" ".haiku/intents/${INTENT_SLUG}/design-blueprint.md" 2>/dev/null || echo "unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Extract the body (everything after frontmatter) from the blueprint
 BLUEPRINT_BODY=$(sed '1,/^---$/d' ".haiku/intents/${INTENT_SLUG}/design-blueprint.md" | sed '1,/^---$/d')
 
 # Write as properly-structured knowledge artifact
-dlc_knowledge_write "design" "---
+hku_knowledge_write "design" "---
 type: design
 version: 1
 created: ${TIMESTAMP}
@@ -1004,9 +1004,9 @@ After knowledge bootstrap (Phase 2.3) and optional design direction:
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
-DOMAIN_KNOWLEDGE=$(dlc_knowledge_read "domain" 2>/dev/null || echo "")
-PRODUCT_KNOWLEDGE=$(dlc_knowledge_read "product" 2>/dev/null || echo "")
-DESIGN_KNOWLEDGE=$(dlc_knowledge_read "design" 2>/dev/null || echo "")
+DOMAIN_KNOWLEDGE=$(hku_knowledge_read "domain" 2>/dev/null || echo "")
+PRODUCT_KNOWLEDGE=$(hku_knowledge_read "product" 2>/dev/null || echo "")
+DESIGN_KNOWLEDGE=$(hku_knowledge_read "design" 2>/dev/null || echo "")
 ```
 
 If domain or product knowledge exists, carry it forward as additional context for Phase 3 (Workflow Selection), Phase 4 (Success Criteria), and Phase 5 (Decomposition). This enriches unit specs with domain vocabulary and business rules already captured in knowledge artifacts.
@@ -1225,7 +1225,7 @@ Clicking an intent navigates to the Intent Detail view which shows:
 Data sources:
 - Intent metadata: Read `.haiku/intents/{slug}/intent.md` frontmatter via filesystem API
 - Unit metadata: Read `.haiku/intents/{slug}/stages/*/units/unit-*.md` frontmatter
-- Live state: Query `dlc_state_load "$INTENT_DIR" "iteration.json"` for current hat and phase
+- Live state: Query `hku_state_load "$INTENT_DIR" "iteration.json"` for current hat and phase
 
 This unit does NOT handle: hat visualization (unit-03), live monitoring (unit-04),
 or timeline replay (unit-05). It only renders the structural hierarchy.
@@ -1721,8 +1721,8 @@ git commit -m "elaborate(${INTENT_SLUG}): define intent"
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_intent_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}"
+haiku_telemetry_init
+haiku_record_intent_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}"
 ```
 
 ### 2.5. Confirm Quality Gates
@@ -1835,8 +1835,8 @@ git commit -m "elaborate(${INTENT_SLUG}): set quality gates"
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_intent_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}"
+haiku_telemetry_init
+haiku_record_intent_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}"
 ```
 
 ### 3. Write and review each `unit-NN-{slug}.md` individually:
@@ -2142,16 +2142,16 @@ git diff --cached --quiet || git commit -m "elaborate(${INTENT_SLUG}): finalize 
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
+haiku_telemetry_init
 UNIT_COUNT=$(ls "$INTENT_DIR"/stages/*/units/unit-*.md 2>/dev/null | wc -l | tr -d ' ')
 HAS_WIREFRAMES="false"
 [ -d "$INTENT_DIR/mockups" ] && HAS_WIREFRAMES="true"
-aidlc_record_elaboration_complete "${INTENT_SLUG}" "${UNIT_COUNT}" "${HAS_WIREFRAMES}"
+haiku_record_elaboration_complete "${INTENT_SLUG}" "${UNIT_COUNT}" "${HAS_WIREFRAMES}"
 ```
 
 ### 5b. Push artifacts to remote (cowork)
 
-If the orchestrator is in a temporary workspace (`/tmp/ai-dlc-workspace-*`):
+If the orchestrator is in a temporary workspace (`/tmp/haiku-workspace-*`):
 
 ```bash
 git push -u origin "$INTENT_BRANCH"
@@ -2753,7 +2753,7 @@ git push -u origin "$INTENT_BRANCH"
 # Determine default branch
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-CONFIG=$(get_ai_dlc_config "$INTENT_DIR")
+CONFIG=$(get_haiku_config "$INTENT_DIR")
 DEFAULT_BRANCH=$(echo "$CONFIG" | jq -r '.default_branch')
 
 # Read intent.md for PR body content
@@ -2832,7 +2832,7 @@ Package all spec artifacts into a zip file:
 
 ```bash
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-ZIP_PATH="/tmp/ai-dlc-${INTENT_SLUG}-spec.zip"
+ZIP_PATH="/tmp/haiku-${INTENT_SLUG}-spec.zip"
 cd "$(git rev-parse --show-toplevel)"
 zip -r "$ZIP_PATH" "$INTENT_DIR"
 ```

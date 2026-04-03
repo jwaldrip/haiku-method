@@ -27,10 +27,10 @@ If `CLAUDE_CODE_IS_COWORK=1`, stop immediately with the message above. Do NOT pr
 
 ```bash
 # Intent-level state is stored on current branch (intent branch)
-# Intent slug is derived from .ai-dlc directory structure
-INTENT_SLUG=$(basename "$(find .ai-dlc -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)")
+# Intent slug is derived from .haiku directory structure
+INTENT_SLUG=$(basename "$(find .haiku -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)")
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json")
+STATE=$(hku_state_load "$INTENT_DIR" "iteration.json")
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
 ```
 
@@ -73,7 +73,7 @@ If "Specific unit" is selected, list available units and ask which one:
 for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
   [ -f "$unit_file" ] || continue
   unit_name=$(basename "$unit_file" .md)
-  status=$(dlc_frontmatter_get "status" "$unit_file" 2>/dev/null || echo "pending")
+  status=$(hku_frontmatter_get "status" "$unit_file" 2>/dev/null || echo "pending")
   echo "- **${unit_name}** (${status})"
 done
 ```
@@ -180,19 +180,19 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 
 # Re-queue affected units and reset hat tracking in frontmatter
-ACTIVE_STAGE=$(dlc_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
-STUDIO=$(dlc_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
+ACTIVE_STAGE=$(hku_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
+STUDIO=$(hku_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
 FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
 [ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
 
 for unit_file in $AFFECTED_UNITS; do
   update_unit_status "$unit_file" "pending"
-  dlc_frontmatter_set "hat" "${FIRST_HAT}" "$unit_file"
+  hku_frontmatter_set "hat" "${FIRST_HAT}" "$unit_file"
 done
 
 # Clear currentUnit in iteration.json
-STATE=$(echo "$STATE" | dlc_json_set "currentUnit" "")
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+STATE=$(echo "$STATE" | hku_json_set "currentUnit" "")
+hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
 git add "$INTENT_DIR/"
 git commit -m "refine: re-queue affected units for ${INTENT_SLUG}"
@@ -210,18 +210,18 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 update_unit_status "$INTENT_DIR/${UNIT_NAME}.md" "pending"
 
 # Reset hat tracking in unit frontmatter
-ACTIVE_STAGE=$(dlc_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
-STUDIO=$(dlc_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
+ACTIVE_STAGE=$(hku_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
+STUDIO=$(hku_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
 FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
 [ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
-dlc_frontmatter_set "hat" "${FIRST_HAT}" "$INTENT_DIR/${UNIT_NAME}.md"
+hku_frontmatter_set "hat" "${FIRST_HAT}" "$INTENT_DIR/${UNIT_NAME}.md"
 
 # Clear currentUnit if it matches
-CURRENT_UNIT=$(echo "$STATE" | dlc_json_get "currentUnit" "")
+CURRENT_UNIT=$(echo "$STATE" | hku_json_get "currentUnit" "")
 if [ "$CURRENT_UNIT" = "$UNIT_NAME" ]; then
-  STATE=$(echo "$STATE" | dlc_json_set "currentUnit" "")
+  STATE=$(echo "$STATE" | hku_json_set "currentUnit" "")
 fi
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
 git add "$INTENT_DIR/"
 git commit -m "refine: re-queue ${UNIT_NAME} for ${INTENT_SLUG}"
@@ -232,8 +232,8 @@ git commit -m "refine: re-queue ${UNIT_NAME} for ${INTENT_SLUG}"
 If `integratorComplete` was set to `true` in `iteration.json`, reset it to `false` since the spec has changed:
 
 ```bash
-STATE=$(echo "$STATE" | dlc_json_set "integratorComplete" "false")
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+STATE=$(echo "$STATE" | hku_json_set "integratorComplete" "false")
+hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 ---

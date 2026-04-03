@@ -643,7 +643,7 @@ Before writing artifacts, create a dedicated branch so commits don't land on the
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
-CONFIG=$(get_ai_dlc_config "" "$REPO_ROOT")
+CONFIG=$(get_haiku_config "" "$REPO_ROOT")
 DEFAULT_BRANCH=$(echo "$CONFIG" | jq -r '.default_branch')
 
 ADOPT_BRANCH="haiku/${SLUG}/main"
@@ -714,11 +714,11 @@ an existing feature.}
 Adopted on {ISO date} via `/haiku:adopt`.
 ```
 
-Use `dlc_frontmatter_set` to ensure frontmatter is correctly written:
+Use `hku_frontmatter_set` to ensure frontmatter is correctly written:
 
 ```bash
-dlc_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
-dlc_frontmatter_set "created" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$INTENT_DIR/intent.md"
+hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
+hku_frontmatter_set "created" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$INTENT_DIR/intent.md"
 
 # Extract the intent title from the H1 heading for use in Phase 7 handoff
 INTENT_TITLE=$(grep -m1 '^# ' "$INTENT_DIR/intent.md" | sed 's/^# //')
@@ -770,11 +770,11 @@ Describes the implementation as-built, not as-planned.}
 {Additional context — e.g., "Adopted from existing code in src/auth/".}
 ```
 
-Use `dlc_frontmatter_set` for each unit:
+Use `hku_frontmatter_set` for each unit:
 
 ```bash
-dlc_frontmatter_set "status" "completed" "$INTENT_DIR/unit-NN-${UNIT_SLUG}.md"
-dlc_frontmatter_set "last_updated" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$INTENT_DIR/unit-NN-${UNIT_SLUG}.md"
+hku_frontmatter_set "status" "completed" "$INTENT_DIR/unit-NN-${UNIT_SLUG}.md"
+hku_frontmatter_set "last_updated" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$INTENT_DIR/unit-NN-${UNIT_SLUG}.md"
 ```
 
 ### Write `discovery.md`
@@ -817,13 +817,13 @@ If operations were approved in Phase 5, write each spec to `$INTENT_DIR/operatio
 
 ```bash
 for op in "${OPERATIONS[@]}"; do
-  OP_NAME=$(echo "$op" | dlc_json_get "name")
-  OP_TYPE=$(echo "$op" | dlc_json_get "type")
-  OP_OWNER=$(echo "$op" | dlc_json_get "owner")
-  OP_RUNTIME=$(echo "$op" | dlc_json_get "runtime")
-  OP_SCHEDULE=$(echo "$op" | dlc_json_get "schedule")
-  OP_TRIGGER=$(echo "$op" | dlc_json_get "trigger")
-  OP_FREQUENCY=$(echo "$op" | dlc_json_get "frequency")
+  OP_NAME=$(echo "$op" | hku_json_get "name")
+  OP_TYPE=$(echo "$op" | hku_json_get "type")
+  OP_OWNER=$(echo "$op" | hku_json_get "owner")
+  OP_RUNTIME=$(echo "$op" | hku_json_get "runtime")
+  OP_SCHEDULE=$(echo "$op" | hku_json_get "schedule")
+  OP_TRIGGER=$(echo "$op" | hku_json_get "trigger")
+  OP_FREQUENCY=$(echo "$op" | hku_json_get "frequency")
   OP_FILE="$INTENT_DIR/operations/${OP_NAME}.md"
 
   # Write the spec file with frontmatter and body
@@ -887,16 +887,16 @@ After committing, derive counts from the approved artifacts and emit telemetry s
 UNIT_COUNT=$(find "$INTENT_DIR" -maxdepth 1 -name "unit-*.md" | wc -l | tr -d ' ')
 
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_intent_created "${SLUG}" "adopt"
-aidlc_record_intent_completed "${SLUG}" "${UNIT_COUNT}"
+haiku_telemetry_init
+haiku_record_intent_created "${SLUG}" "adopt"
+haiku_record_intent_completed "${SLUG}" "${UNIT_COUNT}"
 ```
 
 ### Save State
 
 ```bash
 # OP_COUNT is already set from the Phase 5 synthesis step (0 if operations were skipped)
-dlc_state_save "$INTENT_DIR" "adopt-metadata.json" "{
+hku_state_save "$INTENT_DIR" "adopt-metadata.json" "{
   \"adopted_on\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
   \"feature_description\": \"${FEATURE_DESCRIPTION}\",
   \"unit_count\": ${UNIT_COUNT},

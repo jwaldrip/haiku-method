@@ -202,7 +202,7 @@ Need user input on priorities.
 ### Saving Blockers
 
 ```bash
-dlc_state_save "$INTENT_DIR" "blockers.md" "$BLOCKER_MARKDOWN"
+hku_state_save "$INTENT_DIR" "blockers.md" "$BLOCKER_MARKDOWN"
 ```
 
 ## Blocker Resolution
@@ -304,10 +304,10 @@ When a blocker is resolved:
 
 ```bash
 # Option 1: Clear the file
-dlc_state_delete "$INTENT_DIR" "blockers.md"
+hku_state_delete "$INTENT_DIR" "blockers.md"
 
 # Option 2: Update with resolution
-dlc_state_save "$INTENT_DIR" "blockers.md" "## Resolved
+hku_state_save "$INTENT_DIR" "blockers.md" "## Resolved
 
 OAuth issue fixed by disabling strict mode."
 ```

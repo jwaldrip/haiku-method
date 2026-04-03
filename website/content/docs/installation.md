@@ -42,7 +42,7 @@ Install directly from within a Claude Code session:
 
 ```
 /plugin marketplace add thebushidocollective/ai-dlc
-/plugin install ai-dlc@thebushidocollective-ai-dlc --scope project
+/plugin install haiku@thebushidocollective-ai-dlc --scope project
 ```
 
 ### Method 2: Via Han

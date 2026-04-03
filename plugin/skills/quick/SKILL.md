@@ -333,7 +333,7 @@ Run cleanup after delivery (or if delivery was skipped), regardless of outcome. 
    ```
 2. If a `.haiku/quick/` gitignore entry was added in Step 3a, remove it:
    ```bash
-   sed -i.bak '/\.ai-dlc\/quick\//d' .gitignore && rm -f .gitignore.bak
+   sed -i.bak '/\.haiku\/quick\//d' .gitignore && rm -f .gitignore.bak
    ```
    If `.gitignore` is now unchanged from its original state (the only modification was the quick entry), do not commit the gitignore change. If other gitignore changes exist, leave them.
 

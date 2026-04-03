@@ -75,8 +75,8 @@ for intent_file in .haiku/intents/*/intent.md; do
   [ -f "$intent_file" ] || continue
   dir=$(dirname "$intent_file")
   slug=$(basename "$dir")
-  status=$(dlc_frontmatter_get "status" "$intent_file" 2>/dev/null || echo "active")
-  title=$(dlc_frontmatter_get "title" "$intent_file" 2>/dev/null || echo "$slug")
+  status=$(hku_frontmatter_get "status" "$intent_file" 2>/dev/null || echo "active")
+  title=$(hku_frontmatter_get "title" "$intent_file" 2>/dev/null || echo "$slug")
   echo "$slug|$status|$title"
 done
 ```
@@ -262,8 +262,8 @@ This intent iterates on **{previous title}** (`{previous-slug}`).
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_followup_created "${INTENT_SLUG}" "${PREVIOUS_SLUG}"
+haiku_telemetry_init
+haiku_record_followup_created "${INTENT_SLUG}" "${PREVIOUS_SLUG}"
 ```
 
 ### Step 5: Transition to Elaboration

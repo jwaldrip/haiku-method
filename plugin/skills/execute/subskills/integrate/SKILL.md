@@ -26,7 +26,7 @@ This skill is invoked by `/haiku:advance` or `/haiku:execute` when all units are
 
 - **Intent slug** - The intent being validated
 - **Worktree path** - Path to the intent worktree (contains all merged unit work)
-- **Intent branch** - The branch name (`ai-dlc/{intent-slug}/main`)
+- **Intent branch** - The branch name (`haiku/{intent-slug}/main`)
 - **Intent-level success criteria** - From `intent.md`
 - **Completed units list** - All units that were built and merged
 
@@ -34,7 +34,7 @@ This skill is invoked by `/haiku:advance` or `/haiku:execute` when all units are
 
 ## Step 1: Verify Merged State Integrity
 
-- You MUST confirm you are on the intent branch (`ai-dlc/{intent-slug}/main`)
+- You MUST confirm you are on the intent branch (`haiku/{intent-slug}/main`)
 - You MUST verify all unit branches have been merged
 - You MUST check for merge conflicts or incomplete merges
 - You MUST run `git log --oneline` to confirm all unit merge commits are present
@@ -164,8 +164,8 @@ Full-stack dry-run: PASS (or SKIPPED — no stack config)
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_integration_result "${INTENT_SLUG}" "true" "0"
+haiku_telemetry_init
+haiku_record_integration_result "${INTENT_SLUG}" "true" "0"
 ```
 
 ### On REJECT
@@ -198,8 +198,8 @@ Dry-run failures:
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_integration_result "${INTENT_SLUG}" "false" "${ISSUE_COUNT}"
+haiku_telemetry_init
+haiku_record_integration_result "${INTENT_SLUG}" "false" "${ISSUE_COUNT}"
 ```
 
 ---

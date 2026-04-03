@@ -32,9 +32,9 @@ Advances to the next hat in the stage's hat sequence. For example, in the develo
 
 ```bash
 # Intent-level state is stored in .haiku/intents/{slug}/state/
-INTENT_DIR=$(find .ai-dlc -maxdepth 2 -name "intent.md" -exec dirname {} \; | head -1)
+INTENT_DIR=$(find .haiku -maxdepth 2 -name "intent.md" -exec dirname {} \; | head -1)
 INTENT_SLUG=$(basename "$INTENT_DIR")
-STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json")
+STATE=$(hku_state_load "$INTENT_DIR" "iteration.json")
 ```
 
 ### Step 2: Verify Hard Gate and Determine Next Hat (or Handle Completion)
@@ -48,12 +48,12 @@ Before advancing, check the hard gate for the current transition:
 
 ```bash
 # Hard gate verification — block advancement if gate conditions are not met
-CURRENT_HAT=$(echo "$STATE" | dlc_json_get "hat")
+CURRENT_HAT=$(echo "$STATE" | hku_json_get "hat")
 
 case "$CURRENT_HAT" in
   planner)
     # PLAN_APPROVED gate: plan must exist and cover all criteria
-    PLAN=$(dlc_state_load "$INTENT_DIR" "current-plan.md" 2>/dev/null || echo "")
+    PLAN=$(hku_state_load "$INTENT_DIR" "current-plan.md" 2>/dev/null || echo "")
     if [ -z "$PLAN" ]; then
       echo "## HARD GATE: PLAN_APPROVED"
       echo ""
@@ -69,7 +69,7 @@ case "$CURRENT_HAT" in
     #
     # Visual gate check is still handled here because it prepares
     # comparison context for the reviewer (not a pass/fail gate at this point).
-    CURRENT_UNIT=$(echo "$STATE" | dlc_json_get "currentUnit" "")
+    CURRENT_UNIT=$(echo "$STATE" | hku_json_get "currentUnit" "")
     UNIT_FILE="$INTENT_DIR/${CURRENT_UNIT}.md"
     if [ -n "$CURRENT_UNIT" ] && [ -f "$UNIT_FILE" ]; then
       PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
@@ -102,9 +102,9 @@ case "$CURRENT_HAT" in
     # CRITERIA_MET gate: each criterion must have PASS with evidence
     # This is verified by the reviewer hat itself — if the reviewer calls /haiku:advance,
     # it means criteria were evaluated. The structured completion marker is checked here.
-    REVIEW_RESULT=$(dlc_state_load "$INTENT_DIR" "review-result.json" 2>/dev/null || echo "")
+    REVIEW_RESULT=$(hku_state_load "$INTENT_DIR" "review-result.json" 2>/dev/null || echo "")
     if [ -n "$REVIEW_RESULT" ]; then
-      ALL_PASS=$(echo "$REVIEW_RESULT" | dlc_json_get "allPass" "false" 2>/dev/null || echo "false")
+      ALL_PASS=$(echo "$REVIEW_RESULT" | hku_json_get "allPass" "false" 2>/dev/null || echo "false")
       if [ "$ALL_PASS" != "true" ]; then
         echo "## HARD GATE: CRITERIA_MET"
         echo ""
@@ -147,11 +147,11 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 # INTENT_DIR and INTENT_SLUG already set in Step 1
 
 # Mark current unit as completed
-CURRENT_UNIT=$(echo "$ITERATION_JSON" | dlc_json_get "currentUnit" "")
+CURRENT_UNIT=$(echo "$ITERATION_JSON" | hku_json_get "currentUnit" "")
 if [ -n "$CURRENT_UNIT" ] && [ -f "$INTENT_DIR/${CURRENT_UNIT}.md" ]; then
   update_unit_status "$INTENT_DIR/${CURRENT_UNIT}.md" "completed"
   # Check off completion criteria checkboxes in the unit file
-  dlc_check_unit_criteria "$INTENT_DIR/${CURRENT_UNIT}.md"
+  hku_check_unit_criteria "$INTENT_DIR/${CURRENT_UNIT}.md"
   # Save the status change so it persists across sessions
   source "${CLAUDE_PLUGIN_ROOT}/lib/persistence.sh"
   persistence_save "$INTENT_SLUG" "status: mark ${CURRENT_UNIT} as completed" "$INTENT_DIR/${CURRENT_UNIT}.md"
@@ -163,11 +163,11 @@ fi
 When `targetUnit` is set in state and matches the just-completed unit, handle early exit:
 
 ```bash
-TARGET_UNIT=$(echo "$STATE" | dlc_json_get "targetUnit" "")
+TARGET_UNIT=$(echo "$STATE" | hku_json_get "targetUnit" "")
 if [ -n "$TARGET_UNIT" ] && [ "$TARGET_UNIT" = "$CURRENT_UNIT" ]; then
   # Clear targetUnit from state
-  STATE=$(echo "$STATE" | dlc_json_set "targetUnit" "")
-  dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+  STATE=$(echo "$STATE" | hku_json_set "targetUnit" "")
+  hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 Clean up the targeted unit's team agents before exiting (if Agent Teams are enabled):
@@ -206,7 +206,7 @@ After marking a unit as completed, merge behavior depends on `change_strategy`:
 REPO_ROOT=$(git worktree list --porcelain | head -1 | sed 's/^worktree //')
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-CONFIG=$(get_ai_dlc_config "$INTENT_DIR")
+CONFIG=$(get_haiku_config "$INTENT_DIR")
 AUTO_MERGE=$(echo "$CONFIG" | jq -r '.auto_merge // "true"')
 AUTO_SQUASH=$(echo "$CONFIG" | jq -r '.auto_squash // "false"')
 DEFAULT_BRANCH=$(echo "$CONFIG" | jq -r '.default_branch')
@@ -226,7 +226,7 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/persistence.sh"
 
 if [ "$CHANGE_STRATEGY" = "unit" ]; then
   # Unit strategy: open a PR for the unit branch directly to the default branch
-  UNIT_TICKET=$(dlc_frontmatter_get "ticket" "$INTENT_DIR/${CURRENT_UNIT}.md" 2>/dev/null || echo "")
+  UNIT_TICKET=$(hku_frontmatter_get "ticket" "$INTENT_DIR/${CURRENT_UNIT}.md" 2>/dev/null || echo "")
   TICKET_LINE=""
   if [ -n "$UNIT_TICKET" ]; then
     TICKET_LINE="Closes ${UNIT_TICKET}"
@@ -240,7 +240,7 @@ Part of intent: ${INTENT_SLUG}
 ${TICKET_LINE}
 
 ---
-*Built with [H·AI·K·U](https://ai-dlc.dev)*
+*Built with [H·AI·K·U](https://haikumethod.ai)*
 EOF
 )"
 
@@ -248,16 +248,16 @@ EOF
 
   if [ -n "$PR_URL" ]; then
     source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-    aidlc_telemetry_init
-    aidlc_record_delivery_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}" "${PR_URL}"
+    haiku_telemetry_init
+    haiku_record_delivery_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}" "${PR_URL}"
   fi
 
   # Clean up local unit worktree after PR is pushed (work is on remote now)
   persistence_cleanup "$INTENT_SLUG" --unit "$UNIT_SLUG"
   echo "Cleaned up unit worktree for ${CURRENT_UNIT}"
   source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-  aidlc_telemetry_init
-  aidlc_record_worktree_event "deleted" "${REPO_ROOT}/.haiku/worktrees/${INTENT_SLUG}-${UNIT_SLUG}"
+  haiku_telemetry_init
+  haiku_record_worktree_event "deleted" "${REPO_ROOT}/.haiku/worktrees/${INTENT_SLUG}-${UNIT_SLUG}"
   # Keep the branch — it backs the open PR
 
 elif [ "$AUTO_MERGE" = "true" ]; then
@@ -270,8 +270,8 @@ elif [ "$AUTO_MERGE" = "true" ]; then
   persistence_cleanup "$INTENT_SLUG" --unit "$UNIT_SLUG"
   echo "Cleaned up unit worktree and branch for ${CURRENT_UNIT}"
   source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-  aidlc_telemetry_init
-  aidlc_record_worktree_event "deleted" "${REPO_ROOT}/.haiku/worktrees/${INTENT_SLUG}-${UNIT_SLUG}"
+  haiku_telemetry_init
+  haiku_record_worktree_event "deleted" "${REPO_ROOT}/.haiku/worktrees/${INTENT_SLUG}-${UNIT_SLUG}"
 fi
 ```
 
@@ -340,14 +340,14 @@ SKIP_INTEGRATOR=false
   }
   // Integration passed or skipped - Mark intent as done
   state.status = "completed";
-  // dlc_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
+  // hku_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
 ```
 
 ```bash
 # Update intent.md frontmatter status so it persists in git
-dlc_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
+hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
 # Check off intent-level completion criteria checkboxes
-dlc_check_intent_criteria "$INTENT_DIR"
+hku_check_intent_criteria "$INTENT_DIR"
 source "${CLAUDE_PLUGIN_ROOT}/lib/persistence.sh"
 persistence_save "$INTENT_SLUG" "status: mark intent ${INTENT_SLUG} as completed" \
   "$INTENT_DIR/intent.md" \
@@ -356,9 +356,9 @@ persistence_save "$INTENT_SLUG" "status: mark intent ${INTENT_SLUG} as completed
 
 # Record intent completion telemetry
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
+haiku_telemetry_init
 UNIT_COUNT=$(ls "$INTENT_DIR"/stages/*/units/unit-*.md 2>/dev/null | wc -l | tr -d ' ')
-aidlc_record_intent_completed "${INTENT_SLUG}" "${UNIT_COUNT}"
+haiku_record_intent_completed "${INTENT_SLUG}" "${UNIT_COUNT}"
 ```
 
 ```javascript
@@ -370,7 +370,7 @@ if (READY_COUNT > 0) {
   // MORE UNITS READY - Loop back to builder
   state.hat = unitHats[2] || "builder";  // Reset to builder (index 2 in default stage)
   state.currentUnit = null;  // Will be set by /haiku:execute when it picks next unit
-  // dlc_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
+  // hku_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
   return `Unit completed. ${READY_COUNT} more unit(s) ready. Continuing execution...`;
 }
 
@@ -424,8 +424,8 @@ When `ALL_COMPLETE` is true and `state.integratorComplete` is not true, run inte
 1. Set state to indicate integration is running:
 
 ```bash
-STATE=$(echo "$STATE" | dlc_json_set "hat" "integrator")
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+STATE=$(echo "$STATE" | hku_json_set "hat" "integrator")
+hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
 2. Spawn the integrate skill as a subagent on the **intent worktree** (not a unit worktree):
@@ -462,13 +462,13 @@ Task({
 
 **If ACCEPT:**
 ```bash
-STATE=$(echo "$STATE" | dlc_json_set "integratorComplete" "true" | dlc_json_set "status" "completed")
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+STATE=$(echo "$STATE" | hku_json_set "integratorComplete" "true" | hku_json_set "status" "completed")
+hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
 # Update intent.md frontmatter status so it persists in git
-dlc_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
+hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
 # Check off intent-level completion criteria checkboxes
-dlc_check_intent_criteria "$INTENT_DIR"
+hku_check_intent_criteria "$INTENT_DIR"
 source "${CLAUDE_PLUGIN_ROOT}/lib/persistence.sh"
 persistence_save "$INTENT_SLUG" "status: mark intent ${INTENT_SLUG} as completed" \
   "$INTENT_DIR/intent.md" \
@@ -477,9 +477,9 @@ persistence_save "$INTENT_SLUG" "status: mark intent ${INTENT_SLUG} as completed
 
 # Record intent completion telemetry
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
+haiku_telemetry_init
 UNIT_COUNT=$(ls "$INTENT_DIR"/stages/*/units/unit-*.md 2>/dev/null | wc -l | tr -d ' ')
-aidlc_record_intent_completed "${INTENT_SLUG}" "${UNIT_COUNT}"
+haiku_record_intent_completed "${INTENT_SLUG}" "${UNIT_COUNT}"
 
 # Proceed to Step 5 (completion summary)
 ```
@@ -497,7 +497,7 @@ for UNIT_FILE in $REJECTED_UNITS; do
   update_unit_status "$UNIT_FILE" "pending"
 
   # Reset hat to first hat of this unit's stage (determined by discipline)
-  UNIT_DISCIPLINE=$(dlc_frontmatter_get "discipline" "$UNIT_FILE" 2>/dev/null || echo "")
+  UNIT_DISCIPLINE=$(hku_frontmatter_get "discipline" "$UNIT_FILE" 2>/dev/null || echo "")
   UNIT_STAGE="$ACTIVE_STAGE"
   case "$UNIT_DISCIPLINE" in
     design) UNIT_STAGE="design" ;;
@@ -505,15 +505,15 @@ for UNIT_FILE in $REJECTED_UNITS; do
   esac
   FIRST_HAT=$(hku_get_hat_sequence "$UNIT_STAGE" "$STUDIO" | awk '{print $1}')
   [ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
-  dlc_frontmatter_set "hat" "${FIRST_HAT}" "$UNIT_FILE"
-  dlc_frontmatter_set "retries" "0" "$UNIT_FILE"
+  hku_frontmatter_set "hat" "${FIRST_HAT}" "$UNIT_FILE"
+  hku_frontmatter_set "retries" "0" "$UNIT_FILE"
 done
 
 # Reset integration state
 GLOBAL_FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
 [ -z "$GLOBAL_FIRST_HAT" ] && GLOBAL_FIRST_HAT="planner"
-STATE=$(echo "$STATE" | dlc_json_set "hat" "${GLOBAL_FIRST_HAT}" | dlc_json_set "integratorComplete" "false")
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+STATE=$(echo "$STATE" | hku_json_set "hat" "${GLOBAL_FIRST_HAT}" | hku_json_set "integratorComplete" "false")
+hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
 # Output: "Integration rejected. Re-queued units: {list}. Run /haiku:execute to continue."
 ```
@@ -524,7 +524,7 @@ The re-queued units will be picked up on the next `/haiku:execute` cycle through
 
 ```bash
 # Increment iteration counter
-ITERATION=$(echo "$STATE" | dlc_json_get "iteration" "1")
+ITERATION=$(echo "$STATE" | hku_json_get "iteration" "1")
 ITERATION=$((ITERATION + 1))
 
 # Safety cap: prevent infinite loops
@@ -536,19 +536,19 @@ if [ "$ITERATION" -ge "$MAX_ITERATIONS" ]; then
   echo "This likely indicates poorly specified criteria or a systematic issue."
   echo ""
   echo "**Action required:** Review the intent and unit specs, then run \`/haiku:execute\` to resume."
-  STATE=$(echo "$STATE" | dlc_json_set "status" "blocked" | dlc_json_set "iteration" "$ITERATION")
-  dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+  STATE=$(echo "$STATE" | hku_json_set "status" "blocked" | hku_json_set "iteration" "$ITERATION")
+  hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
   exit 0
 fi
 
 # Update hat and signal SessionStart to increment iteration
 # Intent-level state saved to current branch (intent branch)
 # state.hat = nextHat, state.iteration = ITERATION
-dlc_state_save "$INTENT_DIR" "iteration.json" '<updated JSON with hat and iteration>'
+hku_state_save "$INTENT_DIR" "iteration.json" '<updated JSON with hat and iteration>'
 
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_hat_transition "${INTENT_SLUG}" "${PREVIOUS_HAT}" "${NEXT_HAT}"
+haiku_telemetry_init
+haiku_record_hat_transition "${INTENT_SLUG}" "${PREVIOUS_HAT}" "${NEXT_HAT}"
 ```
 
 ### Step 4: Confirm (Normal Advancement)
@@ -585,14 +585,14 @@ The intent branch is ready to merge:
 # Load merge config
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-CONFIG=$(get_ai_dlc_config "$INTENT_DIR")
+CONFIG=$(get_haiku_config "$INTENT_DIR")
 DEFAULT_BRANCH=$(echo "$CONFIG" | jq -r '.default_branch')
 ```
 
 ```
-Intent branch ready: ai-dlc/{intent-slug}/main → ${DEFAULT_BRANCH}
+Intent branch ready: haiku/{intent-slug}/main → ${DEFAULT_BRANCH}
 
-Create PR: gh pr create --base ${DEFAULT_BRANCH} --head ai-dlc/{intent-slug}/main
+Create PR: gh pr create --base ${DEFAULT_BRANCH} --head haiku/{intent-slug}/main
 ```
 
 ### Completion Announcements
@@ -600,7 +600,7 @@ Create PR: gh pr create --base ${DEFAULT_BRANCH} --head ai-dlc/{intent-slug}/mai
 If the intent has configured `announcements` in its frontmatter, generate each format:
 
 ```bash
-ANNOUNCEMENTS=$(dlc_frontmatter_get "announcements" "$INTENT_DIR/intent.md" 2>/dev/null || echo "[]")
+ANNOUNCEMENTS=$(hku_frontmatter_get "announcements" "$INTENT_DIR/intent.md" 2>/dev/null || echo "[]")
 ```
 
 For each configured format, generate the announcement artifact in `.haiku/intents/{intent-slug}/`:
@@ -637,21 +637,21 @@ for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
   if [ "$UNIT_STATUS" != "completed" ]; then
     echo "Fixing: $(basename "$unit_file" .md) status '$UNIT_STATUS' → 'completed'"
     update_unit_status "$unit_file" "completed"
-    dlc_check_unit_criteria "$unit_file"
+    hku_check_unit_criteria "$unit_file"
     git add "$unit_file"
   fi
 done
 
 # Verify intent is marked completed
-INTENT_STATUS=$(dlc_frontmatter_get "status" "$INTENT_DIR/intent.md")
+INTENT_STATUS=$(hku_frontmatter_get "status" "$INTENT_DIR/intent.md")
 if [ "$INTENT_STATUS" != "completed" ]; then
   echo "Fixing: intent status '$INTENT_STATUS' → 'completed'"
-  dlc_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
+  hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
   git add "$INTENT_DIR/intent.md"
 fi
 
 # Check off completion criteria checkboxes
-dlc_check_intent_criteria "$INTENT_DIR"
+hku_check_intent_criteria "$INTENT_DIR"
 git add "$INTENT_DIR/completion-criteria.md" 2>/dev/null || true
 git add "$INTENT_DIR/state/completion-criteria.md" 2>/dev/null || true
 
@@ -665,7 +665,7 @@ fi
 
 After integration passes and before delivery, refresh knowledge artifacts so the next intent benefits from what this intent established. This is especially valuable for greenfield and early-stage projects where the first few intents create the foundational patterns.
 
-**Gate:** Skip this step if `knowledge_refresh` is explicitly set to `false` in `.ai-dlc/settings.yml`:
+**Gate:** Skip this step if `knowledge_refresh` is explicitly set to `false` in `.haiku/settings.yml`:
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
@@ -679,7 +679,7 @@ If `KNOWLEDGE_REFRESH` is `"false"`, skip to Pre-Delivery Code Review.
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
-KNOWLEDGE_COUNT=$(dlc_knowledge_list | wc -l | tr -d ' ')
+KNOWLEDGE_COUNT=$(hku_knowledge_list | wc -l | tr -d ' ')
 PROJECT_MATURITY=$(detect_project_maturity)
 ```
 
@@ -694,7 +694,7 @@ Write `.haiku/intents/${INTENT_SLUG}/.briefs/knowledge-refresh.md`:
 intent_slug: {INTENT_SLUG}
 worktree_path: {absolute path to intent worktree}
 project_maturity: {PROJECT_MATURITY}
-existing_knowledge: [{list of existing artifact types from dlc_knowledge_list}]
+existing_knowledge: [{list of existing artifact types from hku_knowledge_list}]
 post_integrate: true
 ---
 
@@ -724,7 +724,7 @@ Agent({
 **Run in background** — knowledge refresh should not block delivery. The artifacts will be committed when the subagent completes. If the subagent finishes before delivery completes, commit the results:
 
 ```bash
-git add .ai-dlc/knowledge/ .haiku/intents/${INTENT_SLUG}/.briefs/knowledge-refresh*.md
+git add .haiku/knowledge/ .haiku/intents/${INTENT_SLUG}/.briefs/knowledge-refresh*.md
 git diff --cached --quiet || git commit -m "knowledge: refresh artifacts after ${INTENT_SLUG} integration"
 ```
 
@@ -742,7 +742,7 @@ The review is delegated to the `/haiku:review` skill, which runs specialized age
 # Determine if we need pre-delivery review (intent/hybrid strategy only)
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
-CONFIG=$(get_ai_dlc_config "$INTENT_DIR")
+CONFIG=$(get_haiku_config "$INTENT_DIR")
 CHANGE_STRATEGY=$(echo "$CONFIG" | jq -r '.change_strategy // "unit"')
 
 NEEDS_DELIVERY_REVIEW=false
@@ -773,8 +773,8 @@ The review skill handles the full lifecycle:
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_delivery_review "${INTENT_SLUG}" "approved" "0"
+haiku_telemetry_init
+haiku_record_delivery_review "${INTENT_SLUG}" "approved" "0"
 ```
 
 - **`needs_attention`**: The user was already asked how to proceed by the review skill. If they chose "Proceed anyway", record telemetry and continue to delivery. If they chose "Let me fix manually" or "Abort", STOP — do not create the PR.
@@ -782,8 +782,8 @@ aidlc_record_delivery_review "${INTENT_SLUG}" "approved" "0"
 ```bash
 # Record telemetry for deliveries with noted findings
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_delivery_review "${INTENT_SLUG}" "needs_attention" "${FINDINGS_COUNT}"
+haiku_telemetry_init
+haiku_record_delivery_review "${INTENT_SLUG}" "needs_attention" "${FINDINGS_COUNT}"
 ```
 
 - **`aborted`**: STOP. Do not proceed to delivery.
@@ -793,7 +793,7 @@ aidlc_record_delivery_review "${INTENT_SLUG}" "needs_attention" "${FINDINGS_COUN
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
-CONFIG=$(get_ai_dlc_config "$INTENT_DIR")
+CONFIG=$(get_haiku_config "$INTENT_DIR")
 CHANGE_STRATEGY=$(echo "$CONFIG" | jq -r '.change_strategy // "unit"')
 
 ALL_UNIT_STRATEGY=true
@@ -814,8 +814,8 @@ if [ -d "$INTENT_WORKTREE" ]; then
   git worktree remove "$INTENT_WORKTREE" 2>/dev/null || echo "Warning: failed to remove worktree at $INTENT_WORKTREE"
   echo "Cleaned up intent worktree for ${INTENT_SLUG}"
   source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-  aidlc_telemetry_init
-  aidlc_record_worktree_event "deleted" "${INTENT_WORKTREE}"
+  haiku_telemetry_init
+  haiku_record_worktree_event "deleted" "${INTENT_WORKTREE}"
 fi
 git worktree prune
 ```
@@ -860,7 +860,7 @@ DEFAULT_BRANCH=$(echo "$CONFIG" | jq -r '.default_branch')
 TICKET_REFS=""
 for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
   [ -f "$unit_file" ] || continue
-  TICKET=$(dlc_frontmatter_get "ticket" "$unit_file" 2>/dev/null || echo "")
+  TICKET=$(hku_frontmatter_get "ticket" "$unit_file" 2>/dev/null || echo "")
   if [ -n "$TICKET" ]; then
     TICKET_REFS="${TICKET_REFS}\nCloses ${TICKET}"
   fi
@@ -889,14 +889,14 @@ ${COMPLETED_UNITS_AS_CHANGE_LIST}
 $(printf "%b" "${TICKET_REFS}")
 
 ---
-*Built with [H·AI·K·U](https://ai-dlc.dev)*
+*Built with [H·AI·K·U](https://haikumethod.ai)*
 EOF
 )" 2>&1)
 
 if [ -n "$PR_URL" ]; then
   source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-  aidlc_telemetry_init
-  aidlc_record_delivery_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}" "${PR_URL}"
+  haiku_telemetry_init
+  haiku_record_delivery_created "${INTENT_SLUG}" "${CHANGE_STRATEGY}" "${PR_URL}"
 fi
 ```
 
@@ -909,8 +909,8 @@ if [ -d "$INTENT_WORKTREE" ]; then
   git worktree remove "$INTENT_WORKTREE" 2>/dev/null || echo "Warning: failed to remove worktree at $INTENT_WORKTREE"
   echo "Cleaned up intent worktree for ${INTENT_SLUG}"
   source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-  aidlc_telemetry_init
-  aidlc_record_worktree_event "deleted" "${INTENT_WORKTREE}"
+  haiku_telemetry_init
+  haiku_record_worktree_event "deleted" "${INTENT_WORKTREE}"
 fi
 git worktree prune
 # Keep the branch — it backs the open PR
@@ -921,14 +921,14 @@ git worktree prune
 ### If manual:
 
 ```
-Intent branch ready: ai-dlc/{intent-slug}/main → ${DEFAULT_BRANCH}
+Intent branch ready: haiku/{intent-slug}/main → ${DEFAULT_BRANCH}
 
 To merge:
   git checkout ${DEFAULT_BRANCH}
-  git merge --no-ff ai-dlc/{intent-slug}/main
+  git merge --no-ff haiku/{intent-slug}/main
 
 To create PR manually:
-  gh pr create --base ${DEFAULT_BRANCH} --head ai-dlc/{intent-slug}/main
+  gh pr create --base ${DEFAULT_BRANCH} --head haiku/{intent-slug}/main
 
 To clean up:
   /haiku:reset
@@ -943,8 +943,8 @@ if [ -d "$INTENT_WORKTREE" ]; then
   git worktree remove "$INTENT_WORKTREE" 2>/dev/null || echo "Warning: failed to remove worktree at $INTENT_WORKTREE"
   echo "Cleaned up intent worktree for ${INTENT_SLUG}"
   source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-  aidlc_telemetry_init
-  aidlc_record_worktree_event "deleted" "${INTENT_WORKTREE}"
+  haiku_telemetry_init
+  haiku_record_worktree_event "deleted" "${INTENT_WORKTREE}"
 fi
 git worktree prune
 # Keep the branch — user may create a PR from it

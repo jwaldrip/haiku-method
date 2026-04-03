@@ -11,7 +11,7 @@ Get H·AI·K·U running in your project and complete your first feature.
 **Option 1: Via Claude Code (recommended)**
 ```
 /plugin marketplace add thebushidocollective/ai-dlc
-/plugin install ai-dlc@thebushidocollective-ai-dlc --scope project
+/plugin install haiku@thebushidocollective-ai-dlc --scope project
 ```
 
 **Option 2: Via Han**

@@ -47,7 +47,7 @@ H·AI·K·U is distributed as a Claude Code plugin. Install it with:
 
 ```
 /plugin marketplace add thebushidocollective/ai-dlc
-/plugin install ai-dlc@thebushidocollective-ai-dlc --scope project
+/plugin install haiku@thebushidocollective-ai-dlc --scope project
 ```
 
 Then start using the hat commands to structure your workflow.

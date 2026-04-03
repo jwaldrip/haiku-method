@@ -132,7 +132,7 @@ Install or update the H·AI·K·U plugin:
 
 ```
 /plugin marketplace add thebushidocollective/ai-dlc
-/plugin install ai-dlc@thebushidocollective-ai-dlc --scope project
+/plugin install haiku@thebushidocollective-ai-dlc --scope project
 ```
 
 Then run `/haiku:elaborate` to define an intent with a mode, and `/haiku:execute` to start the team.

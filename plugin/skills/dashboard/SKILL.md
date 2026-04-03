@@ -56,10 +56,10 @@ Then open the generated `index.html` in any browser.
 For interactive, real-time visual reviews (where the agent opens a browser review page and waits for your decision), enable the review channel:
 
 ```bash
-claude --dangerously-load-development-channels server:ai-dlc-review
+claude --dangerously-load-development-channels server:haiku-review
 ```
 
-This starts the `ai-dlc-review` MCP server which provides:
+This starts the `haiku-review` MCP server which provides:
 - `open_review` — opens an interactive review page in your browser
 - `get_review_status` — polls for your approval/rejection decision
 

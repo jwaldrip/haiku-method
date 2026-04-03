@@ -98,7 +98,7 @@ H·AI·K·U stores state in files:
 
 These files are:
 - Injected at session start (via hooks)
-- Updated during work (via `dlc_state_save`/`dlc_state_load`)
+- Updated during work (via `hku_state_save`/`hku_state_load`)
 - Preserved across `/clear` commands
 
 ## The Iteration Loop
@@ -277,10 +277,10 @@ H·AI·K·U provides slash commands:
 
 State is managed via foundation library functions:
 
-- `dlc_state_save "$INTENT_DIR" "<key>" "<content>"` - Persist state
-- `dlc_state_load "$INTENT_DIR" "<key>"` - Retrieve state
-- `dlc_state_list "$INTENT_DIR"` - List keys
-- `dlc_state_delete "$INTENT_DIR" "<key>"` - Remove key
+- `hku_state_save "$INTENT_DIR" "<key>" "<content>"` - Persist state
+- `hku_state_load "$INTENT_DIR" "<key>"` - Retrieve state
+- `hku_state_list "$INTENT_DIR"` - List keys
+- `hku_state_delete "$INTENT_DIR" "<key>"` - Remove key
 
 ## Best Practices
 

@@ -57,7 +57,7 @@ for intent_file in .haiku/intents/*/intent.md; do
   [ -f "$intent_file" ] || continue
   dir=$(dirname "$intent_file")
   slug=$(basename "$dir")
-  status=$(dlc_frontmatter_get "status" "$intent_file" 2>/dev/null || echo "active")
+  status=$(hku_frontmatter_get "status" "$intent_file" 2>/dev/null || echo "active")
   [ "$status" = "active" ] && echo "$slug"
 done
 ```
@@ -89,11 +89,11 @@ Read from `.haiku/intents/{slug}/intent.md`:
 
 ```bash
 intentFile=".haiku/intents/${slug}/intent.md"
-studio=$(dlc_frontmatter_get "studio" "$intentFile")
+studio=$(hku_frontmatter_get "studio" "$intentFile")
 [ -z "$studio" ] && studio="software"
-active_stage=$(dlc_frontmatter_get "active_stage" "$intentFile")
+active_stage=$(hku_frontmatter_get "active_stage" "$intentFile")
 [ -z "$active_stage" ] && active_stage="development"
-title=$(dlc_frontmatter_get "title" "$intentFile")
+title=$(hku_frontmatter_get "title" "$intentFile")
 [ -z "$title" ] && title="$slug"
 ```
 
@@ -148,7 +148,7 @@ Save to file-based state (intent-level state goes to the intent directory):
 # Intent slug is directory-based: .haiku/intents/{slug}/ — no separate save needed
 
 # Save iteration state to intent directory
-dlc_state_save "$INTENT_DIR" "iteration.json" "{\"iteration\":1,\"hat\":\"$STARTING_HAT\",\"status\":\"active\"}"
+hku_state_save "$INTENT_DIR" "iteration.json" "{\"iteration\":1,\"hat\":\"$STARTING_HAT\",\"status\":\"active\"}"
 ```
 
 ### Step 5b: Restore Team (Agent Teams)
@@ -157,7 +157,7 @@ When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is enabled:
 
 ```bash
 AGENT_TEAMS_ENABLED="${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}"
-TEAM_NAME="ai-dlc-${SLUG}"
+TEAM_NAME="haiku-${SLUG}"
 TEAM_CONFIG="${CLAUDE_CONFIG_DIR}/teams/${TEAM_NAME}/config.json"
 ```
 

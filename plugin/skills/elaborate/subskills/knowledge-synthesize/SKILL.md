@@ -226,7 +226,7 @@ CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$(readlink -f "$0")")
 source "${CLAUDE_PLUGIN_ROOT}/lib/knowledge.sh"
 
 # Write an artifact (example for design)
-dlc_knowledge_write "design" "$(cat <<'ARTIFACT_EOF'
+hku_knowledge_write "design" "$(cat <<'ARTIFACT_EOF'
 ---
 type: design
 version: 1
@@ -484,6 +484,6 @@ If a single pass fails but others succeed, continue with remaining passes and no
 
 ## Idempotency
 
-This skill is idempotent. Running it twice on the same codebase produces the same result. `dlc_knowledge_write` overwrites existing artifacts atomically (write to temp, then mv).
+This skill is idempotent. Running it twice on the same codebase produces the same result. `hku_knowledge_write` overwrites existing artifacts atomically (write to temp, then mv).
 
 Existing knowledge artifacts listed in `existing_knowledge` from the brief are overwritten with fresh synthesis results. The calling skill decides whether to invoke synthesis based on whether re-synthesis is needed.

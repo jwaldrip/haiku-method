@@ -37,8 +37,8 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
 source "${CLAUDE_PLUGIN_ROOT}/lib/haiku.sh"
 
-# Intent slug is derived from .ai-dlc directory structure
-INTENT_SLUG="${1:-$(basename "$(find .ai-dlc -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)" 2>/dev/null || echo "")}"
+# Intent slug is derived from .haiku directory structure
+INTENT_SLUG="${1:-$(basename "$(find .haiku -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)" 2>/dev/null || echo "")}"
 ```
 
 If no intent slug found:
@@ -73,8 +73,8 @@ Collect data from state files and artifacts:
 
 ```bash
 # Load iteration state
-STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json" 2>/dev/null || echo "")
-OP_STATUS=$(dlc_state_load "$INTENT_DIR" "operation-status.json" 2>/dev/null || echo "")
+STATE=$(hku_state_load "$INTENT_DIR" "iteration.json" 2>/dev/null || echo "")
+OP_STATUS=$(hku_state_load "$INTENT_DIR" "operation-status.json" 2>/dev/null || echo "")
 
 # Get DAG summary
 SUMMARY=$(get_dag_summary "$INTENT_DIR")
@@ -83,7 +83,7 @@ SUMMARY=$(get_dag_summary "$INTENT_DIR")
 for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
   UNIT_NAME=$(basename "$unit_file" .md)
   UNIT_STATUS=$(parse_unit_status "$unit_file")
-  UNIT_SCRATCHPAD=$(dlc_state_load "$INTENT_DIR" "scratchpad.md" 2>/dev/null || echo "")
+  UNIT_SCRATCHPAD=$(hku_state_load "$INTENT_DIR" "scratchpad.md" 2>/dev/null || echo "")
 done
 ```
 
@@ -331,13 +331,13 @@ Update `reflection.md` with any user corrections or additions.
 ```bash
 # Update reflection status in state
 REFLECTION_STATE='{"phase":"reflection","reflectionStatus":"awaiting-input","version":1,"previousVersions":[]}'
-dlc_state_save "$INTENT_DIR" "reflection-status.json" "$REFLECTION_STATE"
+hku_state_save "$INTENT_DIR" "reflection-status.json" "$REFLECTION_STATE"
 ```
 
 After user validates:
 ```bash
 REFLECTION_STATE=$(echo "$REFLECTION_STATE" | jq '.reflectionStatus = "completed"')
-dlc_state_save "$INTENT_DIR" "reflection-status.json" "$REFLECTION_STATE"
+hku_state_save "$INTENT_DIR" "reflection-status.json" "$REFLECTION_STATE"
 ```
 
 ### Step 7: Offer Next Steps
@@ -405,7 +405,7 @@ git tag "haiku/${INTENT_SLUG}/v${CURRENT_VERSION}" 2>/dev/null || true
 ```markdown
 ## Intent Archived and Ready for v{NEXT_VERSION}
 
-**Archived:** tag ai-dlc/{intent-slug}/v{CURRENT_VERSION}
+**Archived:** tag haiku/{intent-slug}/v{CURRENT_VERSION}
 **New intent:** .haiku/intents/{intent-slug}/
 
 The new intent has been seeded with learnings from the reflection.

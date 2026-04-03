@@ -74,7 +74,7 @@ When reading configuration, always resolve in order: unit frontmatter → intent
    - If it exists, parse the current values — these become the **defaults** for all prompts below.
    - If `.haiku/` doesn't exist, create it:
      ```bash
-     mkdir -p .ai-dlc
+     mkdir -p .haiku
      ```
 
 2. Store the existing settings (or empty `{}`) as `EXISTING_SETTINGS` for reference throughout.
