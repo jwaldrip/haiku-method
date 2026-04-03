@@ -17,7 +17,7 @@ When modifying any component, check if other components need corresponding updat
 | New skill | Mention in relevant section | Primary | Update docs if user-facing |
 | New studio | Document in Profiles section | Primary | Update docs |
 | New stage | Document in relevant profile | Primary | Update docs |
-| New hat (in stage) | Document in relevant profile | Define inline in STAGE.md | Update docs if user-facing |
+| New hat (in stage) | Document in relevant profile | Add `hats/{hat}.md` file in stage directory | Update docs if user-facing |
 | New lifecycle phase | Document as new section | Implement | Update docs |
 | Terminology change | Update all references | Update all references | Update all references |
 | New principle | Document in Principles section | Implement if applicable | Update if referenced |
@@ -31,6 +31,7 @@ When modifying any component, check if other components need corresponding updat
 - Plugin skills: `plugin/skills/*/SKILL.md`
 - Plugin studios: `plugin/studios/*/STUDIO.md`
 - Plugin stages: `plugin/studios/*/stages/*/STAGE.md`
+- Plugin hats: `plugin/studios/*/stages/*/hats/*.md`
 - Plugin hooks: `plugin/hooks/*.sh` + `plugin/.claude-plugin/hooks.json`
 - Plugin libraries: `plugin/lib/*.sh`
 - Plugin orchestration: `plugin/lib/orchestrator.sh`, `plugin/lib/stage.sh`, `plugin/lib/studio.sh`
@@ -48,8 +49,8 @@ When modifying any component, check if other components need corresponding updat
 | Unit | Elaboration phase | `.haiku/intents/{slug}/stages/{stage}/units/unit-NN-*.md` | elaborate/SKILL.md, dag.sh |
 | Bolt | Execution phase | `iteration` field in iteration.json | execute/SKILL.md, orchestrator.sh |
 | Studio | Profiles section | `plugin/studios/{name}/STUDIO.md` | studio.sh |
-| Stage | Profiles section | `plugin/studios/{name}/stages/{stage}/STAGE.md` with inline hats | stage.sh, orchestrator.sh |
-| Hat | Profiles section | Inline in STAGE.md (not standalone files) | stage.sh |
+| Stage | Profiles section | `plugin/studios/{name}/stages/{stage}/STAGE.md` | stage.sh, orchestrator.sh |
+| Hat | Profiles section | `plugin/studios/{name}/stages/{stage}/hats/{hat}.md` | hat.sh, stage.sh |
 | Review Gate | Quality Enforcement | `review:` field in STAGE.md (auto/ask/external/[external,ask]) | orchestrator.sh |
 | Completion Criteria | Throughout | `quality_gates:` in unit/intent frontmatter, harness-enforced | elaborate, execute, advance, quality-gate.sh |
 | Backpressure | Principles section | Quality gates enforced by harness, not agent | quality-gate.sh, orchestrator.sh |
@@ -67,8 +68,8 @@ When modifying any component, check if other components need corresponding updat
 | Unit | Ticket / Story | A discrete piece of work within an intent |
 | Bolt | Sprint | The iteration cycle an agent runs within a unit |
 | Studio | (no equivalent) | A named lifecycle template (profile implementation) containing stages |
-| Stage | (no equivalent) | A lifecycle phase within a studio, containing inline hats and review gates |
-| Hat | Role | A behavioral role scoped to a stage (defined inline in STAGE.md) |
+| Stage | (no equivalent) | A lifecycle phase within a studio, containing hats and review gates |
+| Hat | Role | A behavioral role scoped to a stage, defined in `hats/{hat}.md` files within the stage directory |
 | Review Gate | Quality Gate | A checkpoint between stages (auto, ask, or external) |
 
 ### Hierarchy
@@ -79,7 +80,7 @@ Studio > Stage > Unit > Bolt
 
 - **Studio** is NOT the same as Stage. Studio = the lifecycle template. Stage = a phase within it.
 - **Unit** is NOT the same as Bolt. Unit = the work itself. Bolt = the iteration cycle within a unit.
-- **Hat** is always scoped to a Stage. There are no standalone hat files.
+- **Hat** is always scoped to a Stage, defined in `stages/{stage}/hats/{hat}.md` files. Project-level augmentation: `.haiku/studios/{studio}/stages/{stage}/hats/{hat}.md`.
 
 ## Version Management
 
