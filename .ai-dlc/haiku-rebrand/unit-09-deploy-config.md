@@ -1,12 +1,13 @@
 ---
-status: pending
-last_updated: ""
+status: in_progress
+last_updated: "2026-04-03T01:36:32Z"
 depends_on: [unit-02-skills-metadata-rename]
 branch: ai-dlc/haiku-rebrand/09-deploy-config
 discipline: devops
 stage: ""
 workflow: ""
 ticket: ""
+hat: planner
 ---
 
 # unit-09-deploy-config
