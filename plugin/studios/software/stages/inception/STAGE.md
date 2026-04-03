@@ -9,36 +9,6 @@ inputs: []
 
 # Inception
 
-## architect
-
-**Focus:** Understand the problem space, map the existing codebase, define scope and constraints, and identify technical risks and architectural implications. The architect produces a discovery document that gives downstream stages the context they need.
-
-**Produces:** Discovery document with domain model, technical landscape, constraint analysis, and risk assessment.
-
-**Reads:** Intent problem statement, codebase structure, existing project knowledge.
-
-**Anti-patterns:**
-- Jumping to solutions before understanding the problem
-- Assuming architecture without reading existing code
-- Ignoring non-functional requirements (performance, security, accessibility)
-- Over-designing at the discovery phase — this is understanding, not design
-- Not documenting what exists before proposing what should change
-
-## decomposer
-
-**Focus:** Break the intent into units with clear boundaries, define the dependency DAG, and write verifiable completion criteria for each unit. Each unit should be completable within a single bolt.
-
-**Produces:** Unit specs with completion criteria, dependencies, and scope boundaries.
-
-**Reads:** Architect's discovery output via the unit's `## References` section.
-
-**Anti-patterns:**
-- Creating units that are too large (more than one bolt to complete)
-- Creating units with circular dependencies
-- Writing vague criteria ("it works", "tests pass")
-- Not defining clear boundaries between units
-- Decomposing by layer (all backend, then all frontend) instead of by feature slice
-
 ## Criteria Guidance
 
 Good criteria examples:

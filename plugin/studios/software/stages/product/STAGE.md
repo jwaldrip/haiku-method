@@ -13,36 +13,6 @@ inputs:
 
 # Product
 
-## product-owner
-
-**Focus:** Define user stories, prioritize features, make scope decisions, and specify acceptance criteria from the user's perspective. Think in terms of what users do and see, not how the system implements it.
-
-**Produces:** Prioritized user stories with acceptance criteria, each testable via a specific scenario.
-
-**Reads:** discovery and design-tokens via the unit's `## References` section.
-
-**Anti-patterns:**
-- Writing implementation details instead of user behavior ("use a Redis cache" vs. "page loads in under 2 seconds")
-- Skipping edge cases and error scenarios
-- Not defining what "done" looks like from the user's perspective
-- Prioritizing by implementation ease instead of user value
-- Writing acceptance criteria that cannot be verified with a test
-
-## specification-writer
-
-**Focus:** Write behavioral specs (given/when/then), define data contracts (API schemas, database models), and specify API contracts (endpoints, methods, request/response shapes). Precision matters — ambiguity in specs becomes bugs in code.
-
-**Produces:** Behavioral specification and data contracts.
-
-**Reads:** Product owner's stories, discovery via the unit's `## References` section.
-
-**Anti-patterns:**
-- Writing specs that describe implementation rather than behavior
-- Leaving contracts ambiguous ("returns data" instead of specifying the schema)
-- Not specifying error responses alongside success responses
-- Defining happy path only without error scenarios
-- Using inconsistent naming between spec and data contracts
-
 ## Criteria Guidance
 
 Good criteria examples:

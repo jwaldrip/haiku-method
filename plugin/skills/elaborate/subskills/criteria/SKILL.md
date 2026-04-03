@@ -1,5 +1,5 @@
 ---
-description: (Internal) Success criteria definition with NFRs for AI-DLC elaboration
+description: (Internal) Success criteria definition with NFRs for H·AI·K·U elaboration
 user-invocable: false
 ---
 

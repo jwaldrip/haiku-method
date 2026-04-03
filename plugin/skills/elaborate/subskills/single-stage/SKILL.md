@@ -198,7 +198,7 @@ In single-stage mode, this phase is simple: set `stages: []` and `active_stage: 
 
 ---
 
-## Phase 6: Write AI-DLC Artifacts
+## Phase 6: Write H·AI·K·U Artifacts
 
 ### 1. Verify intent worktree
 

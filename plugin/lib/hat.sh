@@ -2,7 +2,8 @@
 # hat.sh — Hat resolution and metadata for H·AI·K·U
 #
 # Hats define roles (builder, reviewer, planner, etc.).
-# Definitions live inline in stage STAGE.md files as ## {hat-name} sections.
+# Definitions live in per-hat files at stages/{stage}/hats/{hat}.md.
+# Fallback: inline ## {hat-name} sections in STAGE.md (backward compat).
 # Project-level overrides can be placed in .haiku/hats/*.md for augmentation.
 #
 # Usage:
@@ -79,9 +80,18 @@ hku_resolve_hat_instructions() {
 
   local merged=""
 
-  # Extract hat section from stage file
+  # Try file-based resolution first: {stage_dir}/hats/{hat_name}.md
   if [[ -n "$stage_file" && -f "$stage_file" ]]; then
-    merged=$(hku_extract_hat_section "$stage_file" "$hat_name")
+    local stage_dir
+    stage_dir=$(dirname "$stage_file")
+    local hat_file="${stage_dir}/hats/${hat_name}.md"
+    if [[ -f "$hat_file" ]]; then
+      # Read hat file body (strip frontmatter)
+      merged=$(awk '/^---$/{n++; next} n>=2' "$hat_file")
+    else
+      # Fallback: extract inline section from STAGE.md (backward compat)
+      merged=$(hku_extract_hat_section "$stage_file" "$hat_name")
+    fi
   fi
 
   # Check for project-level hat augmentation
@@ -139,9 +149,19 @@ load_hat_metadata() {
   stage_file=$(hku_resolve_stage "$stage_name" "$studio_name" 2>/dev/null) || true
 
   if [[ -n "$stage_file" && -f "$stage_file" ]]; then
-    # Extract first **Focus:** line from the hat section
-    local section
-    section=$(hku_extract_hat_section "$stage_file" "$hat_name")
+    local stage_dir
+    stage_dir=$(dirname "$stage_file")
+    local hat_file="${stage_dir}/hats/${hat_name}.md"
+    local section=""
+
+    if [[ -f "$hat_file" ]]; then
+      # Read hat file body (strip frontmatter)
+      section=$(awk '/^---$/{n++; next} n>=2' "$hat_file")
+    else
+      # Fallback: extract inline section from STAGE.md
+      section=$(hku_extract_hat_section "$stage_file" "$hat_name")
+    fi
+
     if [[ -n "$section" ]]; then
       description=$(echo "$section" | grep -m1 '^\*\*Focus:\*\*' | sed 's/^\*\*Focus:\*\* *//')
     fi

@@ -1,5 +1,5 @@
 ---
-description: (Internal) Git delivery strategy selection for AI-DLC elaboration
+description: (Internal) Git delivery strategy selection for H·AI·K·U elaboration
 user-invocable: false
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: (Internal) Unit decomposition, cross-cutting concerns, and spec flow analysis for AI-DLC elaboration
+description: (Internal) Unit decomposition, cross-cutting concerns, and spec flow analysis for H·AI·K·U elaboration
 user-invocable: false
 ---
 

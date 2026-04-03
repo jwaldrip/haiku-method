@@ -176,7 +176,7 @@ In stage-elaborate mode, the stages are already configured by the dispatcher. Se
 
 ---
 
-## Phase 6: Write AI-DLC Artifacts
+## Phase 6: Write H·AI·K·U Artifacts
 
 Same artifact writing flow as single-stage:
 1. Verify intent worktree

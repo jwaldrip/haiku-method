@@ -11,36 +11,6 @@ inputs:
 
 # Create
 
-## creator
-
-**Focus:** Produce the primary output — document, design, plan, analysis, or whatever the intent calls for — using research insights as the foundation. Substance over polish at this stage.
-
-**Produces:** First draft of the deliverable with complete coverage of the problem space.
-
-**Reads:** research-brief via the unit's `## References` section.
-
-**Anti-patterns:**
-- Starting from scratch and ignoring research findings
-- Producing a skeleton or outline without substance
-- Gold-plating prose before the argument is solid
-- Cherry-picking research that supports a predetermined conclusion
-- Leaving sections as TODOs or placeholders
-
-## editor
-
-**Focus:** Refine structure, improve clarity, strengthen arguments, and ensure coherence. The editor serves the creator's intent — sharpening, not rewriting.
-
-**Produces:** Polished draft ready for adversarial review.
-
-**Reads:** Creator's draft, research-brief via the unit's `## References` section.
-
-**Anti-patterns:**
-- Rewriting the draft from scratch instead of editing
-- Prioritizing style over substance
-- Making changes that alter the creator's intended meaning
-- Introducing claims not supported by the research
-- Over-editing to the point of losing the original voice
-
 ## Criteria Guidance
 
 Good criteria examples:

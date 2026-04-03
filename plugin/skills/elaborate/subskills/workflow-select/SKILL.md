@@ -1,5 +1,5 @@
 ---
-description: (Internal) Hat discovery and workflow selection for AI-DLC elaboration
+description: (Internal) Hat discovery and workflow selection for H·AI·K·U elaboration
 user-invocable: false
 ---
 

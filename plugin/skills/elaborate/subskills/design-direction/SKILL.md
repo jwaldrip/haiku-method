@@ -1,5 +1,5 @@
 ---
-description: (Internal) Design direction selection and blueprint generation for AI-DLC elaboration
+description: (Internal) Design direction selection and blueprint generation for H·AI·K·U elaboration
 user-invocable: false
 ---
 
