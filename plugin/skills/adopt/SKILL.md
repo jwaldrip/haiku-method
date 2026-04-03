@@ -63,7 +63,7 @@ User: Yes, but split the OAuth unit into two — one for Google, one for GitHub
 AI: Updated. Here are the reconstructed success criteria from your tests...
     [presents criteria with test file references]
 User: Looks good
-AI: Artifacts written to .haiku/auth-system/. What would you like to do next?
+AI: Artifacts written to .haiku/intents/auth-system/. What would you like to do next?
     1. Run /haiku:operate auth-system
     2. Open PR for review
     3. Show file paths

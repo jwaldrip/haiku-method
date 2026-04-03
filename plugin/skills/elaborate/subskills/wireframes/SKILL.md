@@ -55,7 +55,7 @@ intent_title: My Feature Title
 design_provider_type: figma  # or empty
 design_provider_capabilities: {"generate":true,"inspect":false,...}  # JSON or empty
 design_provider_mcp_hint: mcp__*canva*  # MCP tool glob pattern or empty
-design_blueprint_path: .haiku/my-feature/design-blueprint.md  # or empty if no blueprint
+design_blueprint_path: .haiku/intents/my-feature/design-blueprint.md  # or empty if no blueprint
 ```
 
 The markdown body contains:
