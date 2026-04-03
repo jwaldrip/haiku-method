@@ -225,7 +225,7 @@ status: completed
 ## Execution Summary
 - Units completed: N/M
 - Total iterations: X
-- Workflow: {workflow name}
+- Studio: {studio name}
 - Sessions used: N
 - Blockers encountered: Z
 
@@ -289,17 +289,17 @@ quality_gates:
 ```
 
 ## Hat Instruction Updates
-{Specific changes to hat files in .haiku/hats/}
+{Specific changes to project hat augmentations in .haiku/hats/}
 
 Example:
 - builder.md: Add "Check existing test patterns before writing new tests" (units 2,4 wrote tests that duplicated fixtures)
 - reviewer.md: Add "Verify import paths resolve before flagging missing modules" (3 false rejections in unit-06)
 
-## Workflow Adjustments
-{Changes to .haiku/workflows.yml or intent-level workflow choice}
+## Stage Adjustments
+{Changes to studio/stage selection or stage-based hat resolution}
 
 Example:
-- For documentation-heavy intents, use workflow: "default" (planner was skipped 6/8 times with adversarial workflow)
+- For documentation-heavy intents, use the ideation studio instead of software
 
 ## Elaboration Template Improvements
 {How to write better intents/criteria next time}
@@ -351,7 +351,7 @@ The reflection is complete. Choose your path(s):
 
 ### Option A: Apply Settings
 Auto-apply the settings recommendations to your project.
-- Updates CLAUDE.md, settings.yml, hat files, workflows
+- Updates CLAUDE.md, settings.yml, hat augmentation files
 - Creates a commit with all changes
 - You can review the diff before confirming
 
@@ -377,8 +377,7 @@ If user chooses to apply settings:
 1. **Read `settings-recommendations.md`** and parse each section
 2. **Apply CLAUDE.md changes**: Edit the project's CLAUDE.md file
 3. **Apply settings.yml changes**: Update `.haiku/settings.yml`
-4. **Apply hat changes**: Edit files in `.haiku/hats/`
-5. **Apply workflow changes**: Update `.haiku/workflows.yml`
+4. **Apply hat augmentation changes**: Edit files in `.haiku/hats/`
 6. **Show the diff** before committing:
 ```bash
 git diff --stat
@@ -387,7 +386,7 @@ git diff
 7. **Ask user to confirm** before committing
 8. **Commit**:
 ```bash
-git add CLAUDE.md .haiku/settings.yml .haiku/hats/ .haiku/workflows.yml
+git add CLAUDE.md .haiku/settings.yml .haiku/hats/
 git commit -m "refine: apply reflection recommendations from ${INTENT_SLUG}"
 ```
 

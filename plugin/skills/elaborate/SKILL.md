@@ -1011,106 +1011,45 @@ If domain or product knowledge exists, carry it forward as additional context fo
 
 ---
 
-## Phase 3: Discover Hats and Select Workflow
+## Phase 3: Select Studio and Stage
 
-### Step 1: Discover Available Hats
+### Step 1: Discover Available Studios and Stages
 
-Use `dlc_frontmatter_get` to read all available hat definitions dynamically:
-
-```bash
-# List all hats from plugin directory
-for hat_file in "${CLAUDE_PLUGIN_ROOT}/hats/"*.md; do
-  [ -f "$hat_file" ] || continue
-  slug=$(basename "$hat_file" .md)
-  name=$(dlc_frontmatter_get "name" "$hat_file" 2>/dev/null)
-  desc=$(dlc_frontmatter_get "description" "$hat_file" 2>/dev/null)
-  echo "- **${name:-$slug}** (\`$slug\`): $desc"
-done
-
-# Also check for project-local hat overrides
-for hat_file in .haiku/hats/*.md; do
-  [ -f "$hat_file" ] || continue
-  slug=$(basename "$hat_file" .md)
-  name=$(dlc_frontmatter_get "name" "$hat_file" 2>/dev/null)
-  desc=$(dlc_frontmatter_get "description" "$hat_file" 2>/dev/null)
-  echo "- **${name:-$slug}** (\`$slug\`): $desc [project override]"
-done
-```
-
-Display the available hats to the user so they can see what's available for workflow composition.
-
-### Step 2: Discover Available Workflows
-
-Read workflows from plugin defaults and project overrides:
+List studios and their stages from the plugin directory:
 
 ```bash
-# Plugin workflows (defaults)
-cat "${CLAUDE_PLUGIN_ROOT}/workflows.yml"
+source "${CLAUDE_PLUGIN_ROOT}/lib/studio.sh"
+source "${CLAUDE_PLUGIN_ROOT}/lib/stage.sh"
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 
-# Project workflow overrides (if any)
-[ -f ".haiku/workflows.yml" ] && cat ".haiku/workflows.yml"
+# List all studios
+for studio_dir in "${CLAUDE_PLUGIN_ROOT}/studios/"*/; do
+  [ -d "$studio_dir" ] || continue
+  studio=$(basename "$studio_dir")
+  echo "## Studio: $studio"
+  # List stages in this studio
+  for stage_file in "$studio_dir"stages/*/STAGE.md; do
+    [ -f "$stage_file" ] || continue
+    stage=$(basename "$(dirname "$stage_file")")
+    hats=$(hku_get_hat_sequence "$stage" "$studio" 2>/dev/null)
+    echo "- **$stage**: $hats"
+  done
+done
 ```
 
-### Step 3: Select or Compose Workflow
+Display the available studios, stages, and their hat sequences.
 
-This step has three parts: show what's available, make a recommendation, then let the user decide.
+### Step 2: Select Studio
 
-#### 3a. Preflight — Display Available Options
+Analyze the intent to determine the best studio:
+- **software** — for code, APIs, infrastructure, and technical implementation
+- **ideation** — for research, content creation, and non-code deliverables
 
-First, show the user all predefined workflows (from Step 2) and available hats (from Step 1) so they have full visibility before any recommendation:
+Present your recommendation with reasoning and let the user confirm via `AskUserQuestion`.
 
-```markdown
-## Available Workflows
+### Step 3: Stage is Automatic
 
-{List each predefined workflow with its hat sequence, from Step 2}
-
-## Available Hats
-
-{List each hat with its slug and one-line description, from Step 1}
-```
-
-#### 3b. Recommendation — Suggest the Best Fit
-
-Analyze the intent against the available options. Consider:
-- What phases does this intent actually need? (Not every intent needs planning — a pure refactor might skip straight to builder.)
-- Does the domain suggest specialized hats? (Security-sensitive work benefits from red-team/blue-team. Bug investigations benefit from observer/hypothesizer.)
-- Keep it minimal — every hat adds an iteration cycle. Don't add hats "just in case."
-
-Present your recommendation with reasoning:
-
-```markdown
-## Recommendation
-
-**{workflow name or "Custom"}**: {hats as arrows}
-
-{1-2 sentences explaining why this fits the intent. Reference specific aspects of what the user described.}
-```
-
-The recommendation can be a predefined workflow or a custom composition — whichever best fits. If suggesting a custom sequence, explain what each hat contributes to this specific intent.
-
-#### 3c. User Decides
-
-Use `AskUserQuestion` with the predefined workflows as options. Do NOT hardcode options — use the workflows discovered in Step 2:
-
-```json
-{
-  "questions": [{
-    "question": "Which workflow would you like to use?",
-    "header": "Workflow",
-    "options": [
-      {"label": "{recommended} (Recommended)", "description": "{hats as arrows}"},
-      {"label": "{workflow2}", "description": "{hats as arrows}"},
-      {"label": "{workflow3}", "description": "{hats as arrows}"},
-      {"label": "Custom", "description": "Tell me which hats to use and in what order"}
-    ],
-    "multiSelect": false
-  }]
-}
-```
-
-If your recommendation is a custom composition, include it as the first option with "(Recommended)". The predefined workflows still appear as alternatives.
-
-If the user selects "Custom", ask them to specify which hats to include and in what order.
+The stage is determined by the execution phase — stages within a studio run in sequence. The first stage is set automatically. No user selection needed for stage.
 
 ---
 
@@ -1233,25 +1172,23 @@ Do NOT ask the user whether to decompose. Assess the complexity from the domain 
 
 2. **Units MUST NOT span domains.** A unit has exactly one discipline (frontend, backend, api, documentation, devops, design, etc.). No unit should mix frontend and backend work, or API and documentation, etc. If a feature needs both a backend endpoint and a frontend view, those are two units — the frontend unit `depends_on` the backend unit.
 
-3. **Design work is its own unit.** If a feature needs UI/UX design work (mockups, component design, interaction flows), create a separate unit with `discipline: design` and `workflow: design`. The design workflow runs `planner → designer → reviewer`. Frontend implementation units should `depends_on` the design unit so builders have finalized designs to implement against. This also enables a human to own the design unit while AI handles other units.
+3. **Design work is its own unit.** If a feature needs UI/UX design work (mockups, component design, interaction flows), create a separate unit with `discipline: design`. The design stage runs `designer → design-reviewer`. Frontend implementation units should `depends_on` the design unit so builders have finalized designs to implement against. This also enables a human to own the design unit while AI handles other units.
 
-**Per-unit workflow suggestions:** Different units may benefit from different workflows based on their discipline or risk profile. When decomposing, suggest an appropriate workflow for each unit:
+**Per-unit stage routing:** Different units route to different stages based on their discipline. The stage determines the hat sequence:
 
-| Discipline / Concern | Suggested Workflow | Rationale |
+| Discipline / Concern | Stage | Hat Sequence |
 |---|---|---|
-| `backend`, `api`, `devops`, `documentation` | `default` (planner → builder → reviewer) | Standard implementation cycle |
-| `design` | `design` (planner → designer → reviewer) | Design artifacts need design hat, not builder |
-| `infrastructure` | `default` (planner → builder → reviewer) | IaC provisioning follows standard plan-build-review |
-| `observability` | `default` (planner → builder → reviewer) | Monitoring/alerting setup follows standard plan-build-review |
-| Security-sensitive units | `adversarial` (planner → builder → red-team → blue-team → reviewer) | Adversarial testing for auth, crypto, data handling |
-| Test-driven units | `tdd` (test-writer → implementer → refactorer → reviewer) | Red-Green-Refactor cycle for high-correctness code |
-| Units without a clear workflow need | (omit `workflow:` field) | Inherits the intent-level workflow |
+| `backend`, `api`, `fullstack` | `development` | planner → builder → reviewer |
+| `design` | `design` | designer → design-reviewer |
+| `infrastructure`, `observability` | `operations` | ops-engineer → sre |
+| `product` | `product` | product-owner → specification-writer |
+| Security-sensitive units | `security` | threat-modeler → red-team → blue-team → security-reviewer |
 
-Set the `workflow:` frontmatter field on units that need a non-default workflow. Omit it (or leave empty) for units that should use the intent-level workflow.
+The discipline-to-stage mapping is automatic — no manual configuration needed.
 
 **Auto-routing rules:**
-- When generating a unit with `discipline: design`, automatically set `workflow: design` in the frontmatter. This ensures design units always route through the design workflow (`planner → designer → reviewer`) instead of accidentally inheriting the intent-level workflow.
-- When generating a unit with `discipline: infrastructure` or `discipline: observability`, the default workflow applies — no `workflow:` override is needed (omit or leave empty). Do not require the user to specify this manually.
+- When generating a unit with `discipline: design`, the execution engine automatically routes it through the `design` stage.
+- When generating a unit with `discipline: infrastructure` or `discipline: observability`, the execution engine automatically routes it through the `operations` stage.
 
 Define each unit with **enough detail that a builder with zero prior context builds the right thing**:
 
@@ -1274,7 +1211,7 @@ Build the session browser page showing sessions from GraphQL.
 ```
 ## unit-02: Intent Browser and DAG View
 Display all H·AI·K·U Intents (read from `.haiku/*/intent.md` files) as cards showing:
-- Intent title, status (from frontmatter), workflow type, operating mode
+- Intent title, status (from frontmatter), studio, operating mode
 - Unit count and completion progress (N of M units completed)
 - Created date and last activity
 
@@ -1412,8 +1349,8 @@ For each unit:
   - Depends on: {dependencies or "none"}
   - Builds: {specific components/modules/endpoints}
 
-### Workflow
-{workflow name}
+### Studio
+{studio name}
 ```
 
 **Visual Review (preferred):**
@@ -1649,9 +1586,9 @@ If fewer than 2 valid passes remain after validation, fall back to single-pass b
 
 For each valid pass, call `load_pass_metadata` and build a summary table:
 
-| Pass | Description | Available Workflows |
+| Pass | Description | Available Stages |
 |---|---|---|
-| `{name}` | `{description}` | `{available_workflows}` |
+| `{name}` | `{description}` | `{available_stages}` |
 
 Display this table as context before asking.
 
@@ -1721,7 +1658,8 @@ fi
 ### 2. Write `intent.md`:
 ```markdown
 ---
-workflow: {workflow-name}
+studio: {studio-name}
+active_stage: {first-stage-name}
 git:
   change_strategy: {unit|intent|trunk}
   auto_merge: {true|false}
@@ -1912,7 +1850,7 @@ depends_on: []
 branch: ai-dlc/{intent-slug}/NN-{unit-slug}
 discipline: {discipline}  # frontend, backend, api, documentation, devops, design, etc.
 pass: ""  # Set to active pass during elaboration — empty for single-pass intents
-workflow: ""  # Per-unit workflow override (optional — omit or leave empty to use intent-level workflow). Auto-set to "design" when discipline is "design".
+stage: ""  # Per-unit stage override (optional — auto-determined from discipline). Auto-set to "design" when discipline is "design".
 ticket: ""  # Ticketing provider ticket key (auto-populated if ticketing provider configured)
 design_ref: ""  # Optional: path to external design file (PNG/JPG/HTML) or directory. Activates visual fidelity gate with high fidelity.
 views: []  # Optional: list of views/routes this unit produces (e.g., ["/", "/about"]). Used for screenshot capture targeting.
@@ -2722,7 +2660,8 @@ Created: .haiku/{intent-slug}/
 ...
 - mockups/unit-NN-{name}-wireframe.html  (if wireframes generated)
 
-Workflow: {workflowName}
+Studio: {studioName}
+Stage: {stageName}
 Next hat: {next-hat}
 ```
 

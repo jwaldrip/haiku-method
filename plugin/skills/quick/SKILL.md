@@ -1,12 +1,12 @@
 ---
 description: Quick mode for small tasks — skip full elaboration/planning when the task is trivial
 user-invocable: true
-argument-hint: "[workflow-name] <task description>"
+argument-hint: "[stage-name] <task description>"
 ---
 
 # Quick Mode
 
-You are running **Quick Mode** — a streamlined path for trivial tasks that skips full elaboration and unit decomposition. The user has described a small task inline and you will execute it through a hat-based workflow using subagents, producing disciplined work without the overhead of full `/haiku:elaborate`.
+You are running **Quick Mode** — a streamlined path for trivial tasks that skips full elaboration and unit decomposition. The user has described a small task inline and you will execute it through a stage-based hat sequence using subagents, producing disciplined work without the overhead of full `/haiku:elaborate`.
 
 ---
 
@@ -30,28 +30,32 @@ Anything that needs multi-unit decomposition, touches multiple subsystems, or in
 
 ## Step 1: Parse Arguments
 
-The user invokes quick mode with an optional workflow name and a task description:
+The user invokes quick mode with an optional stage name and a task description:
 
 ```
 /haiku:quick fix the typo in README.md
-/haiku:quick tdd add input validation to parseConfig
-/haiku:quick adversarial sanitize user input in api/handler.ts
+/haiku:quick security sanitize user input in api/handler.ts
+/haiku:quick design create a loading spinner component
 ```
 
 **Argument parsing:**
 
 1. If no arguments were provided, ask the user what they need done (single question, not a multi-phase interview).
 2. Read the first word of the argument string.
-3. Resolve workflows — load workflow definitions from two sources:
+3. Discover available stages — list stage directories from the software studio:
    ```bash
-   PLUGIN_WORKFLOWS="${CLAUDE_PLUGIN_ROOT}/workflows.yml"
-   PROJECT_WORKFLOWS=".haiku/workflows.yml"
+   source "${CLAUDE_PLUGIN_ROOT}/lib/stage.sh"
+   # Built-in stages
+   for stage_dir in "${CLAUDE_PLUGIN_ROOT}/studios/software/stages/"*/; do
+     [ -d "$stage_dir" ] || continue
+     echo "$(basename "$stage_dir")"
+   done
    ```
-   Project workflows with the same name **fully replace** plugin workflows (not merge — replace). Build a merged map of all known workflow names.
-4. If the first word matches a known workflow name (case-sensitive), use that workflow and treat the remaining words as the task description.
-5. If the first word does NOT match any workflow name, use the `default` workflow and treat the **entire** argument string as the task description.
+   Build a list of all known stage names.
+4. If the first word matches a known stage name (case-sensitive), use that stage and treat the remaining words as the task description.
+5. If the first word does NOT match any stage name, use the `development` stage and treat the **entire** argument string as the task description.
 
-Store `WORKFLOW_NAME` (e.g. `"default"`, `"tdd"`, `"adversarial"`) and `TASK_DESCRIPTION`.
+Store `STAGE_NAME` (e.g. `"development"`, `"security"`, `"design"`) and `TASK_DESCRIPTION`.
 
 ---
 
@@ -115,7 +119,8 @@ Create `.haiku/quick/intent.md`:
 
 ```markdown
 ---
-workflow: {WORKFLOW_NAME}
+studio: software
+active_stage: {STAGE_NAME}
 status: active
 quality_gates: []
 ---
@@ -131,25 +136,28 @@ Create `.haiku/quick/state/iteration.json`:
 
 ```json
 {
-  "hat": "{first hat in workflow}",
+  "hat": "{first hat in stage}",
   "iteration": 1,
-  "status": "active",
-  "workflowName": "{WORKFLOW_NAME}",
-  "workflow": ["{hat1}", "{hat2}", "{hat3}"]
+  "status": "active"
 }
 ```
 
-The `hat` field is set to the first hat in the resolved workflow sequence.
+The `hat` field is set to the first hat in the resolved stage's hat sequence.
 
 ---
 
 ## Step 4: Hat Loop (CORE)
 
-Resolve the hat sequence from the workflow definition. For `default`, this is `["planner", "builder", "reviewer"]`.
+Resolve the hat sequence from the stage definition. For `development`, this is `["planner", "builder", "reviewer"]`.
+
+```bash
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
+STAGE_HATS=$(hku_get_hat_sequence "$STAGE_NAME" "software")
+```
 
 Execute each hat in order by spawning a subagent.
 
-### For each hat in the workflow:
+### For each hat in the stage:
 
 #### A. Update iteration state
 
@@ -159,9 +167,7 @@ Write the current hat to `.haiku/quick/state/iteration.json` so hooks pick it up
 {
   "hat": "{current-hat}",
   "iteration": 1,
-  "status": "active",
-  "workflowName": "{WORKFLOW_NAME}",
-  "workflow": ["{hat1}", "{hat2}", "{hat3}"]
+  "status": "active"
 }
 ```
 
@@ -188,14 +194,14 @@ Work directly in the current working directory. Do NOT create worktrees.
 Do NOT read or execute the advance or fail skill definitions directly — just complete your work and report results.
 ```
 
-**Hat context injection (always explicit):** Always inject hat context directly into the subagent prompt — do not rely on hooks firing for Agent-spawned subagents. Read the hat file directly:
+**Hat context injection (always explicit):** Always inject hat context directly into the subagent prompt — do not rely on hooks firing for Agent-spawned subagents. Resolve hat instructions from the stage:
 
 ```bash
-HAT_FILE="${CLAUDE_PLUGIN_ROOT}/hats/{hat-name}.md"
-[ -f ".haiku/hats/{hat-name}.md" ] && HAT_FILE=".haiku/hats/{hat-name}.md"
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
+HAT_INSTRUCTIONS=$(hku_resolve_hat_instructions "{hat-name}" "$STAGE_NAME" "software")
 ```
 
-If the hat file exists, read its contents and append them to the subagent prompt as additional context under a `## Hat Instructions` heading. This makes hat injection deterministic regardless of whether `subagent-context.sh` fires.
+If hat instructions are found, append them to the subagent prompt as additional context under a `## Hat Instructions` heading. This makes hat injection deterministic regardless of whether `subagent-context.sh` fires.
 
 #### D. Hat-specific subagent instructions
 
@@ -217,7 +223,7 @@ After each subagent returns, process its result based on archetype:
 - **Building/Testing hats:** Verify a commit was produced. If no commit, log a warning but continue.
 - **Reviewing hats:** Parse the result for `Decision: APPROVED` or `Decision: REQUEST CHANGES`.
   - If **APPROVED**: Continue to the next hat (or finish if this is the last hat).
-  - If **REQUEST CHANGES**: Loop back to the most recent building-archetype hat in the workflow. See rejection loop below.
+  - If **REQUEST CHANGES**: Loop back to the most recent building-archetype hat in the stage. See rejection loop below.
 - **Attacking hats:** Capture findings. Continue to the next hat.
 
 #### F. Reviewer rejection loop
@@ -229,13 +235,13 @@ When a reviewer rejects:
 3. If rejection count >= 3: Stop the loop and tell the user:
    > Quick mode hit the review cycle limit (3 attempts). This task may be more complex than expected.
    > Consider using `/haiku:elaborate` for proper planning and decomposition.
-4. After the builder re-implements, resume the workflow from the builder's position (i.e., advance to the reviewer again).
+4. After the builder re-implements, resume the hat sequence from the builder's position (i.e., advance to the reviewer again).
 
 ---
 
 ## Step 5: Pre-Delivery Review
 
-After the hat loop completes successfully (reviewer approved or no reviewer in workflow), run the pre-delivery code review to catch issues before they hit external CI or review bots.
+After the hat loop completes successfully (reviewer approved or no reviewer in stage), run the pre-delivery code review to catch issues before they hit external CI or review bots.
 
 **Invoke `/haiku:review`:**
 
@@ -341,7 +347,7 @@ Output a brief summary:
 ## Quick Mode Complete
 
 **Task:** {TASK_DESCRIPTION}
-**Workflow:** {WORKFLOW_NAME} ({hat1} -> {hat2} -> ... -> {hatN})
+**Stage:** {STAGE_NAME} ({hat1} -> {hat2} -> ... -> {hatN})
 **Changed:** {file(s) modified}
 **Review cycles:** {count}
 **Pre-delivery review:** {passed | skipped | needs attention}
@@ -361,6 +367,6 @@ Output a brief summary:
 - **Pre-delivery review is mandatory.** `/haiku:review` runs after the hat loop — the same multi-agent review that runs for full intents. Issues are fixed locally before the PR is created.
 - **Scope escape hatch.** If at any point during execution you realize the task is not trivial, stop and recommend `/haiku:elaborate`. Do not silently expand scope.
 - **Conflict guard.** Quick mode refuses to start if another active intent exists. Only one intent can be active at a time.
-- **Empty quality gates.** Quick artifacts use `quality_gates: []` — no harness-enforced gates. Verification is handled by the hat workflow itself.
+- **Empty quality gates.** Quick artifacts use `quality_gates: []` — no harness-enforced gates. Verification is handled by the hat sequence itself.
 - **Single session.** Quick mode runs to completion in one session. There is no resume capability — if interrupted, clean up orphaned artifacts and start over.
 - **Cowork rejection.** Quick mode cannot run in cowork mode (`CLAUDE_CODE_IS_COWORK=1`).

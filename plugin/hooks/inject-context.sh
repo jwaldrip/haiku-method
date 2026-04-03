@@ -68,61 +68,8 @@ if type detect_project_maturity &>/dev/null; then
   PROJECT_MATURITY=$(detect_project_maturity)
 fi
 
-# Load workflows from plugin (defaults) and project (overrides)
-# Project workflows merge with plugin workflows (project takes precedence)
-PLUGIN_WORKFLOWS="${PLUGIN_ROOT}/workflows.yml"
-PROJECT_WORKFLOWS=".haiku/workflows.yml"
-
-# Parse workflows from YAML file
-# Output format: name|description|hat1,hat2,hat3
-parse_all_workflows() {
-  local file="$1"
-  [ -f "$file" ] || return
-  local content
-  content=$(cat "$file" 2>/dev/null) || return
-  local names
-  names=$(echo "$content" | grep -E '^[a-z][a-z0-9_-]*:' | sed 's/:.*//')
-  for name in $names; do
-    local desc hats
-    desc=$(echo "$content" | hku_yaml_get "${name}.description")
-    hats=$(echo "$content" | yq ".${name}.hats[]" 2>/dev/null | tr '\n' '|' | sed 's/|$//; s/|/ → /g' || echo "")
-    [ -n "$desc" ] && [ -n "$hats" ] && echo "$name|$desc|$hats"
-  done
-}
-
-# Build merged workflow list (project overrides plugin)
-declare -A WORKFLOWS
-KNOWN_WORKFLOWS=""
-
-# Load plugin workflows first (single file read)
-while IFS='|' read -r name desc hats; do
-  [ -z "$name" ] && continue
-  WORKFLOWS[$name]="$desc|$hats"
-  KNOWN_WORKFLOWS="$KNOWN_WORKFLOWS $name"
-done < <(parse_all_workflows "$PLUGIN_WORKFLOWS")
-
-# Load project workflows (override or add)
-while IFS='|' read -r name desc hats; do
-  [ -z "$name" ] && continue
-  WORKFLOWS[$name]="$desc|$hats"
-  if ! echo "$KNOWN_WORKFLOWS" | grep -qw "$name"; then
-    KNOWN_WORKFLOWS="$KNOWN_WORKFLOWS $name"
-  fi
-done < <(parse_all_workflows "$PROJECT_WORKFLOWS")
-
-# Build formatted workflow list for display
-AVAILABLE_WORKFLOWS=""
-for name in $KNOWN_WORKFLOWS; do
-  details="${WORKFLOWS[$name]}"
-  if [ -n "$details" ]; then
-    desc="${details%%|*}"
-    hats="${details##*|}"
-    AVAILABLE_WORKFLOWS="${AVAILABLE_WORKFLOWS}
-- **$name**: $desc ($hats)"
-  fi
-done
-AVAILABLE_WORKFLOWS="${AVAILABLE_WORKFLOWS#
-}"  # Remove leading newline
+# Source stage and hat libraries for stage-based resolution
+source "${PLUGIN_ROOT}/lib/hat.sh"
 
 # Note: _yaml_get_simple is provided by dag.sh (sourced above)
 # Alias for consistency in this file
@@ -203,11 +150,6 @@ if [ -z "$ITERATION_JSON" ]; then
         echo ""
       fi
     fi
-    if [ -n "$AVAILABLE_WORKFLOWS" ]; then
-      echo "**Available workflows:**"
-      echo "$AVAILABLE_WORKFLOWS"
-      echo ""
-    fi
     echo "### Task Routing"
     echo ""
     echo "When a user describes a task without a slash command, assess scope and suggest a path:"
@@ -219,21 +161,11 @@ if [ -z "$ITERATION_JSON" ]; then
     echo "| Tests needed | None or existing pass | New tests required |"
     echo "| Design decisions | None | Any |"
     echo ""
-    echo "**Workflow suggestions:**"
-    echo "- Simple fix/typo/rename → \`/ai-dlc:quick <task>\` (default workflow)"
-    echo "- Bug with unclear cause → \`/ai-dlc:quick hypothesis <task>\`"
-    echo "- UI/UX task → \`/ai-dlc:quick design <task>\`"
-    echo "- Security-sensitive change → \`/ai-dlc:quick adversarial <task>\`"
-    echo "- Logic needing test-first → \`/ai-dlc:quick tdd <task>\`"
+    echo "**Routing:**"
+    echo "- Simple fix/typo/rename → \`/ai-dlc:quick <task>\`"
     echo "- New feature / multi-file / architecture → \`/ai-dlc:elaborate\`"
     echo ""
-    echo "**Syntax:** \`/ai-dlc:quick [workflow] <task description>\`"
-    echo ""
-    if [ -n "$AVAILABLE_WORKFLOWS" ]; then
-      echo "See available workflows above. Always confirm your routing suggestion with the user before proceeding."
-    else
-      echo "Always confirm your routing suggestion with the user before proceeding."
-    fi
+    echo "Always confirm your routing suggestion with the user before proceeding."
     echo ""
     exit 0
   fi
@@ -250,23 +182,23 @@ if [ -z "$ITERATION_JSON" ]; then
     # Use fast yaml extraction (no subprocess)
     status=$(yaml_get_simple "status" "active" < "$intent_file")
     [ "$status" = "active" ] || continue
-    workflow=$(yaml_get_simple "workflow" "default" < "$intent_file")
+    studio=$(yaml_get_simple "studio" "software" < "$intent_file")
 
     # Get unit summary if DAG functions are available
     summary=""
     if type get_dag_summary &>/dev/null && [ -d "$dir" ]; then
       summary=$(get_dag_summary "$dir")
     fi
-    FILESYSTEM_INTENTS[$slug]="$workflow|$summary"
+    FILESYSTEM_INTENTS[$slug]="$studio|$summary"
   done
 
   # 2. Discover intents on git branches (local only for performance)
   if type discover_branch_intents &>/dev/null; then
-    while IFS='|' read -r slug workflow source branch; do
+    while IFS='|' read -r slug studio source branch; do
       [ -z "$slug" ] && continue
       # Skip if already found in filesystem
       [ -n "${FILESYSTEM_INTENTS[$slug]}" ] && continue
-      BRANCH_INTENTS[$slug]="$workflow|$source|$branch"
+      BRANCH_INTENTS[$slug]="$studio|$source|$branch"
     done < <(discover_branch_intents false)
   fi
 
@@ -280,8 +212,8 @@ if [ -z "$ITERATION_JSON" ]; then
       echo "### In Current Directory"
       echo ""
       for slug in "${!FILESYSTEM_INTENTS[@]}"; do
-        IFS='|' read -r workflow summary <<< "${FILESYSTEM_INTENTS[$slug]}"
-        echo "- **$slug** (workflow: $workflow)"
+        IFS='|' read -r studio summary <<< "${FILESYSTEM_INTENTS[$slug]}"
+        echo "- **$slug**"
         if [ -n "$summary" ]; then
           completed=$(echo "$summary" | sed -n 's/.*completed:\([0-9]*\).*/\1/p')
           pending=$(echo "$summary" | sed -n 's/.*pending:\([0-9]*\).*/\1/p')
@@ -297,13 +229,13 @@ if [ -z "$ITERATION_JSON" ]; then
     declare -A LOCAL_BRANCH_INTENTS
     declare -A REMOTE_BRANCH_INTENTS
     for slug in "${!BRANCH_INTENTS[@]}"; do
-      IFS='|' read -r workflow source branch <<< "${BRANCH_INTENTS[$slug]}"
+      IFS='|' read -r studio source branch <<< "${BRANCH_INTENTS[$slug]}"
       case "$source" in
         worktree|local)
-          LOCAL_BRANCH_INTENTS[$slug]="$workflow|$branch"
+          LOCAL_BRANCH_INTENTS[$slug]="$studio|$branch"
           ;;
         remote)
-          REMOTE_BRANCH_INTENTS[$slug]="$workflow|$branch"
+          REMOTE_BRANCH_INTENTS[$slug]="$studio|$branch"
           ;;
       esac
     done
@@ -312,8 +244,8 @@ if [ -z "$ITERATION_JSON" ]; then
       echo "### On Local Branches (no worktree)"
       echo ""
       for slug in "${!LOCAL_BRANCH_INTENTS[@]}"; do
-        IFS='|' read -r workflow branch <<< "${LOCAL_BRANCH_INTENTS[$slug]}"
-        echo "- **$slug** (workflow: $workflow)"
+        IFS='|' read -r studio branch <<< "${LOCAL_BRANCH_INTENTS[$slug]}"
+        echo "- **$slug**"
         echo "  - *Branch: \`$branch\`*"
       done
       echo ""
@@ -341,31 +273,25 @@ if [ -z "$ITERATION_JSON" ]; then
       fi
     fi
   else
-    # No H·AI·K·U state and no resumable intents - show available workflows for /ai-dlc:elaborate
-    if [ -n "$AVAILABLE_WORKFLOWS" ]; then
-      echo "## H·AI·K·U Available"
+    echo "## H·AI·K·U Available"
+    echo ""
+    if [ -n "$PROJECT_MATURITY" ]; then
+      echo "**Project maturity:** $PROJECT_MATURITY"
       echo ""
-      if [ -n "$PROJECT_MATURITY" ]; then
-        echo "**Project maturity:** $PROJECT_MATURITY"
+    fi
+    echo "No active H·AI·K·U task. Run \`/ai-dlc:elaborate\` to start a new task."
+    echo ""
+    if [ ! -f ".haiku/settings.yml" ]; then
+      echo "> **First time?** Run \`/ai-dlc:setup\` to configure H·AI·K·U for this project (auto-detects providers, VCS settings, etc.)"
+      echo ""
+    fi
+    # Inject provider context
+    if type format_providers_markdown &>/dev/null; then
+      PROVIDERS_MD=$(format_providers_markdown)
+      if [ -n "$PROVIDERS_MD" ]; then
+        echo "$PROVIDERS_MD"
         echo ""
       fi
-      echo "No active H·AI·K·U task. Run \`/ai-dlc:elaborate\` to start a new task."
-      echo ""
-      if [ ! -f ".haiku/settings.yml" ]; then
-        echo "> **First time?** Run \`/ai-dlc:setup\` to configure H·AI·K·U for this project (auto-detects providers, VCS settings, etc.)"
-        echo ""
-      fi
-      # Inject provider context
-      if type format_providers_markdown &>/dev/null; then
-        PROVIDERS_MD=$(format_providers_markdown)
-        if [ -n "$PROVIDERS_MD" ]; then
-          echo "$PROVIDERS_MD"
-          echo ""
-        fi
-      fi
-      echo "**Available workflows:**"
-      echo "$AVAILABLE_WORKFLOWS"
-      echo ""
     fi
     echo "### Task Routing"
     echo ""
@@ -378,21 +304,11 @@ if [ -z "$ITERATION_JSON" ]; then
     echo "| Tests needed | None or existing pass | New tests required |"
     echo "| Design decisions | None | Any |"
     echo ""
-    echo "**Workflow suggestions:**"
-    echo "- Simple fix/typo/rename → \`/ai-dlc:quick <task>\` (default workflow)"
-    echo "- Bug with unclear cause → \`/ai-dlc:quick hypothesis <task>\`"
-    echo "- UI/UX task → \`/ai-dlc:quick design <task>\`"
-    echo "- Security-sensitive change → \`/ai-dlc:quick adversarial <task>\`"
-    echo "- Logic needing test-first → \`/ai-dlc:quick tdd <task>\`"
+    echo "**Routing:**"
+    echo "- Simple fix/typo/rename → \`/ai-dlc:quick <task>\`"
     echo "- New feature / multi-file / architecture → \`/ai-dlc:elaborate\`"
     echo ""
-    echo "**Syntax:** \`/ai-dlc:quick [workflow] <task description>\`"
-    echo ""
-    if [ -n "$AVAILABLE_WORKFLOWS" ]; then
-      echo "See available workflows above. Always confirm your routing suggestion with the user before proceeding."
-    else
-      echo "Always confirm your routing suggestion with the user before proceeding."
-    fi
+    echo "Always confirm your routing suggestion with the user before proceeding."
     echo ""
   fi
   exit 0
@@ -417,12 +333,10 @@ eval "$(echo "$ITERATION_JSON" | jq -r '@sh "
   ITERATION=\(.iteration // 1)
   HAT=\(.hat // \"planner\")
   STATUS=\(.status // \"active\")
-  WORKFLOW_NAME=\(.workflowName // \"default\")
   CURRENT_UNIT=\(.currentUnit // \"\")
   MAX_ITERATIONS=\(.maxIterations // 0)
   TARGET_UNIT=\(.targetUnit // \"\")
   INTENT_SLUG_STATE=\(.intentSlug // \"\")
-  WORKFLOW_HATS=\((.workflow // [\"planner\",\"builder\",\"reviewer\"]) | tostring)
 "')"
 
 # State migration: add 'phase' field if missing (backward compat with pre-H•AI•K•U state)
@@ -479,24 +393,19 @@ if [ -n "$ACTIVE_PASS" ]; then
   PASS_INSTRUCTIONS=$(load_pass_instructions "$ACTIVE_PASS")
 fi
 
-# Validate workflow name against known workflows (loaded above from workflows.yml files)
-if ! echo "$KNOWN_WORKFLOWS" | grep -qw "$WORKFLOW_NAME"; then
-  echo "Warning: Unknown workflow '$WORKFLOW_NAME'. Using 'default'." >&2
-  WORKFLOW_NAME="default"
+# Resolve active stage and studio from intent for stage-based hat resolution
+ACTIVE_STAGE=""
+STUDIO=""
+if [ -n "$INTENT_DIR" ] && [ -f "${INTENT_DIR}/intent.md" ]; then
+  ACTIVE_STAGE=$(yaml_get_simple "active_stage" "" < "${INTENT_DIR}/intent.md")
+  STUDIO=$(yaml_get_simple "studio" "software" < "${INTENT_DIR}/intent.md")
 fi
+[ -z "$ACTIVE_STAGE" ] && ACTIVE_STAGE="development"
+[ -z "$STUDIO" ] && STUDIO="software"
 
-# Constrain workflow to pass's available workflows when active_pass is set
-if [ -n "$ACTIVE_PASS" ]; then
-  CONSTRAINED=$(constrain_workflow "$ACTIVE_PASS" "$WORKFLOW_NAME")
-  if [ "$CONSTRAINED" != "$WORKFLOW_NAME" ]; then
-    echo "Note: Workflow '$WORKFLOW_NAME' not available for '$ACTIVE_PASS' pass; using '$CONSTRAINED'." >&2
-    WORKFLOW_NAME="$CONSTRAINED"
-  fi
-fi
-
-# Format workflow hats as arrow-separated list
-WORKFLOW_HATS_STR=$(echo "$WORKFLOW_HATS" | tr -d '[]"' | sed 's/,/ → /g')
-[ -z "$WORKFLOW_HATS_STR" ] && WORKFLOW_HATS_STR="planner → builder → reviewer"
+# Get hat sequence from stage
+STAGE_HATS_STR=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" 2>/dev/null | sed 's/ / → /g')
+[ -z "$STAGE_HATS_STR" ] && STAGE_HATS_STR="planner → builder → reviewer"
 
 # If task is complete, just show completion message
 if [ "$STATUS" = "complete" ] || [ "$STATUS" = "completed" ]; then
@@ -508,7 +417,7 @@ fi
 
 echo "## H·AI·K·U Context"
 echo ""
-STATUS_LINE="**Iteration:** $ITERATION | **Hat:** $HAT | **Workflow:** $WORKFLOW_NAME ($WORKFLOW_HATS_STR)"
+STATUS_LINE="**Iteration:** $ITERATION | **Hat:** $HAT | **Stage:** $ACTIVE_STAGE ($STAGE_HATS_STR)"
 if [ -n "$ACTIVE_PASS" ]; then
   STATUS_LINE="$STATUS_LINE | **Pass:** $ACTIVE_PASS"
 fi
@@ -697,12 +606,9 @@ if [ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
   fi
 fi
 
-# Load hat instructions using augmentation pattern (plugin hat + project augmentation)
-# shellcheck source=/dev/null
-source "${PLUGIN_ROOT}/lib/hat.sh"
-
-INSTRUCTIONS=$(load_hat_instructions "$HAT")
-HAT_META=$(load_hat_metadata "$HAT" 2>/dev/null || echo "{}")
+# Load hat instructions from stage-based resolution
+INSTRUCTIONS=$(hku_resolve_hat_instructions "$HAT" "$ACTIVE_STAGE" "$STUDIO")
+HAT_META=$(load_hat_metadata "$HAT" "$ACTIVE_STAGE" "$STUDIO" 2>/dev/null || echo "{}")
 NAME=$(printf '%s' "$HAT_META" | sed -n 's/.*"name":"\([^"]*\)".*/\1/p')
 DESC=$(printf '%s' "$HAT_META" | sed -n 's/.*"description":"\([^"]*\)".*/\1/p')
 

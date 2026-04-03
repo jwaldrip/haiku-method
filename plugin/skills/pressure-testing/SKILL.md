@@ -28,7 +28,7 @@ This skill systematically discovers loopholes in hat instructions by simulating 
 ### RED: Establish Baseline Failure
 
 1. Pick a hat to test (from argument or prompt user)
-2. Read the hat definition from `.haiku/hats/{hat-name}.md`
+2. Resolve the hat definition from the active stage
 3. Design a pressure scenario combining 3+ pressures from the table below:
 
 | Pressure Type | Example |
@@ -178,22 +178,31 @@ Hat definition held under pressure. No changes needed.
 
 ```bash
 HAT_NAME="${1}"
-HAT_FILE=".haiku/hats/${HAT_NAME}.md"
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
+# Resolve hat instructions from the active stage
+HAT_INSTRUCTIONS=$(hku_resolve_hat_instructions "$HAT_NAME" "development" "software")
 ```
 
-If no hat name provided, list available hats:
+If no hat name provided, list available hats from stages:
 ```bash
-ls .haiku/hats/*.md 2>/dev/null | sed 's|.*/||;s|\.md$||'
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
+# List hats from all stages in the software studio
+for stage_file in "${CLAUDE_PLUGIN_ROOT}/studios/software/stages/"*/STAGE.md; do
+  [ -f "$stage_file" ] || continue
+  stage=$(basename "$(dirname "$stage_file")")
+  hats=$(hku_get_hat_sequence "$stage" "software")
+  echo "$stage: $hats"
+done
 ```
 
 Use `AskUserQuestion` to let the user pick a hat.
 
-If `HAT_FILE` does not exist:
+If hat instructions are empty:
 ```
-No hat found at .haiku/hats/{hat-name}.md
+No hat definition found for {hat-name} in any stage.
 
-Available hats:
-{list of .md files in .haiku/hats/}
+Available hats by stage:
+{list of stages and their hats}
 ```
 
 ### Step 1: Design Pressure Scenario
@@ -282,7 +291,7 @@ git add .haiku/pressure-tests/${HAT_NAME}/${SCENARIO_SLUG}.md
 git commit -m "pressure-test(${HAT_NAME}): ${SCENARIO_SLUG}"
 ```
 
-If hat definition was updated:
+If hat augmentation was updated:
 ```bash
 git add .haiku/hats/${HAT_NAME}.md
 git commit -m "refine(${HAT_NAME}): close rationalization loophole from pressure test"

@@ -38,8 +38,6 @@ eval "$(echo "$ITERATION_JSON" | jq -r '@sh "
   ITERATION=\(.iteration // 1)
   HAT=\(.hat // \"\")
   STATUS=\(.status // \"active\")
-  WORKFLOW_NAME=\(.workflowName // \"default\")
-  WORKFLOW_HATS=\((.workflow // [\"planner\",\"builder\",\"reviewer\"]) | tostring)
 "')"
 
 # Skip if no active task
@@ -60,14 +58,15 @@ if [ -n "$ACTIVE_PASS" ]; then
   PASS_INSTRUCTIONS=$(load_pass_instructions "$ACTIVE_PASS")
 fi
 
-# Constrain workflow to pass's available workflows when active_pass is set
-if [ -n "$ACTIVE_PASS" ]; then
-  CONSTRAINED=$(constrain_workflow "$ACTIVE_PASS" "$WORKFLOW_NAME")
-  if [ "$CONSTRAINED" != "$WORKFLOW_NAME" ]; then
-    echo "Note: Workflow '$WORKFLOW_NAME' not available for '$ACTIVE_PASS' pass; using '$CONSTRAINED'." >&2
-    WORKFLOW_NAME="$CONSTRAINED"
-  fi
+# Resolve active stage and studio from intent for stage-based hat resolution
+ACTIVE_STAGE=""
+STUDIO=""
+if [ -f "${INTENT_DIR}/intent.md" ]; then
+  ACTIVE_STAGE=$(_state_yaml_get_simple "active_stage" "" < "${INTENT_DIR}/intent.md")
+  STUDIO=$(_state_yaml_get_simple "studio" "software" < "${INTENT_DIR}/intent.md")
 fi
+[ -z "$ACTIVE_STAGE" ] && ACTIVE_STAGE="development"
+[ -z "$STUDIO" ] && STUDIO="software"
 
 # Role-scoped context — skip irrelevant sections for review-focused subagents
 # Review hats don't need bootstrap, worktree setup, or resilience boilerplate
@@ -87,9 +86,10 @@ case "$HAT" in
     ;;
 esac
 
-# Format workflow hats as arrow-separated list
-WORKFLOW_HATS_STR=$(echo "$WORKFLOW_HATS" | tr -d '[]"' | sed 's/,/ → /g')
-[ -z "$WORKFLOW_HATS_STR" ] && WORKFLOW_HATS_STR="planner → builder → reviewer"
+# Get hat sequence from stage
+source "${PLUGIN_ROOT}/lib/hat.sh"
+STAGE_HATS_STR=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" 2>/dev/null | sed 's/ / → /g')
+[ -z "$STAGE_HATS_STR" ] && STAGE_HATS_STR="planner → builder → reviewer"
 
 # Read content from filesystem (source of truth)
 INTENT_FILE="${INTENT_DIR}/intent.md"
@@ -104,7 +104,7 @@ INTENT=$(cat "$INTENT_FILE")
 
 echo "## AI-DLC Subagent Context"
 echo ""
-STATUS_LINE="**Iteration:** $ITERATION | **Role:** $HAT | **Workflow:** $WORKFLOW_NAME ($WORKFLOW_HATS_STR)"
+STATUS_LINE="**Iteration:** $ITERATION | **Role:** $HAT | **Stage:** $ACTIVE_STAGE ($STAGE_HATS_STR)"
 if [ -n "$ACTIVE_PASS" ]; then
   STATUS_LINE="$STATUS_LINE | **Pass:** $ACTIVE_PASS"
 fi
@@ -225,12 +225,9 @@ if [ -z "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]; then
     echo ""
   fi
 
-  # Load role/hat instructions using augmentation pattern (plugin hat + project augmentation)
-  # shellcheck source=/dev/null
-  source "${PLUGIN_ROOT}/lib/hat.sh"
-
-  INSTRUCTIONS=$(load_hat_instructions "$HAT")
-  HAT_META=$(load_hat_metadata "$HAT" 2>/dev/null || echo "{}")
+  # Load role/hat instructions from stage-based resolution
+  INSTRUCTIONS=$(hku_resolve_hat_instructions "$HAT" "$ACTIVE_STAGE" "$STUDIO")
+  HAT_META=$(load_hat_metadata "$HAT" "$ACTIVE_STAGE" "$STUDIO" 2>/dev/null || echo "{}")
   NAME=$(printf '%s' "$HAT_META" | sed -n 's/.*"name":"\([^"]*\)".*/\1/p')
 
   echo "### Current Role: $HAT"
