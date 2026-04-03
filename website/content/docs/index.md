@@ -4,7 +4,7 @@ description: An introduction to H·AI·K·U and its core concepts
 order: 1
 ---
 
-H·AI·K·U (Human AI Knowledge Unification) is a methodology for structured, iterative development with AI assistants, organizing work into focused units with clear phases and responsibilities. It provides a framework that scales from solo developers to cross-functional teams.
+H·AI·K·U (Human + AI Knowledge Unification) is a methodology for structured, iterative development with AI assistants, organizing work into focused units with clear phases and responsibilities. It provides a framework that scales from solo developers to cross-functional teams.
 
 ## Why H·AI·K·U?
 

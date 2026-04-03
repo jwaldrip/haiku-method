@@ -130,21 +130,22 @@ This emits structured context. Use it to decompose the stage into units:
 4. For each unit, populate `## References` with specific artifacts needed (subset of resolved inputs).
 5. Write units to `.haiku/intents/{slug}/stages/{stage}/units/`.
 
-**Stage-back detection:** During decomposition, if you discover that an upstream stage's outputs are insufficient or incorrect for this stage's work (e.g., design brief missing screens that development needs, behavioral spec ambiguous on error handling), do NOT silently proceed or re-enter the upstream stage. Instead:
+**Upstream gap detection:** During decomposition, if you discover that an upstream stage's outputs are insufficient or incorrect for this stage's work (e.g., design brief missing screens that development needs, behavioral spec ambiguous on error handling), invoke a **stage-scoped refinement** via `/haiku:refine stage:{upstream-stage}`:
 
 1. Document the gap: which upstream stage, which output, what is missing or wrong.
-2. Ask the user via `AskUserQuestion`:
+2. Surface what you're doing:
    ```
-   Stage "{current}" depends on "{upstream}" output "{output}", which has a gap:
-   {specific description of what's missing}
-
-   Recommend returning to the {upstream} stage to address this.
-   Options: [Return to {upstream}, Proceed with best effort]
+   Gap detected: {current} stage needs {description}, but {upstream} stage output doesn't include it.
+   Running targeted refinement on the {upstream} stage to add this.
    ```
-3. **If user approves stage-back:** Set `active_stage` back to the upstream stage, exit the current stage cleanly. The user will run `/haiku:run` to re-enter the upstream stage.
-4. **If user declines:** Proceed with decomposition, document the gap in relevant unit `## Notes` sections so downstream work accounts for it.
+3. Invoke the refine skill with `stage:{upstream-stage}` — this creates a targeted unit in the upstream stage, runs it through that stage's hats, and persists the updated output.
+4. Continue decomposition with the now-complete upstream inputs.
 
-**Stage-backs are always user-initiated.** The agent surfaces the gap but never autonomously re-enters a previous stage.
+This is a **scoped side-trip**, not a full stage restart. The current stage's progress is preserved. Only the missing output is added to the upstream stage.
+
+The user can also trigger this explicitly: "add a screen for X" during development causes the agent to refine the design stage to produce that screen, then continue.
+
+**Full stage-backs** (resetting `active_stage` to a prior stage) are always user-initiated. The agent can recommend one if the gap is too large for a scoped refinement, but never autonomously resets stage position.
 
 #### 4.2: Execute — Run the bolt loop per unit
 
@@ -220,6 +221,7 @@ Gate resolution based on the stage's `review:` field in STAGE.md:
 - **`auto`** (return 0): Stage passes — advance to next stage
 - **`ask`** (return 1): Pause, present stage summary, wait for user approval via `AskUserQuestion`
 - **`external`** (return 2): Push branch and create PR/MR for external review, block until resolved
+- **`await`** (return 3): Stage work is complete but an external event must occur before advancing (e.g., customer response, CI result, stakeholder decision). Record what is being awaited and block. The user resumes with `/haiku:run` when the event has occurred.
 
 ### Step 5: Advance Stage
 
@@ -262,6 +264,21 @@ Ready for delivery. Run /haiku:review to verify, then create a PR.
   - **Continuous mode:** Loop back to Step 2.
   - **Discrete mode:** Report completion, tell the user to run `/haiku:run`.
 
+**If the review gate returned `await` (return 3):**
+- The stage's work is complete, but an external event must occur before the intent can advance.
+- Present what is being awaited:
+  ```
+  Stage "{stage}" complete. Awaiting external event before advancing:
+  {description of what the stage is waiting for — from the stage's ## Await Condition section or inferred from the stage's outputs}
+
+  When the event has occurred, run /haiku:run to continue.
+  ```
+- Save the await state to the intent's state directory.
+- Block. The intent stays at this stage until the user explicitly runs `/haiku:run`.
+- On resumption: the user confirms the event occurred, then advance `active_stage`.
+  - **Continuous mode:** Loop back to Step 2.
+  - **Discrete mode:** Report completion, tell the user to run `/haiku:run`.
+
 ---
 
 ## Continuous vs Discrete Mode
@@ -275,6 +292,7 @@ Both modes run the same stage loop. The difference is **what happens after a rev
 | Review gate `auto` | Advance and run next stage automatically | Stop, tell user to run `/haiku:run` |
 | Review gate `ask` | Pause for user approval, then advance and continue | Pause for user approval, then stop |
 | Review gate `external` | Push for external review, block until resolved, then advance and continue | Push for external review, block until resolved, then stop |
+| Review gate `await` | Block until external event occurs, then advance and continue | Block until external event occurs, then stop |
 
 **Continuous mode never skips or collapses stages.** Every stage runs its own decompose, execute, adversarial review, output persistence, and review gate cycle. The stage's hats, unit types, inputs, and outputs are always scoped to that stage's definition. Continuous mode simply controls whether the agent automatically proceeds to the next stage or hands control back to the user.
 

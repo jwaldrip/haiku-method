@@ -1,11 +1,11 @@
 ---
-description: Refine intent or unit specs mid-execution without losing progress
-argument-hint: "[unit-slug]"
+description: Refine intent, unit, or upstream stage outputs mid-execution without losing progress
+argument-hint: "[unit-slug | stage:<stage-name>]"
 ---
 
 # H·AI·K·U Refine
 
-You are refining an H·AI·K·U intent or unit specification mid-execution. Your job is to collaborate with the user to amend specs without destroying in-flight progress.
+You are refining an H·AI·K·U artifact mid-execution. Your job is to amend specs without destroying in-flight progress. Supports three targets: intent-level specs, specific units, and **upstream stage outputs** (stage-scoped refinement).
 
 ---
 
@@ -48,9 +48,11 @@ Intent is already complete. Run /haiku:elaborate to start a new task.
 
 ## Step 2: Determine Refinement Target
 
-If an argument was provided (unit slug), target that unit directly.
+**If argument starts with `stage:`** (e.g., `stage:design`): target that stage for stage-scoped refinement. Skip to Step 3b.
 
-If no argument provided, ask what to refine:
+**If argument is a unit slug**: target that unit directly.
+
+**If no argument provided**, ask what to refine:
 
 ```json
 {
@@ -59,12 +61,15 @@ If no argument provided, ask what to refine:
     "header": "Target",
     "options": [
       {"label": "Intent-level spec", "description": "Refine problem statement, solution approach, domain model, or intent-level success criteria"},
-      {"label": "Specific unit", "description": "Refine a specific unit's spec, criteria, or boundaries"}
+      {"label": "Specific unit", "description": "Refine a specific unit's spec, criteria, or boundaries"},
+      {"label": "Upstream stage output", "description": "Add or update an output from a prior stage (e.g., add a missing design screen)"}
     ],
     "multiSelect": false
   }]
 }
 ```
+
+If "Upstream stage output" is selected, list completed and in-progress stages and ask which one to refine.
 
 If "Specific unit" is selected, list available units and ask which one:
 
@@ -99,6 +104,56 @@ cat "$INTENT_DIR/${UNIT_NAME}.md"
 ```
 
 Display the full file contents in a markdown code block.
+
+---
+
+## Step 3b: Stage-Scoped Refinement
+
+When the target is an upstream stage, the goal is to add or update a **specific output** from that stage without re-running the entire stage.
+
+1. **Load the target stage's definition:**
+   ```bash
+   source "$CLAUDE_PLUGIN_ROOT/lib/stage.sh"
+   local metadata=$(hku_load_stage_metadata "$TARGET_STAGE" "$STUDIO")
+   ```
+
+2. **Show existing stage outputs:**
+   List the stage's completed units and their outputs. Show what already exists so the user/agent can identify what's missing.
+
+3. **Create a targeted unit** in the upstream stage:
+   - Write a new unit file to `.haiku/intents/{slug}/stages/{target-stage}/units/`
+   - The unit describes only the new/updated output (e.g., "Design screen for feature X")
+   - Mark it `status: pending`
+
+4. **Run the upstream stage's hats for this unit only:**
+   - Load the target stage's hat sequence
+   - Execute each hat for the new unit (bolt loop)
+   - Run quality gates
+   - Do NOT re-run existing completed units in that stage
+
+5. **Persist the updated output:**
+   ```bash
+   hku_persist_stage_outputs "$INTENT_DIR" "$TARGET_STAGE" "$STUDIO"
+   ```
+
+6. **Return to the current stage:**
+   - The current stage's decomposition or execution can now reference the new/updated upstream output
+   - Do NOT change `active_stage` — the upstream refinement is a scoped side-trip
+
+7. **Commit:**
+   ```bash
+   git add "$INTENT_DIR/stages/$TARGET_STAGE/"
+   git commit -m "refine: add output to ${TARGET_STAGE} stage for ${INTENT_SLUG}"
+   ```
+
+**This can be invoked by the agent autonomously** during decomposition (step 4.1 of the stage loop) when a gap is detected, or by the user explicitly via `/haiku:refine stage:<name>`. When invoked by the agent, it should still surface what it's doing:
+
+```
+Gap detected: development stage needs a design for screen X, but design stage output doesn't include it.
+Running targeted refinement on the design stage to add this screen.
+```
+
+After stage-scoped refinement completes, skip to Step 7 (Handoff).
 
 ---
 

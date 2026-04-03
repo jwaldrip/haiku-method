@@ -2,7 +2,7 @@
 name: mitigate
 description: Apply immediate fixes to stop the bleeding — rollbacks, feature flags, scaling
 hats: [mitigator, verifier]
-review: ask
+review: [ask, await]
 unit_types: [hotfix, rollback, workaround]
 inputs:
   - stage: investigate

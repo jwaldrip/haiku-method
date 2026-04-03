@@ -14,7 +14,7 @@ When `/haiku:run` executes an intent, it progresses through stages in the order 
 2. **Execute** — For each unit, run the bolt loop through the stage's hat sequence
 3. **Adversarial review** — Spawn the stage's review agents (plus any included from other stages) to verify the work
 4. **Persist** — Save stage outputs to their scoped locations
-5. **Gate** — Evaluate the review mode and advance, pause for approval, or block for external review
+5. **Gate** — Evaluate the review mode and advance, pause for approval, block for external review, or await an external event
 
 ## STAGE.md Schema
 
@@ -59,8 +59,11 @@ review-agents-include:
 | `auto` | Stage completes without human review if criteria pass |
 | `ask` | Prompts the human to approve before advancing |
 | `external` | Requires external review (e.g., PR approval) before advancing |
+| `await` | Stage work is complete but blocks until an external event occurs (e.g., customer response, CI result, stakeholder decision) |
 
 A stage can specify multiple review modes as a list (e.g., `[external, ask]`), meaning it uses external review first, with ask as fallback.
+
+The `await` gate is distinct from `external` — `external` pushes work for review by another person; `await` blocks because the ball is in someone else's court entirely (a customer needs to respond, a third-party approval needs to come through, a pipeline needs to finish).
 
 ## Hats Within Stages
 

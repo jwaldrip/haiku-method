@@ -1,5 +1,5 @@
 ---
-title: "H·AI·K·U: Human AI Knowledge Unification"
+title: "H·AI·K·U: Human + AI Knowledge Unification"
 subtitle: "A Universal Framework for Structured Human-AI Collaboration"
 description: "A methodology paper describing H·AI·K·U's four-phase lifecycle, studio-based domain adaptation, and the plugin implementation that enforces structured collaboration through backpressure, hat-based role separation, and persistence abstraction."
 date: "2026-04-03"
@@ -145,7 +145,7 @@ A stage declares five things:
 
 2. **Review agents** — specialized adversarial agents that run during the stage's review phase. Each review agent is defined as a file within the stage's `review-agents/` directory, with a mandate and checklist scoped to the stage's domain. A development stage might define correctness, security, performance, architecture, and test-quality agents. A compliance stage might define thoroughness and accuracy agents. Stages can also *include* review agents from other stages via `review-agents-include`, enabling cross-stage verification — for example, the development stage can include the design stage's consistency and accessibility agents to verify that the implementation respects the design intent.
 
-3. **Review gate** — the checkpoint that must be satisfied before advancing. Three gate types exist: *auto* (the framework advances when quality gates pass), *ask* (the framework pauses for human approval), and *external* (the framework blocks until an external review — such as a pull request approval — resolves). Gates may vary by operating context: a stage can require external review under normal operation while allowing human-approval-only during autonomous runs.
+3. **Review gate** — the checkpoint that must be satisfied before advancing. Four gate types exist: *auto* (the framework advances when quality gates pass), *ask* (the framework pauses for human approval), *external* (the framework blocks until an external review — such as a pull request approval — resolves), and *await* (the framework blocks until an external event occurs — such as a customer response, a CI pipeline result, or a stakeholder decision — that is outside the agent's control). Gates may vary by operating context: a stage can require external review under normal operation while allowing human-approval-only during autonomous runs.
 
 4. **Inputs** — explicit dependencies on outputs from earlier stages. A development stage, for instance, declares that it requires the discovery document from inception, the design brief from design, and the behavioral spec from product. This creates a verifiable pipeline: each stage's preconditions are guaranteed by the stages that preceded it.
 
@@ -159,7 +159,7 @@ Each stage executes through a fixed five-step loop:
 2. **Execute** — For each unit in dependency order, run the bolt loop: cycle through the hat sequence. Each hat runs in isolation, produces output for the next hat, and quality gates verify the result.
 3. **Adversarial review** — Spawn the stage's review agents in parallel. Each agent evaluates the stage's work against its specific mandate (correctness, security, accessibility, etc.). Agents from other stages included via `review-agents-include` run alongside the stage's own agents. High-severity findings trigger targeted fixes before the stage can proceed.
 4. **Persist** — Save stage outputs to their declared scope.
-5. **Gate** — Evaluate the review gate and either advance, pause for approval, or block for external review.
+5. **Gate** — Evaluate the review gate and either advance, pause for approval, block for external review, or await an external event.
 
 This loop is enforced by the framework harness. Agents operate within it but cannot alter it. The human's control is expressed through review gates and mode selection, not through micro-management of the loop itself.
 
@@ -390,7 +390,7 @@ The framework is intentionally extensible through studios rather than through co
 | **Persistence Adapter** | Backend that handles how work is stored and delivered. Implementations: git (branches, commits, pull requests) and filesystem (local directories). |
 | **Quality Gate** | A machine-verifiable check (test, lint, typecheck, build) enforced by the Stop hook. Blocks the agent from stopping until gates pass. |
 | **Review Agent** | A specialized adversarial agent that evaluates stage output against a specific mandate (e.g., correctness, security, accessibility). Defined per-stage in `review-agents/{name}.md`. Stages can include review agents from other stages via `review-agents-include`. |
-| **Review Gate** | A checkpoint between stages. Types: `auto` (proceed), `ask` (require human approval), `external` (require external review). |
+| **Review Gate** | A checkpoint between stages. Types: `auto` (proceed), `ask` (require human approval), `external` (require external review), `await` (block until an external event occurs). |
 | **Stage** | A lifecycle phase within a studio. Contains hat definitions, review gate, input/output contracts, and unit type constraints. |
 | **Studio** | A named lifecycle template mapping the four-phase model to domain-specific stages. Defines stage order, persistence type, and delivery mechanism. |
 | **Unit** | A discrete piece of work within an intent, scoped to a single stage. Has verifiable completion criteria and dependency relationships forming a DAG. |

@@ -1,6 +1,6 @@
 # H·AI·K·U Project
 
-H·AI·K·U = Human AI Knowledge Unification — a universal lifecycle framework for structured AI-assisted work.
+H·AI·K·U = Human + AI Knowledge Unification — a universal lifecycle framework for structured AI-assisted work.
 
 Three-component project: **plugin** (Claude Code plugin), **paper** (methodology spec), **website** (Next.js 15 static site).
 
@@ -54,7 +54,7 @@ When modifying any component, check if other components need corresponding updat
 | Stage | Profiles section | `plugin/studios/{name}/stages/{stage}/STAGE.md` | stage.sh, orchestrator.sh |
 | Hat | Profiles section | `plugin/studios/{name}/stages/{stage}/hats/{hat}.md` | hat.sh, stage.sh |
 | Review Agent | Quality Enforcement | `plugin/studios/{name}/stages/{stage}/review-agents/{agent}.md` | orchestrator.sh, run/SKILL.md |
-| Review Gate | Quality Enforcement | `review:` field in STAGE.md (auto/ask/external/[external,ask]) | orchestrator.sh |
+| Review Gate | Quality Enforcement | `review:` field in STAGE.md (auto/ask/external/await/[external,ask]) | orchestrator.sh |
 | Completion Criteria | Throughout | `quality_gates:` in unit/intent frontmatter, harness-enforced | elaborate, execute, advance, quality-gate.sh |
 | Backpressure | Principles section | Quality gates enforced by harness, not agent | quality-gate.sh, orchestrator.sh |
 | Operating Modes | Operating Modes section | interactive=HITL, /haiku:execute=OHOTL, /haiku:autopilot=AHOTL | execute, autopilot |
