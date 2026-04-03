@@ -9,7 +9,7 @@ stages: []
 active_stage: ""
 iterates_on: ""
 created: 2026-04-02
-status: active
+status: completed
 epic: ""
 quality_gates: [{name: tests, command: "bun test"}, {name: lint, command: "bun run lint"}, {name: typecheck, command: "bun run typecheck"}]
 ---
