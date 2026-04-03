@@ -7,7 +7,7 @@ discipline: backend
 stage: ""
 workflow: ""
 ticket: ""
-hat: planner
+hat: builder
 ---
 
 # unit-02-skills-metadata-rename
