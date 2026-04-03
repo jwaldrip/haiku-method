@@ -46,7 +46,7 @@ When modifying any component, check if other components need corresponding updat
 |---|---|---|---|
 | Intent | Elaboration phase | `.haiku/intents/{slug}/intent.md` | elaborate/SKILL.md |
 | Unit | Elaboration phase | `.haiku/intents/{slug}/stages/{stage}/units/unit-NN-*.md` | elaborate/SKILL.md, dag.sh |
-| Bolt | Execution phase | `iteration` field in iteration.json | execute/SKILL.md, advance/SKILL.md |
+| Bolt | Execution phase | `iteration` field in iteration.json | execute/SKILL.md, orchestrator.sh |
 | Studio | Profiles section | `plugin/studios/{name}/STUDIO.md` | studio.sh |
 | Stage | Profiles section | `plugin/studios/{name}/stages/{stage}/STAGE.md` with inline hats | stage.sh, orchestrator.sh |
 | Hat | Profiles section | Inline in STAGE.md (not standalone files) | stage.sh |
@@ -54,7 +54,7 @@ When modifying any component, check if other components need corresponding updat
 | Completion Criteria | Throughout | `quality_gates:` in unit/intent frontmatter, harness-enforced | elaborate, execute, advance, quality-gate.sh |
 | Backpressure | Principles section | Quality gates enforced by harness, not agent | quality-gate.sh, orchestrator.sh |
 | Operating Modes | Operating Modes section | interactive=HITL, /haiku:execute=OHOTL, /haiku:autopilot=AHOTL | execute, autopilot |
-| Hard Gates | Execution phase | exit code enforcement in /haiku:advance | advance/SKILL.md |
+| Hard Gates | Execution phase | exit code enforcement in quality-gate.sh | orchestrator.sh |
 | Persistence | Context Preservation | `plugin/lib/adapters/*.sh` (filesystem, git) | config.sh, adapters/ |
 | Providers | Memory Providers section | `plugin/schemas/providers/*.json`, `plugin/providers/*.md` | config.sh |
 | Operations | Operation phase | /haiku:operate skill | operate/SKILL.md |
