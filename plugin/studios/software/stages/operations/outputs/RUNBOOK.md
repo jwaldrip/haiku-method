@@ -1,7 +1,7 @@
 ---
 name: runbook
-location: .haiku/intents/{intent-slug}/knowledge/RUNBOOK.md
-scope: intent
+location: .haiku/knowledge/RUNBOOK.md
+scope: project
 format: text
 required: true
 ---

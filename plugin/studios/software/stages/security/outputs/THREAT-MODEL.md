@@ -1,7 +1,7 @@
 ---
 name: threat-model
-location: .haiku/intents/{intent-slug}/knowledge/THREAT-MODEL.md
-scope: intent
+location: .haiku/knowledge/THREAT-MODEL.md
+scope: project
 format: text
 required: true
 ---
