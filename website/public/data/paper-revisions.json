@@ -1,4 +1,23 @@
 {
+  "haiku-method": {
+    "slug": "haiku-method",
+    "currentVersion": "1",
+    "revisions": [
+      {
+        "version": "1",
+        "date": "2026-03-06",
+        "commitHash": "",
+        "fullCommitHash": "",
+        "commitMessage": "feat: add HAIKU methodology paper as canonical paper",
+        "stats": {
+          "linesAdded": 1453,
+          "linesRemoved": 0
+        },
+        "sectionChanges": []
+      }
+    ],
+    "newSections": []
+  },
   "ai-dlc-2026": {
     "slug": "ai-dlc-2026",
     "currentVersion": "1",

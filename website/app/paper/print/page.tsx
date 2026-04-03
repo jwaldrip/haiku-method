@@ -8,8 +8,8 @@ import remarkGfm from "remark-gfm"
 import { PrintButton } from "./PrintButton"
 
 export const metadata: Metadata = {
-	title: "AI-DLC Paper - Print Version",
-	description: "Print-friendly version of the AI-DLC methodology paper.",
+	title: "H·AI·K·U Paper - Print Version",
+	description: "Print-friendly version of the H·AI·K·U methodology paper.",
 	robots: {
 		index: false,
 		follow: false,
@@ -68,7 +68,7 @@ export default function PrintPaperPage() {
 
 			{/* Print footer */}
 			<footer className="mt-12 border-t-2 border-stone-900 pt-4 text-center text-sm text-stone-600 dark:border-stone-100 dark:text-stone-400">
-				<p>AI-DLC - https://ai-dlc.dev</p>
+				<p>H·AI·K·U - https://han.guru</p>
 				<p>The Bushido Collective</p>
 			</footer>
 		</div>

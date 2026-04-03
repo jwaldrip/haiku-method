@@ -52,16 +52,16 @@ Help improve the docs:
 ### Code
 
 Contribute to the plugin:
-- Fix bugs in hat logic
-- Add new workflows
+- Fix bugs in stage/studio logic
+- Add new studios or stages
 - Improve error handling
 - Add tests
 
-### Custom Hats and Workflows
+### Custom Studios and Stages
 
 Share your custom configurations:
-- Specialized hats for your domain
-- Workflow patterns that worked well
+- Specialized studios for your domain
+- Stage patterns that worked well
 - Integration examples
 
 ## Resources
@@ -69,7 +69,7 @@ Share your custom configurations:
 ### The H·AI·K·U Paper
 
 The foundational methodology document:
-- [H·AI·K·U Paper](https://han.guru/papers/ai-dlc-2026)
+- [H·AI·K·U Paper](https://han.guru/paper)
 - Full background and rationale
 - Research references
 - Adoption guidance

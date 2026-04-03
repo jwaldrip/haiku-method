@@ -6,13 +6,13 @@ import { PaperContent } from "./PaperContent"
 import PaperRevisionHistory from "./PaperRevisionHistory"
 
 export const metadata: Metadata = {
-	title: "AI-DLC Paper",
+	title: "H·AI·K·U Paper",
 	description:
-		"The complete AI-Driven Development Lifecycle methodology paper - a comprehensive guide to AI-native software development.",
+		"The complete H·AI·K·U methodology paper — Human AI Knowledge Unification, a universal framework for structured human-AI collaboration.",
 	openGraph: {
-		title: "AI-DLC Paper - Complete Methodology",
+		title: "H·AI·K·U Paper — Human AI Knowledge Unification",
 		description:
-			"A comprehensive methodology reimagining software development for the era of autonomous AI agents.",
+			"A universal framework for disciplined human-AI collaboration across any domain, introducing the 4-phase lifecycle and configurable operating modes.",
 	},
 }
 
@@ -79,7 +79,7 @@ export default function PaperPage() {
 
 					{/* Revision History */}
 					<div className="mt-6">
-						<PaperRevisionHistory slug="ai-dlc-2026" />
+						<PaperRevisionHistory slug="haiku-method" />
 					</div>
 				</div>
 
