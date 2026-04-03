@@ -12549,7 +12549,7 @@ async function parseIntent(intentDir) {
   } catch (err) {
     const filePath = join(intentDir, "intent.md");
     if (err.code !== "ENOENT") {
-      console.warn(`[ai-dlc/shared] Failed to parse ${filePath}:`, err);
+      console.warn(`[haiku/shared] Failed to parse ${filePath}:`, err);
     }
     return null;
   }
@@ -12575,7 +12575,7 @@ async function parseUnit(filePath) {
     };
   } catch (err) {
     if (err.code !== "ENOENT") {
-      console.warn(`[ai-dlc/shared] Failed to parse ${filePath}:`, err);
+      console.warn(`[haiku/shared] Failed to parse ${filePath}:`, err);
     }
     return null;
   }
