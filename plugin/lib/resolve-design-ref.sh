@@ -605,14 +605,14 @@ hku_resolve_design_ref() {
   fi
 
   # Handle provider URI and native format exports
-  local output_dir="$repo_root/.ai-dlc/$intent_slug/screenshots/$unit_slug"
+  local output_dir="$repo_root/.haiku/intents/$intent_slug/screenshots/$unit_slug"
   if [ "$_RESOLVED_FORMAT" = "provider-uri" ] || [[ "$_RESOLVED_FORMAT" =~ ^(op|pen|excalidraw|fig)$ ]]; then
     mkdir -p "$output_dir"
 
     # Read current bolt iteration to invalidate cache across bolts
     local current_iteration="0"
     local iter_json
-    iter_json=$(dlc_state_load "$intent_dir" "iteration.json" 2>/dev/null)
+    iter_json=$(hku_state_load "$intent_dir" "iteration.json" 2>/dev/null)
     if [ -n "$iter_json" ]; then
       current_iteration=$(echo "$iter_json" | jq -r '.iteration // 0' 2>/dev/null || echo "0")
     fi

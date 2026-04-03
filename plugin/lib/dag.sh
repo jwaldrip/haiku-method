@@ -488,14 +488,14 @@ update_unit_status() {
     fi
   fi
   if type haiku_record_unit_status_change &>/dev/null; then
-    # Extract intent slug and unit slug from the path
-    # Path pattern: .haiku/<intent_slug>/unit-NN-<unit_slug>.md
+    # Extract intent slug from the path
+    # Path pattern: .haiku/intents/<intent_slug>/stages/<stage>/units/unit-NN-<unit_slug>.md
     local unit_basename
     unit_basename=$(basename "$unit_file" .md)
     local intent_slug=""
-    local after_ai_dlc="${real_path#*/.haiku/}"
-    if [ "$after_ai_dlc" != "$real_path" ]; then
-      intent_slug="${after_ai_dlc%%/*}"
+    local after_haiku="${real_path#*/.haiku/intents/}"
+    if [ "$after_haiku" != "$real_path" ]; then
+      intent_slug="${after_haiku%%/*}"
     fi
     haiku_record_unit_status_change "$intent_slug" "$unit_basename" "$old_status" "$new_status"
   fi
@@ -733,7 +733,7 @@ discover_branch_intents() {
         # Cross-check: main may have marked this completed after the branch diverged
         _intent_completed_on_main "$slug" && continue
         local studio
-        studio=$(echo "$intent_content" | _yaml_get_simple "studio" "software")
+        studio=$(echo "$intent_content" | _yaml_get_simple "studio" "ideation")
         echo "$slug|$studio|worktree|$branch"
         seen_slugs="$seen_slugs $slug"
         ;;
@@ -764,7 +764,7 @@ discover_branch_intents() {
     # Cross-check: main may have marked this completed after the branch diverged
     _intent_completed_on_main "$slug" && continue
     local studio
-    studio=$(echo "$intent_content" | _yaml_get_simple "studio" "software")
+    studio=$(echo "$intent_content" | _yaml_get_simple "studio" "ideation")
     echo "$slug|$studio|local|$branch"
     seen_slugs="$seen_slugs $slug"
   done < <(git for-each-ref --format='%(refname:short)' 'refs/heads/haiku/*/main' 2>/dev/null)
@@ -792,7 +792,7 @@ discover_branch_intents() {
       # Cross-check: main may have marked this completed after the branch diverged
       _intent_completed_on_main "$slug" && continue
       local studio
-      studio=$(echo "$intent_content" | _yaml_get_simple "studio" "software")
+      studio=$(echo "$intent_content" | _yaml_get_simple "studio" "ideation")
       echo "$slug|$studio|remote|$branch"
       seen_slugs="$seen_slugs $slug"
     done < <(git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/haiku/*/main' 2>/dev/null)
