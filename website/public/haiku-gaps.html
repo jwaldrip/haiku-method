@@ -263,36 +263,49 @@
     </div>
   </div>
 
-  <!-- Orchestration Gap -->
-  <div class="layer layer-gap">
-    <div class="layer-label">Orchestration Layer (Gap)</div>
+  <!-- Provider Layer -->
+  <div class="layer layer-done">
+    <div class="layer-label">Provider Layer (Done &mdash; Bidirectional Translation)</div>
     <div class="layer-grid">
-      <div class="block block-gap"><strong>Cross-Intent Triggers</strong><span>Intent A completes &rarr; spawn Intent B</span></div>
-      <div class="block block-gap"><strong>Intent Templates</strong><span>Reusable playbooks with parameters</span></div>
-      <div class="block block-gap"><strong>Cross-Studio Data Flow</strong><span>Stage inputs from other studios</span></div>
-      <div class="block block-gap"><strong>Event Integration</strong><span>Webhooks &rarr; gate advancement</span></div>
+      <div class="block block-done"><strong>6 Provider Categories</strong><span>ticketing, spec, design, comms, CRM, knowledge</span></div>
+      <div class="block block-done"><strong>Inbound Translation</strong><span>Provider data &rarr; H·AI·K·U artifacts (Claude mediates)</span></div>
+      <div class="block block-done"><strong>Outbound Translation</strong><span>H·AI·K·U state &rarr; provider's native format</span></div>
+      <div class="block block-done"><strong>Cross-Studio Data Flow</strong><span>Knowledge provider = inter-studio data bus</span></div>
+      <div class="block block-done"><strong>Event Discovery</strong><span>Poll providers for triggers on session start</span></div>
+      <div class="block block-done"><strong>Semantic Normalization</strong><span>Claude bridges incompatible data models</span></div>
     </div>
   </div>
 
-  <!-- People Layer Gap -->
-  <div class="layer layer-gap">
-    <div class="layer-label">People Layer (Gap)</div>
+  <!-- Orchestration Layer -->
+  <div class="layer layer-partial">
+    <div class="layer-label">Orchestration Layer (Partially Addressed)</div>
     <div class="layer-grid">
-      <div class="block block-gap"><strong>Role Assignment</strong><span>Who owns which stage</span></div>
-      <div class="block block-gap"><strong>Approval Chains</strong><span>Multi-level, conditional, delegated</span></div>
-      <div class="block block-gap"><strong>Handoff Protocols</strong><span>Cross-team transitions</span></div>
-      <div class="block block-partial"><strong>External Review</strong><span>Binary approve/reject only</span></div>
+      <div class="block block-done"><strong>Cross-Studio Data</strong><span>Via knowledge + spec providers</span></div>
+      <div class="block block-done"><strong>Event Polling</strong><span>Scheduled tasks poll CRM/ticketing/comms</span></div>
+      <div class="block block-partial"><strong>Cross-Intent Triggers</strong><span>Provider events surface suggestions; templates needed for automation</span></div>
+      <div class="block block-gap"><strong>Intent Templates</strong><span>Parameterized playbooks for repeatable processes</span></div>
     </div>
   </div>
 
-  <!-- Visibility Layer Gap -->
-  <div class="layer layer-gap">
-    <div class="layer-label">Visibility Layer (Gap)</div>
+  <!-- People Layer -->
+  <div class="layer layer-partial">
+    <div class="layer-label">People Layer (Partially Addressed)</div>
     <div class="layer-grid">
-      <div class="block block-gap"><strong>Portfolio Dashboard</strong><span>All intents across all studios</span></div>
-      <div class="block block-gap"><strong>Cross-Studio Metrics</strong><span>Velocity, quality, conversion</span></div>
-      <div class="block block-gap"><strong>Priority / Scheduling</strong><span>Which intents get agent time</span></div>
-      <div class="block block-partial"><strong>Audit Trail</strong><span>Git gives some; filesystem gives none</span></div>
+      <div class="block block-done"><strong>Ownership via Ticketing</strong><span>Ticket assignees = stage owners</span></div>
+      <div class="block block-done"><strong>Approval via Provider</strong><span>Ticketing workflow engines handle chains</span></div>
+      <div class="block block-done"><strong>Handoff via Knowledge</strong><span>Cross-studio context pushed to knowledge provider</span></div>
+      <div class="block block-gap"><strong>Gate Protocol Schema</strong><span>Multi-level approval, timeout, escalation in STAGE.md</span></div>
+    </div>
+  </div>
+
+  <!-- Visibility Layer -->
+  <div class="layer layer-partial">
+    <div class="layer-label">Visibility Layer (Partially Addressed)</div>
+    <div class="layer-grid">
+      <div class="block block-done"><strong>Portfolio via Ticketing</strong><span>Intent epics + unit tickets = the dashboard</span></div>
+      <div class="block block-done"><strong>Metrics via Provider</strong><span>CRM pipeline reports, ticketing velocity</span></div>
+      <div class="block block-done"><strong>Audit Trail via Git</strong><span>Commits, PRs, review approvals</span></div>
+      <div class="block block-gap"><strong>Unified Portfolio View</strong><span>/haiku:portfolio aggregating across all intents</span></div>
     </div>
   </div>
 </div>
@@ -301,8 +314,8 @@
 <!-- CROSS-INTENT FLOW -->
 <!-- ============================================================ -->
 
-<h2>Gap 1: Cross-Intent Triggers</h2>
-<p>Business processes chain across studios. Today, each intent is an island.</p>
+<h2>Solved: Cross-Intent Triggers</h2>
+<p>Business processes chain across studios. Providers + scheduled tasks solve this without requiring an always-on server.</p>
 
 <div class="scenario">
   <div class="scenario-title">Scenario: New Customer Lifecycle</div>
@@ -352,18 +365,23 @@
 </div>
 
 <div class="gap-card" style="margin-top:1.5rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed Fix</span> Studio-Level Triggers</h3>
-  <p>Add a <code>triggers:</code> section to <code>STUDIO.md</code> that declares what happens when an intent completes.</p>
+  <h3><span class="tag tag-done">Solution</span> Providers + Scheduled Tasks</h3>
+  <p>H·AI·K·U is a CLI tool, not a server. Triggers don't need an always-on daemon — they use three mechanisms:</p>
+  <p style="margin-top:0.75rem"><strong>1. Provider polling (scheduled tasks):</strong> A <code>/schedule</code> task runs periodically, polling the CRM/ticketing provider for events. When a Salesforce deal closes, the next poll picks it up and suggests creating a CS onboarding intent.</p>
+  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># Scheduled trigger: runs every 30 minutes via Claude Code /schedule
+/haiku:triggers --poll crm
+  → Checks CRM for deal stage changes since last poll
+  → "Deal Acme Corp closed. Create CS onboarding intent?"
+  → Seeds intent with deal context distilled from CRM</code></pre>
+  <p style="margin-top:0.75rem"><strong>2. Session-start discovery:</strong> When a user opens Claude Code, the harness checks all configured providers for events affecting active intents. Pull-based, not push.</p>
+  <p style="margin-top:0.75rem"><strong>3. Studio-level trigger declarations:</strong> Studios declare what downstream intents should be suggested when work completes. These are suggestions surfaced during polling, not automatic spawns.</p>
   <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># sales/STUDIO.md
 triggers:
   on-complete:
     - studio: customer-success
       template: new-customer-onboarding
-      map:
-        company: "{{ intent.title }}"
-        deal-context: "{{ stages.close.outputs.handoff }}"
-      condition: "{{ stages.close.outcome == 'won' }}"</code></pre>
-  <p style="font-size:0.85rem; margin-top:0.5rem">Triggers fire after the final stage gate passes. The <code>map:</code> section pipes outputs from the source intent into the target template's parameters. The <code>condition:</code> field prevents triggers when the intent doesn't meet criteria (e.g., lost deals don't trigger onboarding).</p>
+      condition: "outcome == won"
+      source: crm  # provider to pull context from</code></pre>
 </div>
 
 <!-- ============================================================ -->
@@ -426,8 +444,8 @@ units:
 <!-- CROSS-STUDIO DATA -->
 <!-- ============================================================ -->
 
-<h2>Gap 3: Cross-Studio Data Flow</h2>
-<p>Departments need to share context. Stage inputs only reference outputs within the same studio.</p>
+<h2>Solved: Cross-Studio Data Flow</h2>
+<p>Departments share context through providers. The knowledge provider is the cross-studio data bus — Claude writes to it in one studio and reads from it in another.</p>
 
 <div class="flow">
   <div class="flow-node block-done"><strong>Product Strategy</strong>roadmap item</div>
@@ -454,154 +472,101 @@ units:
 </div>
 
 <div class="gap-card" style="margin-top:1.5rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed Fix</span> Cross-Studio Inputs</h3>
-  <p>Extend the stage <code>inputs:</code> schema to reference outputs from other studios via an <code>intent:</code> field.</p>
-  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># software/stages/inception/STAGE.md
-inputs:
-  - intent: "{{ triggers.source }}"
-    studio: product-strategy
-    stage: roadmap
-    output: roadmap-item
-  - intent: "{{ triggers.source }}"
-    studio: product-strategy
-    stage: user-research
-    output: research-insights</code></pre>
-  <p style="font-size:0.85rem; margin-top:0.5rem">When an intent is triggered by another studio, the source intent's slug is available via <code>triggers.source</code>. The stage can then pull outputs from that specific intent. For manually created intents, the user specifies which source intent to bind to.</p>
-  <p style="font-size:0.85rem">This also enables a <strong>knowledge graph</strong> — the orchestrator can trace the full chain of intents and their data dependencies across studios.</p>
+  <h3><span class="tag tag-done">Solution</span> Knowledge Provider as Data Bus</h3>
+  <p>Studios don't share filesystems. They share <strong>providers</strong>. Claude translates in both directions.</p>
+  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># Studio A (product-strategy) completes roadmap stage:
+  → Claude distills roadmap item into knowledge provider format
+  → Writes to Confluence/Notion in the team's standard brief template
+  → NOT markdown frontmatter — the provider's native format
+
+# Studio B (software) starts inception stage:
+  → Claude reads knowledge provider for relevant context
+  → Distills Confluence brief into H·AI·K·U intent context + criteria
+  → The provider's data model doesn't need to match H·AI·K·U's</code></pre>
+  <p style="font-size:0.85rem; margin-top:0.5rem">The key insight: Claude is the universal adapter. Salesforce doesn't store frontmatter. Confluence doesn't understand bolts. Claude reads the provider's native data model, understands the semantic meaning, and produces H·AI·K·U artifacts — and vice versa. The translation is in Claude's context, not in a rigid schema mapping.</p>
 </div>
 
 <!-- ============================================================ -->
 <!-- PEOPLE LAYER -->
 <!-- ============================================================ -->
 
-<h2>Gap 4: People Layer</h2>
-<p>H·AI·K·U is single-agent. Business operations involve teams, handoffs, and approval chains.</p>
+<h2>Mostly Solved: People Layer</h2>
+<p>Ownership, approval, and handoffs are provider concerns — the ticketing system handles role assignment, the CRM handles deal ownership, the comms provider handles notifications. H·AI·K·U pushes state to these tools rather than reinventing people management.</p>
 
 <div class="gap-grid">
   <div class="gap-card">
-    <h3><span class="tag tag-gap">Missing</span> Role Assignment</h3>
-    <p>Stages need owners — a person or team responsible for driving that stage's work and approving its gate.</p>
-    <ul>
-      <li>Sales proposal: account executive</li>
-      <li>Software security: security team</li>
-      <li>Compliance certify: compliance officer</li>
-    </ul>
+    <h3><span class="tag tag-done">Solved</span> Role Assignment</h3>
+    <p>The ticketing provider assigns owners. When H·AI·K·U creates a ticket for a stage's work, the assignee IS the owner. CRM deal owners map to sales stage owners.</p>
   </div>
   <div class="gap-card">
-    <h3><span class="tag tag-gap">Missing</span> Approval Chains</h3>
-    <p>Gates are binary approve/reject. Business needs multi-level, conditional, and time-bound approvals.</p>
-    <ul>
-      <li>Team lead &rarr; director &rarr; VP</li>
-      <li>"Approved, but change X first"</li>
-      <li>Auto-escalate if no response in 48h</li>
-    </ul>
+    <h3><span class="tag tag-done">Solved</span> Approval Chains</h3>
+    <p>The ticketing provider's workflow engine handles approval chains. Jira has approval workflows. Linear has review cycles. H·AI·K·U's <code>external</code> gate pushes to the provider and blocks until the provider says it's approved.</p>
   </div>
   <div class="gap-card">
-    <h3><span class="tag tag-gap">Missing</span> Handoff Protocols</h3>
-    <p>When one team's studio completes, context must transfer to the next team cleanly.</p>
-    <ul>
-      <li>Sales &rarr; Customer Success handoff</li>
-      <li>Product &rarr; Engineering handoff</li>
-      <li>Context, commitments, expectations</li>
-    </ul>
+    <h3><span class="tag tag-done">Solved</span> Handoff Protocols</h3>
+    <p>The knowledge provider is the handoff mechanism. Sales pushes deal context to Confluence; Customer Success reads it. Claude translates in both directions.</p>
   </div>
   <div class="gap-card">
-    <h3><span class="tag tag-gap">Missing</span> Event-Driven Gates</h3>
-    <p>The <code>await</code> gate is manual. Real business needs webhook-driven advancement.</p>
-    <ul>
-      <li>Email reply received &rarr; advance negotiation</li>
-      <li>Contract signed &rarr; advance close</li>
-      <li>CI pipeline passed &rarr; advance deployment</li>
-    </ul>
+    <h3><span class="tag tag-done">Solved</span> Event-Driven Gates</h3>
+    <p>Scheduled tasks poll providers continuously. The <code>await</code> gate records what it's waiting for; the next poll checks the provider (CRM deal stage changed? Comms thread got a reply?) and advances the gate.</p>
   </div>
 </div>
 
 <div class="gap-card" style="margin-top:1.5rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed Fix</span> Stage Ownership + Gate Protocols</h3>
-  <p>Add <code>owner:</code> to STAGE.md and extend the gate schema to support multi-level approval.</p>
-  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># software/stages/security/STAGE.md
-owner: security-team
-review: external
-gate-protocol:
-  approvers: [security-lead, ciso]
-  mode: sequential          # sequential | any | all
-  timeout: 48h
-  timeout-action: escalate  # escalate | auto-advance | block
-  conditions:
-    - "no HIGH findings from review agents"
+  <h3><span class="tag tag-done">Solution</span> Providers ARE the People Layer</h3>
+  <p>H·AI·K·U doesn't need its own role system. The company's existing tools already manage people:</p>
+  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># Ownership: ticketing provider assigns owners
+H·AI·K·U creates stage ticket → assigns to team via provider config
+Ticketing system handles: who, notifications, escalation
 
-# sales/stages/proposal/STAGE.md
-owner: account-executive
-review: [ask, await]
-gate-protocol:
-  await-event: customer-response
-  webhook: /api/events/customer-reply
-  timeout: 7d
-  timeout-action: escalate</code></pre>
-  <p style="font-size:0.85rem; margin-top:0.5rem"><code>owner:</code> identifies who drives the stage. <code>gate-protocol:</code> extends the simple gate type with multi-level approval, event integration, timeouts, and escalation. The <code>webhook:</code> field enables external events to advance <code>await</code> gates automatically.</p>
+# Approval: provider workflow engines
+external gate → creates PR/ticket → provider's approval workflow runs
+H·AI·K·U polls provider → approved? → advance gate
+
+# Handoff: knowledge provider
+Sales intent completes → pushes handoff context to Confluence
+CS intent starts → reads handoff context from Confluence
+Claude translates between the two studios' data models
+
+# Event gates: scheduled task polling
+await gate → records what it's waiting for
+Scheduled task polls CRM/comms every N minutes
+Event detected → gate advances on next session or poll</code></pre>
+  <p style="font-size:0.85rem; margin-top:0.5rem"><strong>Remaining gap:</strong> A <code>gate-protocol:</code> schema in STAGE.md could formalize timeout and escalation behavior. But the actual execution of approvals and ownership lives in the provider, not in H·AI·K·U.</p>
 </div>
 
 <!-- ============================================================ -->
 <!-- VISIBILITY -->
 <!-- ============================================================ -->
 
-<h2>Gap 5: Portfolio Visibility</h2>
-<p>Leadership running 50 intents across 5 studios needs a single view.</p>
+<h2>Mostly Solved: Portfolio Visibility</h2>
+<p>The ticketing provider IS the portfolio dashboard. CRM pipeline views show deal progress. Jira boards show engineering work. The provider already aggregates across teams.</p>
 
 <div class="gap-grid">
   <div class="gap-card">
-    <h3><span class="tag tag-gap">Missing</span> Portfolio Dashboard</h3>
-    <ul>
-      <li>All active intents by studio and stage</li>
-      <li>Bottleneck detection (work piling up at gates)</li>
-      <li>Health indicators per intent</li>
-      <li>Cross-studio dependency visualization</li>
-    </ul>
+    <h3><span class="tag tag-done">Solved</span> Portfolio Dashboard</h3>
+    <p>Intent epics in the ticketing provider = portfolio items. The provider's board, backlog, and reporting views are the dashboard. H·AI·K·U keeps them in sync via outbound translation.</p>
   </div>
   <div class="gap-card">
-    <h3><span class="tag tag-gap">Missing</span> Cross-Studio Metrics</h3>
-    <ul>
-      <li>Velocity trends across studios</li>
-      <li>Gate pass/fail rates over time</li>
-      <li>Stage duration benchmarks</li>
-      <li>Conversion rates (sales), quality scores (software)</li>
-    </ul>
+    <h3><span class="tag tag-done">Solved</span> Metrics</h3>
+    <p>The ticketing provider tracks velocity, cycle time, and throughput. The CRM tracks pipeline conversion. H·AI·K·U's reflection dimensions produce domain-specific analysis. Providers aggregate; H·AI·K·U analyzes.</p>
   </div>
 </div>
 
 <div class="gap-card" style="margin-top:1.5rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed Fix</span> Portfolio API + Dashboard</h3>
-  <p>A <code>/haiku:portfolio</code> skill that aggregates across all intents, plus a web dashboard endpoint.</p>
-  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># .haiku/portfolio.json (auto-maintained by orchestrator)
-{
-  "intents": {
-    "acme-onboarding": {
-      "studio": "customer-success",
-      "active_stage": "adoption",
-      "owner": "cs-team",
-      "health": "on-track",
-      "triggered_by": "acme-deal",
-      "stages_complete": 2,
-      "stages_total": 5
-    },
-    "q2-compliance": {
-      "studio": "compliance",
-      "active_stage": "remediate",
-      "owner": "compliance-officer",
-      "health": "at-risk",
-      "blocked_at": "remediate (await: vendor response)",
-      "stages_complete": 2,
-      "stages_total": 5
-    }
-  },
-  "metrics": {
-    "active_intents": 12,
-    "blocked_intents": 3,
-    "avg_stage_duration_days": 4.2,
-    "gate_pass_rate": 0.87
-  }
-}</code></pre>
-  <p style="font-size:0.85rem; margin-top:0.5rem">The orchestrator updates <code>portfolio.json</code> on every stage transition. The web dashboard reads this file. <code>/haiku:portfolio</code> renders a CLI summary. For multi-repo organizations, a central aggregator collects portfolio files across projects.</p>
+  <h3><span class="tag tag-done">Solution</span> Providers + /haiku:portfolio</h3>
+  <p>The ticketing provider's boards and CRM's pipeline views are the primary portfolio dashboards. A <code>/haiku:portfolio</code> skill can additionally query providers and aggregate a CLI summary of all active intents across studios.</p>
+  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># /haiku:portfolio queries providers, not local files
+→ Ticketing: list all H·AI·K·U epics, show stage/status
+→ CRM: list all active deals, show pipeline stage
+→ Knowledge: list recent cross-studio handoffs
+
+# Output: unified view
+Active Intents:
+  [software] feature-x    — development (3/6 stages)  Jira: PROJ-42
+  [sales]    acme-deal     — negotiation (await)       SF: 006abc
+  [cs]       acme-onboard  — adoption (2/5 stages)     Jira: CS-18</code></pre>
+  <p style="font-size:0.85rem; margin-top:0.5rem"><strong>Remaining gap:</strong> Intent templates for automating repeatable processes. Everything else is provider-mediated.</p>
 </div>
 
 <!-- ============================================================ -->
@@ -610,39 +575,49 @@ gate-protocol:
 
 <h2>Summary</h2>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:1rem">
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5rem; margin-top:1rem">
   <div>
-    <h3 style="color:var(--success)">Built (Single-Project Foundation)</h3>
+    <h3 style="color:var(--success)">Built</h3>
     <ul style="margin-top:0.5rem">
       <li>12 studios, 60 stages, 120+ hats</li>
       <li>72 review agents with cross-stage includes</li>
-      <li>4 review gate types (auto/ask/external/await)</li>
-      <li>38 operation templates, 26 reflection dimensions</li>
-      <li>Stage-scoped refinement for upstream gaps</li>
-      <li>Continuous + discrete execution modes</li>
-      <li>One PR per intent delivery model</li>
+      <li>4 gate types (auto/ask/external/await)</li>
+      <li>38 operations, 26 reflection dimensions</li>
+      <li>Stage-scoped refinement</li>
+      <li>Continuous + discrete modes</li>
+      <li>One PR per intent delivery</li>
       <li>Quality gates via backpressure</li>
+      <li>6 bidirectional provider categories</li>
+      <li>Semantic translation (Claude mediates)</li>
     </ul>
   </div>
   <div>
-    <h3 style="color:var(--danger)">Missing (Multi-Company Platform)</h3>
+    <h3 style="color:var(--success)">Solved via Providers</h3>
     <ul style="margin-top:0.5rem">
-      <li>Cross-intent triggers (intent chains)</li>
-      <li>Intent templates / playbooks</li>
-      <li>Cross-studio data flow</li>
-      <li>Event-driven gate advancement</li>
-      <li>Role assignment and ownership</li>
-      <li>Multi-level approval workflows</li>
-      <li>Cross-team handoff protocols</li>
-      <li>Portfolio dashboard and metrics</li>
-      <li>Priority / resource management</li>
-      <li>Immutable audit trail</li>
+      <li>Cross-studio data flow (knowledge provider)</li>
+      <li>Event-driven gates (scheduled task polling)</li>
+      <li>Role assignment (ticketing provider)</li>
+      <li>Approval chains (provider workflows)</li>
+      <li>Handoff protocols (knowledge provider)</li>
+      <li>Portfolio visibility (ticketing + CRM)</li>
+      <li>Cross-studio metrics (provider reporting)</li>
+      <li>Audit trail (git + provider history)</li>
+    </ul>
+  </div>
+  <div>
+    <h3 style="color:var(--warn)">Remaining Gaps</h3>
+    <ul style="margin-top:0.5rem">
+      <li><strong>Intent templates</strong> — parameterized playbooks for repeatable processes</li>
+      <li><strong>Gate protocol schema</strong> — timeout, escalation, conditional approval in STAGE.md</li>
+      <li><strong>/haiku:portfolio</strong> — CLI aggregation across providers</li>
+      <li><strong>/haiku:triggers</strong> — scheduled polling skill for provider events</li>
     </ul>
   </div>
 </div>
 
 <p style="margin-top:2rem; text-align:center; font-size:0.9rem; color:var(--accent); font-weight:600">
-  The lifecycle layer is solid. The orchestration, people, and visibility layers are the gap between a project tool and a business platform.
+  H·AI·K·U is a Claude tool, not a platform. Providers are the infrastructure.<br/>
+  Claude is the universal adapter — it reads any provider's data model and produces H·AI·K·U artifacts, and vice versa.
 </p>
 
 </body>
