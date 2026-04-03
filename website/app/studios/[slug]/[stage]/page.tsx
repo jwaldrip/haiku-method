@@ -90,12 +90,25 @@ export default async function StageDetailPage({ params }: Props) {
 			</header>
 
 			{/* Quick Facts */}
-			<section className="mb-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
+			<section className="mb-10 grid grid-cols-2 gap-4 sm:grid-cols-5">
 				<div className="rounded-lg border border-stone-200 p-4 dark:border-stone-700">
 					<div className="text-xs font-medium uppercase tracking-wider text-stone-400">
 						Hats
 					</div>
 					<div className="mt-1 text-2xl font-bold">{stage.hatDefinitions.length}</div>
+				</div>
+				<div className="rounded-lg border border-stone-200 p-4 dark:border-stone-700">
+					<div className="text-xs font-medium uppercase tracking-wider text-stone-400">
+						Review Agents
+					</div>
+					<div className="mt-1 text-2xl font-bold">
+						{stage.reviewAgentDefinitions.length}
+						{stage.reviewAgentsInclude.length > 0 && (
+							<span className="text-sm font-normal text-stone-400">
+								{" "}+{stage.reviewAgentsInclude.reduce((acc: number, i: { agents: string[] }) => acc + i.agents.length, 0)}
+							</span>
+						)}
+					</div>
 				</div>
 				<div className="rounded-lg border border-stone-200 p-4 dark:border-stone-700">
 					<div className="text-xs font-medium uppercase tracking-wider text-stone-400">
@@ -184,6 +197,58 @@ export default async function StageDetailPage({ params }: Props) {
 					))}
 				</div>
 			</section>
+
+			{/* Review Agents */}
+			{(stage.reviewAgentDefinitions.length > 0 || stage.reviewAgentsInclude.length > 0) && (
+				<section className="mb-10">
+					<h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-stone-400">
+						Review Agents
+					</h2>
+					<div className="space-y-4">
+						{stage.reviewAgentDefinitions.map((agent) => (
+							<div
+								key={agent.name}
+								id={`agent-${agent.name}`}
+								className="rounded-xl border border-teal-200 dark:border-teal-800"
+							>
+								<div className="border-b border-teal-200 px-6 py-3 dark:border-teal-800">
+									<h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
+										{titleCase(agent.name)}
+									</h3>
+								</div>
+								<div className="px-6 py-4">
+									<div className="prose prose-sm prose-gray dark:prose-invert max-w-none">
+										<ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
+											{agent.content}
+										</ReactMarkdown>
+									</div>
+								</div>
+							</div>
+						))}
+						{stage.reviewAgentsInclude.length > 0 && (
+							<div className="rounded-xl border border-dashed border-stone-300 px-6 py-4 dark:border-stone-600">
+								<h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-stone-400">
+									Included from other stages
+								</h4>
+								<div className="flex flex-wrap gap-2">
+									{stage.reviewAgentsInclude.flatMap((inc) =>
+										inc.agents.map((agentName) => (
+											<Link
+												key={`${inc.stage}-${agentName}`}
+												href={`/studios/${slug}/${inc.stage}/#agent-${agentName}`}
+												className="rounded-lg border border-stone-200 px-3 py-1.5 text-sm hover:border-teal-300 dark:border-stone-700 dark:hover:border-teal-700"
+											>
+												<span className="font-medium">{titleCase(agentName)}</span>
+												<span className="ml-1 text-stone-400">from {titleCase(inc.stage)}</span>
+											</Link>
+										)),
+									)}
+								</div>
+							</div>
+						)}
+					</div>
+				</section>
+			)}
 
 			{/* Stage Body Content (criteria guidance, completion signal) */}
 			{stage.content && (

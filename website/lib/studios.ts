@@ -11,6 +11,13 @@ export interface HatDefinition {
 	content: string
 }
 
+export interface ReviewAgentDefinition {
+	name: string
+	stage: string
+	studio: string
+	content: string
+}
+
 export interface StageDefinition {
 	name: string
 	description: string
@@ -18,8 +25,10 @@ export interface StageDefinition {
 	review: string
 	unitTypes: string[]
 	inputs: Array<{ stage: string; output: string }>
+	reviewAgentsInclude: Array<{ stage: string; agents: string[] }>
 	content: string
 	hatDefinitions: HatDefinition[]
+	reviewAgentDefinitions: ReviewAgentDefinition[]
 }
 
 export interface StudioDefinition {
@@ -54,6 +63,18 @@ function parseHat(hatPath: string): HatDefinition | null {
 	}
 }
 
+function parseReviewAgent(agentPath: string): ReviewAgentDefinition | null {
+	if (!fs.existsSync(agentPath)) return null
+	const raw = fs.readFileSync(agentPath, "utf8")
+	const { data, content } = matter(raw)
+	return {
+		name: data.name || path.basename(agentPath, ".md"),
+		stage: data.stage || "",
+		studio: data.studio || "",
+		content: content.trim(),
+	}
+}
+
 function parseStage(stageDir: string): StageDefinition | null {
 	const stagePath = path.join(stageDir, "STAGE.md")
 	if (!fs.existsSync(stagePath)) return null
@@ -71,6 +92,17 @@ function parseStage(stageDir: string): StageDefinition | null {
 		}
 	}
 
+	// Parse review agents
+	const reviewAgentsDir = path.join(stageDir, "review-agents")
+	const reviewAgentDefinitions: ReviewAgentDefinition[] = []
+	if (fs.existsSync(reviewAgentsDir)) {
+		const agentFiles = fs.readdirSync(reviewAgentsDir).filter((f) => f.endsWith(".md")).sort()
+		for (const agentFile of agentFiles) {
+			const agent = parseReviewAgent(path.join(reviewAgentsDir, agentFile))
+			if (agent) reviewAgentDefinitions.push(agent)
+		}
+	}
+
 	return {
 		name: data.name || path.basename(stageDir),
 		description: data.description || "",
@@ -81,8 +113,15 @@ function parseStage(stageDir: string): StageDefinition | null {
 			stage: i.stage,
 			output: i.output,
 		})),
+		reviewAgentsInclude: (data["review-agents-include"] || []).map(
+			(i: { stage: string; agents: string[] }) => ({
+				stage: i.stage,
+				agents: i.agents || [],
+			}),
+		),
 		content: content.trim(),
 		hatDefinitions,
+		reviewAgentDefinitions,
 	}
 }
 

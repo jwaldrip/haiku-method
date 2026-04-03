@@ -77,6 +77,12 @@ export default async function StudioDetailPage({ params }: Props) {
 						hats
 					</span>
 					<span>
+						<strong className="text-stone-700 dark:text-stone-300">
+							{studio.stageDefinitions.reduce((acc, s) => acc + s.reviewAgentDefinitions.length, 0)}
+						</strong>{" "}
+						review agents
+					</span>
+					<span>
 						Persistence: <strong className="text-stone-700 dark:text-stone-300">{studio.persistence.type}</strong>
 					</span>
 					<span>
@@ -106,6 +112,11 @@ export default async function StudioDetailPage({ params }: Props) {
 										<span className="text-xs text-stone-400">
 											{stage.hats.length} hat{stage.hats.length !== 1 ? "s" : ""}
 										</span>
+										{stage.reviewAgentDefinitions.length > 0 && (
+											<span className="text-xs text-teal-500 dark:text-teal-400">
+												{stage.reviewAgentDefinitions.length} agent{stage.reviewAgentDefinitions.length !== 1 ? "s" : ""}
+											</span>
+										)}
 										<span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${badge.color}`}>
 											{badge.label}
 										</span>
@@ -186,6 +197,51 @@ export default async function StudioDetailPage({ params }: Props) {
 									})}
 								</div>
 							</div>
+
+							{/* Review Agents */}
+							{(stage.reviewAgentDefinitions.length > 0 || stage.reviewAgentsInclude.length > 0) && (
+								<div className="border-t border-stone-100 px-6 py-4 dark:border-stone-800">
+									<h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-stone-400">
+										Review Agents
+									</h4>
+									<div className="grid gap-3 sm:grid-cols-2">
+										{stage.reviewAgentDefinitions.map((agent) => {
+											const mandateMatch = agent.content.match(/\*\*Mandate:\*\*\s*(.+?)(?:\n|$)/)
+											const mandate = mandateMatch ? mandateMatch[1].trim() : ""
+											return (
+												<div
+													key={agent.name}
+													className="rounded-lg border border-teal-100 bg-teal-50/50 px-4 py-3 dark:border-teal-900/50 dark:bg-teal-900/20"
+												>
+													<div className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+														{titleCase(agent.name)}
+													</div>
+													{mandate && (
+														<p className="mt-1 text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
+															{mandate}
+														</p>
+													)}
+												</div>
+											)
+										})}
+										{stage.reviewAgentsInclude.map((inc) =>
+											inc.agents.map((agentName) => (
+												<div
+													key={`${inc.stage}-${agentName}`}
+													className="rounded-lg border border-stone-100 border-dashed bg-stone-50/50 px-4 py-3 dark:border-stone-800 dark:bg-stone-900/30"
+												>
+													<div className="text-sm font-semibold text-stone-600 dark:text-stone-300">
+														{titleCase(agentName)}
+													</div>
+													<p className="mt-1 text-xs text-stone-400">
+														from {titleCase(inc.stage)} stage
+													</p>
+												</div>
+											)),
+										)}
+									</div>
+								</div>
+							)}
 
 							{/* Inputs */}
 							{stage.inputs.length > 0 && (

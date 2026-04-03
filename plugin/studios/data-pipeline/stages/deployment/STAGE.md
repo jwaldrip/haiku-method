@@ -7,6 +7,11 @@ unit_types: [deployment]
 inputs:
   - stage: validation
     output: validation-report
+review-agents-include:
+  - stage: transformation
+    agents: [data-quality]
+  - stage: validation
+    agents: [coverage]
 ---
 
 # Deployment

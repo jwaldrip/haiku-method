@@ -7,6 +7,9 @@ unit_types: [validation]
 inputs:
   - stage: migrate
     output: migration-artifacts
+review-agents-include:
+  - stage: mapping
+    agents: [accuracy]
 ---
 
 # Validation

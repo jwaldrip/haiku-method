@@ -15,6 +15,11 @@ inputs:
     output: behavioral-spec
   - stage: product
     output: data-contracts
+review-agents-include:
+  - stage: design
+    agents: [consistency, accessibility]
+  - stage: product
+    agents: [completeness]
 ---
 
 # Development

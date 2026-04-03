@@ -7,6 +7,11 @@ unit_types: [audit-prep, finding-resolution]
 inputs:
   - stage: document
     output: evidence-package
+review-agents-include:
+  - stage: assess
+    agents: [thoroughness]
+  - stage: remediate
+    agents: [effectiveness]
 ---
 
 # Certify

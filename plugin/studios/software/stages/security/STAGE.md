@@ -15,6 +15,11 @@ inputs:
     output: code
   - stage: development
     output: architecture
+review-agents-include:
+  - stage: development
+    agents: [security, architecture]
+  - stage: operations
+    agents: [reliability]
 ---
 
 # Security
