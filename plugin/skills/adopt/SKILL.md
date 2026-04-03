@@ -669,7 +669,8 @@ Write the intent file with `status: completed`:
 
 ```markdown
 ---
-workflow: default
+studio: software
+active_stage: development
 git:
   change_strategy: unit
   auto_merge: false

@@ -71,8 +71,8 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 # Discover from branches (include remote for resume command)
 branch_intents=$(discover_branch_intents true)
 
-# Parse results: slug|workflow|source|branch
-echo "$branch_intents" | while IFS='|' read -r slug workflow source branch; do
+# Parse results: slug|studio|source|branch
+echo "$branch_intents" | while IFS='|' read -r slug studio source branch; do
   [ -z "$slug" ] && continue
   echo "$slug ($source: $branch)"
 done
@@ -89,8 +89,10 @@ Read from `.haiku/{slug}/intent.md`:
 
 ```bash
 intentFile=".haiku/${slug}/intent.md"
-workflow=$(dlc_frontmatter_get "workflow" "$intentFile")
-[ -z "$workflow" ] && workflow="default"
+studio=$(dlc_frontmatter_get "studio" "$intentFile")
+[ -z "$studio" ] && studio="software"
+active_stage=$(dlc_frontmatter_get "active_stage" "$intentFile")
+[ -z "$active_stage" ] && active_stage="development"
 title=$(dlc_frontmatter_get "title" "$intentFile")
 [ -z "$title" ] && title="$slug"
 ```
@@ -104,7 +106,7 @@ Use DAG analysis to determine where to resume:
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 
 # Get recommended hat based on unit states
-starting_hat=$(get_recommended_hat ".haiku/${slug}" "${workflow}")
+starting_hat=$(get_recommended_hat ".haiku/${slug}" "${active_stage}" "${studio}")
 ```
 
 **Hat selection logic:**
@@ -146,7 +148,7 @@ Save to file-based state (intent-level state goes to the intent directory):
 # Intent slug is directory-based: .haiku/{slug}/ — no separate save needed
 
 # Save iteration state to intent directory
-dlc_state_save "$INTENT_DIR" "iteration.json" "{\"iteration\":1,\"hat\":\"$STARTING_HAT\",\"workflowName\":\"$WORKFLOW\",\"workflow\":$WORKFLOW_HATS_JSON,\"status\":\"active\"}"
+dlc_state_save "$INTENT_DIR" "iteration.json" "{\"iteration\":1,\"hat\":\"$STARTING_HAT\",\"status\":\"active\"}"
 ```
 
 ### Step 5b: Restore Team (Agent Teams)
@@ -179,7 +181,7 @@ If `AGENT_TEAMS_ENABLED` is set:
 
 **Intent:** {title}
 **Slug:** {slug}
-**Workflow:** {workflow}
+**Studio:** {studio}
 **Starting Hat:** {startingHat}
 **Worktree:** .haiku/worktrees/{slug}/
 **Team:** {teamName} (if Agent Teams enabled)
@@ -263,8 +265,8 @@ AI: Found 1 resumable intent: han-team-platform
 ```
 User: /haiku:resume
 AI: Found multiple resumable intents:
-- han-team-platform (default workflow, 1/3 completed)
-- api-refactor (tdd workflow, 0/5 completed)
+- han-team-platform (software studio, 1/3 completed)
+- api-refactor (software studio, 0/5 completed)
 
 Please specify: `/haiku:resume han-team-platform` or `/haiku:resume api-refactor`
 ```

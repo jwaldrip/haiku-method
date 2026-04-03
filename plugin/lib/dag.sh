@@ -573,16 +573,18 @@ is_dag_complete() {
 }
 
 # Determine recommended starting hat based on unit states
-# Usage: get_recommended_hat <intent_dir> [workflow_name]
+# Usage: get_recommended_hat <intent_dir> [stage_name] [studio_name]
 # Returns: hat name (planner, builder, reviewer, etc.)
 get_recommended_hat() {
   local intent_dir="$1"
-  local workflow_name="${2:-default}"
+  local stage_name="${2:-development}"
+  local studio_name="${3:-software}"
 
-  # Get workflow hats from workflows.yml
-  local hats_file="${CLAUDE_PLUGIN_ROOT}/workflows.yml"
+  # Get hat sequence from stage definition
+  # shellcheck source=hat.sh
+  source "$SCRIPT_DIR/hat.sh" 2>/dev/null || true
   local hats
-  hats=$(yq ".${workflow_name}.hats[]" "$hats_file" 2>/dev/null | tr '\n' ' ')
+  hats=$(hku_get_hat_sequence "$stage_name" "$studio_name" 2>/dev/null)
 
   # Default hats if parse fails
   [ -z "$hats" ] && hats="planner builder reviewer"
@@ -698,7 +700,7 @@ validate_dag() {
 
 # Discover intents on git branches (worktrees, local branches, remote branches)
 # Usage: discover_branch_intents [include_remote]
-# Returns: "slug|workflow|source|branch" per line
+# Returns: "slug|studio|source|branch" per line
 #   source: "worktree" | "local" | "remote"
 discover_branch_intents() {
   local include_remote="${1:-false}"
@@ -730,9 +732,9 @@ discover_branch_intents() {
         [ "$intent_status" != "active" ] && continue
         # Cross-check: main may have marked this completed after the branch diverged
         _intent_completed_on_main "$slug" && continue
-        local workflow
-        workflow=$(echo "$intent_content" | _yaml_get_simple "workflow" "default")
-        echo "$slug|$workflow|worktree|$branch"
+        local studio
+        studio=$(echo "$intent_content" | _yaml_get_simple "studio" "software")
+        echo "$slug|$studio|worktree|$branch"
         seen_slugs="$seen_slugs $slug"
         ;;
       *) ;;
@@ -761,9 +763,9 @@ discover_branch_intents() {
     [ "$intent_status" != "active" ] && continue
     # Cross-check: main may have marked this completed after the branch diverged
     _intent_completed_on_main "$slug" && continue
-    local workflow
-    workflow=$(echo "$intent_content" | _yaml_get_simple "workflow" "default")
-    echo "$slug|$workflow|local|$branch"
+    local studio
+    studio=$(echo "$intent_content" | _yaml_get_simple "studio" "software")
+    echo "$slug|$studio|local|$branch"
     seen_slugs="$seen_slugs $slug"
   done < <(git for-each-ref --format='%(refname:short)' 'refs/heads/haiku/*/main' 2>/dev/null)
 
@@ -789,9 +791,9 @@ discover_branch_intents() {
       [ "$intent_status" != "active" ] && continue
       # Cross-check: main may have marked this completed after the branch diverged
       _intent_completed_on_main "$slug" && continue
-      local workflow
-      workflow=$(echo "$intent_content" | _yaml_get_simple "workflow" "default")
-      echo "$slug|$workflow|remote|$branch"
+      local studio
+      studio=$(echo "$intent_content" | _yaml_get_simple "studio" "software")
+      echo "$slug|$studio|remote|$branch"
       seen_slugs="$seen_slugs $slug"
     done < <(git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/haiku/*/main' 2>/dev/null)
   fi

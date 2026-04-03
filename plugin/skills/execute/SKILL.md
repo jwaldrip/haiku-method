@@ -54,7 +54,7 @@ This command resumes work from the current hat and runs until:
 
 **User Flow:**
 ```
-User: /haiku:elaborate           # Once - define intent, criteria, and workflow
+User: /haiku:elaborate           # Once - define intent, criteria, and studio
 User: /haiku:execute             # Kicks off autonomous loop
 ...AI works autonomously across all units...
 ...session exhausts, Stop hook fires...
@@ -200,7 +200,7 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 # Discover active intents from branches (worktrees, local, remote)
 declare -A ACTIVE_INTENTS  # slug -> "source"
 
-while IFS='|' read -r slug workflow source branch; do
+while IFS='|' read -r slug studio source branch; do
   [ -z "$slug" ] && continue
   ACTIVE_INTENTS[$slug]="$source"
 done < <(discover_branch_intents true)
@@ -409,20 +409,19 @@ Initialize `iteration.json` from the intent artifacts:
 INTENT_DIR=".haiku/${INTENT_SLUG}"
 INTENT_FILE="$INTENT_DIR/intent.md"
 
-# Read workflow from intent.md frontmatter
-WORKFLOW_NAME=$(dlc_frontmatter_get "workflow" "$INTENT_FILE" 2>/dev/null || echo "default")
+# Read stage and studio from intent.md frontmatter
+ACTIVE_STAGE=$(dlc_frontmatter_get "active_stage" "$INTENT_FILE" 2>/dev/null || echo "development")
+STUDIO=$(dlc_frontmatter_get "studio" "$INTENT_FILE" 2>/dev/null || echo "software")
+[ -z "$ACTIVE_STAGE" ] && ACTIVE_STAGE="development"
+[ -z "$STUDIO" ] && STUDIO="software"
 
-# Resolve workflow to hat sequence
-if [ -f ".haiku/workflows.yml" ]; then
-  WORKFLOW_HATS=$(dlc_frontmatter_get "${WORKFLOW_NAME}" ".haiku/workflows.yml" 2>/dev/null || echo "")
-fi
-if [ -z "$WORKFLOW_HATS" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/workflows.yml" ]; then
-  WORKFLOW_HATS=$(dlc_frontmatter_get "${WORKFLOW_NAME}" "${CLAUDE_PLUGIN_ROOT}/workflows.yml" 2>/dev/null || echo "")
-fi
-FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
+# Get hat sequence from stage definition
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
+STAGE_HATS=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO")
+FIRST_HAT=$(echo "$STAGE_HATS" | awk '{print $1}')
 
 # Initialize iteration state
-STATE='{"iteration":1,"hat":"'"${FIRST_HAT}"'","workflowName":"'"${WORKFLOW_NAME}"'","workflow":'"${WORKFLOW_HATS}"',"status":"active"}'
+STATE='{"iteration":1,"hat":"'"${FIRST_HAT}"'","status":"active"}'
 dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 ```
 
@@ -580,8 +579,13 @@ else
   READY_UNITS=$(find_ready_units "$INTENT_DIR")
 fi
 
-# Intent-level workflow (default fallback)
-INTENT_WORKFLOW_HATS=$(echo "$STATE" | dlc_json_get "workflow")
+# Intent-level hat sequence from stage (default fallback)
+ACTIVE_STAGE=$(dlc_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
+STUDIO=$(dlc_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
+[ -z "$ACTIVE_STAGE" ] && ACTIVE_STAGE="development"
+[ -z "$STUDIO" ] && STUDIO="software"
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
+INTENT_STAGE_HATS=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO")
 
 # If no ready units and active_pass is set, check if the pass is complete
 # (all units for this pass are completed, not just blocked)
@@ -646,64 +650,32 @@ git add "$UNIT_FILE"
 git commit -m "status: mark $(basename "$UNIT_FILE" .md) as in_progress"
 ```
 
-3. **Resolve per-unit workflow** — read the unit's `workflow:` frontmatter field. If present, resolve it to a hat sequence. If absent, check for discipline-based defaults before falling back to the intent-level workflow:
+3. **Resolve per-unit hat sequence** — determine the stage for this unit based on its discipline, then get the hat sequence from the stage definition:
 
 ```bash
-UNIT_WORKFLOW_NAME=$(dlc_frontmatter_get "workflow" "$UNIT_FILE" 2>/dev/null || echo "")
+# Determine stage from unit discipline
+UNIT_DISCIPLINE=$(dlc_frontmatter_get "discipline" "$UNIT_FILE" 2>/dev/null || echo "")
+UNIT_STAGE="$ACTIVE_STAGE"  # Default to intent-level stage
+case "$UNIT_DISCIPLINE" in
+  design)          UNIT_STAGE="design" ;;
+  infrastructure)  UNIT_STAGE="operations" ;;
+  observability)   UNIT_STAGE="operations" ;;
+  *)               ;;  # use intent-level stage
+esac
 
-# Discipline-based fallback: auto-route discipline: design → workflow: design
-if [ -z "$UNIT_WORKFLOW_NAME" ]; then
-  UNIT_DISCIPLINE=$(dlc_frontmatter_get "discipline" "$UNIT_FILE" 2>/dev/null || echo "")
-  case "$UNIT_DISCIPLINE" in
-    design)          UNIT_WORKFLOW_NAME="design" ;;
-    infrastructure)  UNIT_WORKFLOW_NAME="default" ;;
-    observability)   UNIT_WORKFLOW_NAME="default" ;;
-    *)               ;;  # fall through to intent-level
-  esac
-fi
+# Get hat sequence from the resolved stage
+UNIT_STAGE_HATS=$(hku_get_hat_sequence "$UNIT_STAGE" "$STUDIO" 2>/dev/null)
+[ -z "$UNIT_STAGE_HATS" ] && UNIT_STAGE_HATS="$INTENT_STAGE_HATS"
 
-if [ -n "$UNIT_WORKFLOW_NAME" ]; then
-  # Resolve unit-specific workflow
-  UNIT_WORKFLOW_HATS=""
-  if [ -f ".haiku/workflows.yml" ]; then
-    UNIT_WORKFLOW_HATS=$(dlc_frontmatter_get "${UNIT_WORKFLOW_NAME}.hats" ".haiku/workflows.yml" 2>/dev/null || echo "")
-  fi
-  if [ -z "$UNIT_WORKFLOW_HATS" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/workflows.yml" ]; then
-    UNIT_WORKFLOW_HATS=$(dlc_frontmatter_get "${UNIT_WORKFLOW_NAME}.hats" "${CLAUDE_PLUGIN_ROOT}/workflows.yml" 2>/dev/null || echo "")
-  fi
-  [ -z "$UNIT_WORKFLOW_HATS" ] && UNIT_WORKFLOW_HATS="$INTENT_WORKFLOW_HATS"
-else
-  UNIT_WORKFLOW_HATS="$INTENT_WORKFLOW_HATS"
-fi
-
-# Apply pass-level workflow constraint if active_pass is set
-if [ -n "$ACTIVE_PASS" ] && [ -n "$UNIT_WORKFLOW_NAME" ]; then
-  source "${CLAUDE_PLUGIN_ROOT}/lib/pass.sh"
-  CONSTRAINED_WORKFLOW=$(constrain_workflow "$ACTIVE_PASS" "$UNIT_WORKFLOW_NAME")
-  if [ "$CONSTRAINED_WORKFLOW" != "$UNIT_WORKFLOW_NAME" ]; then
-    echo "Note: Workflow '$UNIT_WORKFLOW_NAME' not available in '$ACTIVE_PASS' pass. Using '$CONSTRAINED_WORKFLOW'."
-    UNIT_WORKFLOW_NAME="$CONSTRAINED_WORKFLOW"
-    # Re-resolve hats for the constrained workflow
-    UNIT_WORKFLOW_HATS=""
-    if [ -f ".haiku/workflows.yml" ]; then
-      UNIT_WORKFLOW_HATS=$(dlc_frontmatter_get "${UNIT_WORKFLOW_NAME}.hats" ".haiku/workflows.yml" 2>/dev/null || echo "")
-    fi
-    if [ -z "$UNIT_WORKFLOW_HATS" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/workflows.yml" ]; then
-      UNIT_WORKFLOW_HATS=$(dlc_frontmatter_get "${UNIT_WORKFLOW_NAME}.hats" "${CLAUDE_PLUGIN_ROOT}/workflows.yml" 2>/dev/null || echo "")
-    fi
-    [ -z "$UNIT_WORKFLOW_HATS" ] && UNIT_WORKFLOW_HATS="$INTENT_WORKFLOW_HATS"
-  fi
-fi
-
-FIRST_HAT=$(echo "$UNIT_WORKFLOW_HATS" | jq -r '.[0]')
+FIRST_HAT=$(echo "$UNIT_STAGE_HATS" | awk '{print $1}')
 ```
 
 4. **Track unit hat in unit frontmatter** (per-unit hat derived from unit-*.md + DAG):
 
 ```bash
 # Per-unit hat tracking is derived from unit frontmatter status and the DAG.
-# The unit's current workflow position is determined by its status field
-# and the workflow defined in unit frontmatter or intent-level fallback.
+# The unit's current hat position is determined by its status field
+# and the stage's hat sequence (determined by discipline).
 dlc_frontmatter_set "hat" "${FIRST_HAT}" "$INTENT_DIR/${UNIT_NAME}.md"
 git add "$INTENT_DIR/${UNIT_NAME}.md"
 git commit -m "status: set hat for ${UNIT_NAME}"
@@ -712,9 +684,9 @@ git commit -m "status: set hat for ${UNIT_NAME}"
 5. **Load hat instructions for the first hat**:
 
 ```bash
-# Load hat instructions using augmentation pattern (plugin hat + project augmentation)
+# Load hat instructions from stage-based resolution
 source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
-HAT_INSTRUCTIONS=$(load_hat_instructions "${FIRST_HAT}")
+HAT_INSTRUCTIONS=$(hku_resolve_hat_instructions "${FIRST_HAT}" "$UNIT_STAGE" "$STUDIO")
 ```
 
 5. **Select agent type based on hat**:
@@ -808,19 +780,19 @@ The lead processes auto-delivered teammate messages. Handle each event type:
 When a teammate reports successful completion:
 
 1. Read current hat for this unit from unit frontmatter (`dlc_frontmatter_get "hat" "$UNIT_FILE"`)
-2. Read this unit's workflow from unit frontmatter or intent-level fallback
-3. Find current hat's index in the unit's workflow array
-4. Determine next hat: `unitWorkflow[currentIndex + 1]`
+2. Read this unit's hat sequence from its stage (determined by discipline)
+3. Find current hat's index in the stage's hat sequence
+4. Determine next hat: `stageHats[currentIndex + 1]`
 
-**If next hat exists** (not at end of workflow):
+**If next hat exists** (not at end of sequence):
 
 a. Update hat in unit frontmatter: `dlc_frontmatter_set "hat" "$nextHat" "$UNIT_FILE"`
 b. Commit: `git add "$UNIT_FILE" && git commit -m "status: advance hat for $(basename "$UNIT_FILE" .md)"`
-c. Load hat instructions for nextHat using augmentation pattern:
+c. Load hat instructions for nextHat from stage:
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
-HAT_INSTRUCTIONS=$(load_hat_instructions "${nextHat}")
+HAT_INSTRUCTIONS=$(hku_resolve_hat_instructions "${nextHat}" "$UNIT_STAGE" "$STUDIO")
 ```
 
 d. Select agent type based on hat:
@@ -966,13 +938,13 @@ fi
 ```
 
 d. Check DAG for newly unblocked units
-e. For each newly ready unit, spawn at `workflow[0]` (first hat):
+e. For each newly ready unit, spawn at the first hat of its stage:
 
 ```bash
-FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
+FIRST_HAT=$(hku_get_hat_sequence "$UNIT_STAGE" "$STUDIO" | awk '{print $1}')
 ```
 
-Then follow the same spawn logic from Step 3 (use `load_hat_instructions` from `hat.sh` for augmented hat resolution, select agent type, spawn teammate with hat instructions in prompt).
+Then follow the same spawn logic from Step 3 (use `hku_resolve_hat_instructions` from `hat.sh` for stage-based hat resolution, select agent type, spawn teammate with hat instructions in prompt).
 
 #### Teammate Reports Issues (Any Hat)
 
@@ -983,7 +955,7 @@ When a teammate reports issues or rejects the work:
 3. Increment retry count in unit frontmatter (`dlc_frontmatter_get "retries" "$UNIT_FILE"`)
 4. If `retries >= 3`: Mark unit as blocked, document in `dlc_state_save "$INTENT_DIR" "blockers.md"`
 5. Otherwise: Update hat in unit frontmatter: `dlc_frontmatter_set "hat" "$previousHat" "$UNIT_FILE"`
-6. Load hat instructions for previousHat using augmentation pattern (`load_hat_instructions`)
+6. Load hat instructions for previousHat from stage (`hku_resolve_hat_instructions`)
 7. Spawn teammate at previous hat with the feedback/issues in the prompt
 
 This means ANY hat can reject -- not just the reviewer. A red-team finding issues sends work back to the previous hat.
@@ -1430,7 +1402,7 @@ Per-unit hat tracking is derived from unit-*.md frontmatter and the DAG, rather 
 
 - `hat`: Current hat for this specific unit (frontmatter field)
 - `retries`: Number of reviewer rejection cycles, max 3 before escalating to blocked (frontmatter field)
-- Workflow: Resolved from unit frontmatter `workflow:` field, falling back to intent-level workflow
+- Stage: Determined by unit's discipline, which resolves the hat sequence from the corresponding STAGE.md
 
 This keeps `iteration.json` small and avoids duplicating state that already lives in the unit files.
 

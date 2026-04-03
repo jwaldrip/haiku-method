@@ -86,7 +86,7 @@ done
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 branch_intents=$(discover_branch_intents true)
-echo "$branch_intents" | while IFS='|' read -r slug workflow source branch; do
+echo "$branch_intents" | while IFS='|' read -r slug studio source branch; do
   [ -z "$slug" ] && continue
   echo "$slug ($source: $branch)"
 done
@@ -220,7 +220,8 @@ Create `.haiku/{new-slug}/intent.md` with the `iterates_on` field:
 
 ```markdown
 ---
-workflow: {inherit from previous intent or use default}
+studio: {inherit from previous intent or use software}
+active_stage: {inherit from previous intent or use development}
 git:
   change_strategy: {inherit from previous intent}
   auto_merge: {inherit from previous intent}

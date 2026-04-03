@@ -172,15 +172,18 @@ For each affected unit:
 3. Write the updated file
 
 Update state:
-- For each affected unit, reset `hat` to the first hat in the workflow (in unit frontmatter)
+- For each affected unit, reset `hat` to the first hat in its stage (in unit frontmatter)
 - Clear `currentUnit` in iteration.json
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 
 # Re-queue affected units and reset hat tracking in frontmatter
-WORKFLOW_HATS=$(echo "$STATE" | dlc_json_get "workflow")
-FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
+ACTIVE_STAGE=$(dlc_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
+STUDIO=$(dlc_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
+FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
+[ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
 
 for unit_file in $AFFECTED_UNITS; do
   update_unit_status "$unit_file" "pending"
@@ -201,13 +204,16 @@ Re-queue only the target unit:
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 
 # Re-queue the specific unit
 update_unit_status "$INTENT_DIR/${UNIT_NAME}.md" "pending"
 
 # Reset hat tracking in unit frontmatter
-WORKFLOW_HATS=$(echo "$STATE" | dlc_json_get "workflow")
-FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
+ACTIVE_STAGE=$(dlc_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
+STUDIO=$(dlc_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
+FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
+[ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
 dlc_frontmatter_set "hat" "${FIRST_HAT}" "$INTENT_DIR/${UNIT_NAME}.md"
 
 # Clear currentUnit if it matches

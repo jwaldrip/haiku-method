@@ -5,7 +5,7 @@ user-invocable: false
 
 ## Name
 
-`haiku:advance` - Move to the next hat in the H·AI·K·U workflow sequence.
+`haiku:advance` - Move to the next hat in the H·AI·K·U stage hat sequence.
 
 ## Synopsis
 
@@ -17,7 +17,7 @@ user-invocable: false
 
 **Internal command** - Called by the AI during `/haiku:execute`, not directly by users.
 
-Advances to the next hat in the workflow sequence. For example, in the default workflow:
+Advances to the next hat in the stage's hat sequence. For example, in the development stage:
 - planner -> builder (plan ready, now implement)
 - builder -> reviewer (bolt complete, now review)
 
@@ -42,9 +42,9 @@ STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json")
 Before advancing, check the hard gate for the current transition:
 
 **Gate architecture:**
-- **Structural gates** (PLAN_APPROVED, CRITERIA_MET) are checked here because they verify workflow state, not code quality
+- **Structural gates** (PLAN_APPROVED, CRITERIA_MET) are checked here because they verify execution state, not code quality
 - **Quality gates** (tests, lint, types, custom checks) are harness-enforced via `quality-gate.sh` on Stop/SubagentStop — the agent cannot reach `/haiku:advance` unless all gates passed
-- This separation ensures: the harness handles enforcement, the advance skill handles workflow
+- This separation ensures: the harness handles enforcement, the advance skill handles hat transitions
 
 ```bash
 # Hard gate verification — block advancement if gate conditions are not met
@@ -105,19 +105,19 @@ esac
 Then determine the next hat:
 
 ```javascript
-// Resolve workflow for this unit: per-unit workflow from frontmatter takes priority, then intent-level fallback
+// Resolve hat sequence for this unit from its stage (determined by discipline)
 const currentUnit = state.currentUnit;
-const unitWorkflow = state.workflow || ["planner", "builder", "reviewer"];
-// Per-unit workflow override: read from unit frontmatter if set
-const currentIndex = unitWorkflow.indexOf(state.hat);
+// Get hat sequence from the unit's stage via hku_get_hat_sequence
+const unitHats = getHatSequenceForUnit(currentUnit) || ["planner", "builder", "reviewer"];
+const currentIndex = unitHats.indexOf(state.hat);
 const nextIndex = currentIndex + 1;
 
-if (nextIndex >= unitWorkflow.length) {
+if (nextIndex >= unitHats.length) {
   // At last hat - check DAG status to determine next action
   // See Steps 2b-2d below
 }
 
-const nextHat = unitWorkflow[nextIndex];
+const nextHat = unitHats[nextIndex];
 ```
 
 ### Step 2b: Last Hat Logic (Completion/Loop/Block)
@@ -172,7 +172,7 @@ If `AGENT_TEAMS_ENABLED` is set, delete the team to release all agent resources:
 ```bash
   echo "## Targeted Unit Complete: ${CURRENT_UNIT}"
   echo ""
-  echo "The targeted unit has finished its workflow."
+  echo "The targeted unit has finished its hat sequence."
   echo ""
   echo "**Next steps:**"
   echo "- Run \`/haiku:execute\` to continue with the next ready unit"
@@ -372,7 +372,7 @@ aidlc_record_intent_completed "${INTENT_SLUG}" "${UNIT_COUNT}"
 
 if (READY_COUNT > 0) {
   // MORE UNITS READY - Loop back to builder
-  state.hat = workflow[2] || "builder";  // Reset to builder (index 2 in default workflow)
+  state.hat = unitHats[2] || "builder";  // Reset to builder (index 2 in default stage)
   state.currentUnit = null;  // Will be set by /haiku:execute when it picks next unit
   // dlc_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
   return `Unit completed. ${READY_COUNT} more unit(s) ready. Continuing execution...`;
@@ -423,7 +423,7 @@ This replaces the sequential "loop back to builder" behavior when Agent Teams is
 
 When `ALL_COMPLETE` is true and `state.integratorComplete` is not true, run integration validation instead of marking the intent completed.
 
-**Integration is NOT a per-unit hat** — it does not appear in the workflow sequence. It runs once on the merged intent branch after all units pass their per-unit workflows. It is implemented as the internal `/haiku:integrate` skill (see `plugin/skills/execute/subskills/integrate/SKILL.md`).
+**Integration is NOT a per-unit hat** — it does not appear in the stage's hat sequence. It runs once on the merged intent branch after all units pass their per-unit hat sequences. It is implemented as the internal `/haiku:integrate` skill (see `plugin/skills/execute/subskills/integrate/SKILL.md`).
 
 1. Set state to indicate integration is running:
 
@@ -493,25 +493,28 @@ The integration result specifies which units need rework. For each rejected unit
 
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
-INTENT_WORKFLOW_HATS=$(echo "$STATE" | dlc_json_get "workflow")
+source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 
 # Re-queue each rejected unit
 for UNIT_FILE in $REJECTED_UNITS; do
   update_unit_status "$UNIT_FILE" "pending"
 
-  # Reset hat to first hat of this unit's workflow (per-unit or intent-level fallback)
-  UNIT_WORKFLOW_NAME=$(dlc_frontmatter_get "workflow" "$UNIT_FILE" 2>/dev/null || echo "")
-  if [ -n "$UNIT_WORKFLOW_NAME" ]; then
-    FIRST_HAT=$(resolve_workflow_first_hat "$UNIT_WORKFLOW_NAME")
-  else
-    FIRST_HAT=$(echo "$INTENT_WORKFLOW_HATS" | jq -r '.[0]')
-  fi
+  # Reset hat to first hat of this unit's stage (determined by discipline)
+  UNIT_DISCIPLINE=$(dlc_frontmatter_get "discipline" "$UNIT_FILE" 2>/dev/null || echo "")
+  UNIT_STAGE="$ACTIVE_STAGE"
+  case "$UNIT_DISCIPLINE" in
+    design) UNIT_STAGE="design" ;;
+    infrastructure|observability) UNIT_STAGE="operations" ;;
+  esac
+  FIRST_HAT=$(hku_get_hat_sequence "$UNIT_STAGE" "$STUDIO" | awk '{print $1}')
+  [ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
   dlc_frontmatter_set "hat" "${FIRST_HAT}" "$UNIT_FILE"
   dlc_frontmatter_set "retries" "0" "$UNIT_FILE"
 done
 
 # Reset integration state
-GLOBAL_FIRST_HAT=$(echo "$INTENT_WORKFLOW_HATS" | jq -r '.[0]')
+GLOBAL_FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
+[ -z "$GLOBAL_FIRST_HAT" ] && GLOBAL_FIRST_HAT="planner"
 STATE=$(echo "$STATE" | dlc_json_set "hat" "${GLOBAL_FIRST_HAT}" | dlc_json_set "integratorComplete" "false")
 dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
@@ -566,7 +569,7 @@ When `/haiku:advance` completes the intent (all units done), output:
 ## Intent Complete!
 
 **Total iterations:** {iteration count}
-**Workflow:** {workflowName} ({workflowHats})
+**Stage:** {stageName} ({stageHats})
 
 ### What Was Built
 {Summary from intent}
