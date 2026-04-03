@@ -1001,10 +1001,10 @@ Hypothesis:    Observer --> Hypothesizer --> Experimenter --> Analyst
 
 The AI-DLC profile is implemented as a Claude plugin (the `haiku` plugin) that works in both Claude Code and Cowork. Key implementation details:
 
-**Studios as Profiles.** HAIKU profiles are implemented as **studios** — named lifecycle templates stored as `plugin/studios/{name}/STUDIO.md`. Each studio contains **stages** (`plugin/studios/{name}/stages/{stage}/STAGE.md`) that define the lifecycle phases, inline hats, review gates, and artifact contracts.
+**Studios as Profiles.** HAIKU profiles are implemented as **studios** — named lifecycle templates stored as `plugin/studios/{name}/STUDIO.md`. Each studio contains **stages** (`plugin/studios/{name}/stages/{stage}/STAGE.md`) that define the lifecycle phases, hat file references, review gates, and artifact contracts.
 
 **Stage Orchestration.** The stage orchestrator (`orchestrator.sh`) drives unit execution through the studio's stage pipeline. Each stage defines:
-- Inline hats (behavioral roles scoped to that stage)
+- Hat files (behavioral roles scoped to that stage, stored as `stages/{stage}/hats/{hat}.md`)
 - Artifact contracts (requires/produces)
 - Review gates (auto, ask, or external)
 

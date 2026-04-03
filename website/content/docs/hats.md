@@ -4,7 +4,7 @@ description: Understanding the hat-based role system within stages
 order: 4
 ---
 
-H·AI·K·U uses a "hat" metaphor to separate concerns. Each hat represents a distinct mindset, set of responsibilities, and communication style. Hats are organized within **stages** -- each stage defines its own set of hats inline in its `STAGE.md` file. Different stages use different hat combinations depending on the type of work being done.
+H·AI·K·U uses a "hat" metaphor to separate concerns. Each hat represents a distinct mindset, set of responsibilities, and communication style. Hats are organized within **stages** -- each stage defines its own set of hats as separate `hats/{hat}.md` files inside the stage directory. Different stages use different hat combinations depending on the type of work being done.
 
 ## Why Hats?
 

@@ -17,7 +17,7 @@ When `/haiku:run` executes an intent, it progresses through stages in the order 
 
 ## STAGE.md Schema
 
-Every stage is defined by a `STAGE.md` file with YAML frontmatter and inline hat definitions:
+Every stage is defined by a `STAGE.md` file with YAML frontmatter:
 
 ```yaml
 ---
@@ -57,31 +57,29 @@ A stage can specify multiple review modes as a list (e.g., `[external, ask]`), m
 
 ## Hats Within Stages
 
-Hats are defined inline in the `STAGE.md` body. Each hat section specifies:
+Hats are defined as separate files at `stages/{stage}/hats/{hat}.md`. Each hat file specifies:
 
 - **Focus** — What this hat concentrates on
 - **Produces** — What artifacts or outputs the hat creates
 - **Reads** — What inputs the hat consumes
 - **Anti-patterns** — Common mistakes to avoid
 
-### Example: Development Stage Hats
+### Example: Development Stage Hat Files
+
+```
+plugin/studios/software/stages/development/hats/
+  planner.md
+  builder.md
+  reviewer.md
+```
+
+Example `builder.md`:
 
 ```markdown
-## planner
-
-**Focus:** Read the unit spec and prior stage outputs, plan the implementation
-approach, identify files to modify, assess risks.
-
-**Produces:** Tactical plan with files to modify, implementation steps,
-verification commands, and risk assessment.
-
-**Reads:** Unit spec, behavioral-spec, and data-contracts.
-
-**Anti-patterns:**
-- Planning without reading the completion criteria
-- Not identifying risks or potential blockers up front
-
-## builder
+---
+name: builder
+description: Implement code to satisfy completion criteria
+---
 
 **Focus:** Implement code to satisfy completion criteria, working in small
 verifiable increments.
@@ -91,18 +89,9 @@ verifiable increments.
 **Anti-patterns:**
 - Disabling lint, type checks, or test suites to make code pass
 - Continuing past 3 failed attempts without documenting a blocker
-
-## reviewer
-
-**Focus:** Verify implementation satisfies completion criteria through
-multi-stage review.
-
-**Produces:** Structured review decision — APPROVED or REQUEST CHANGES.
-
-**Anti-patterns:**
-- Approving without running verification commands
-- Trusting claims over evidence
 ```
+
+Project-level hat augmentation can be placed at `.haiku/studios/{studio}/stages/{stage}/hats/{hat}.md` to extend built-in hats for your project.
 
 ## The requires/produces Pipeline
 
@@ -157,10 +146,11 @@ Example from inception:
 To add a custom stage to a studio:
 
 1. Create the stage directory: `.haiku/studios/{studio}/stages/{stage}/`
-2. Write `STAGE.md` with frontmatter and hat definitions
-3. Add the stage name to the studio's `stages` list in `STUDIO.md`
+2. Write `STAGE.md` with frontmatter
+3. Create hat files at `stages/{stage}/hats/{hat}.md` for each hat in the sequence
+4. Add the stage name to the studio's `stages` list in `STUDIO.md`
 
-Example custom stage:
+Example custom stage `STAGE.md`:
 
 ```yaml
 ---
@@ -175,16 +165,22 @@ inputs:
   - stage: security
     output: threat-model
 ---
+```
 
-# Compliance
+Example hat file `.haiku/studios/{studio}/stages/compliance/hats/compliance-auditor.md`:
 
-## compliance-auditor
+```markdown
+---
+name: compliance-auditor
+description: Verify implementation meets regulatory requirements
+---
 
-**Focus:** Verify implementation meets regulatory requirements...
+**Focus:** Verify implementation meets regulatory requirements.
 
-## documentation-writer
+**Produces:** Compliance audit report with pass/fail per requirement.
 
-**Focus:** Generate compliance documentation...
+**Anti-patterns:**
+- Marking requirements as met without verification evidence
 ```
 
 ## Criteria Guidance
