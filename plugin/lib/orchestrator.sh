@@ -278,6 +278,10 @@ hku_resolve_review_gate() {
       echo "haiku: stage '$stage_name' review gate: external review required" >&2
       return 2
       ;;
+    await)
+      echo "haiku: stage '$stage_name' review gate: awaiting external event" >&2
+      return 3
+      ;;
     *)
       return 0
       ;;

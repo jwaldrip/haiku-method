@@ -8,16 +8,17 @@ A **stage** is a phase of work within a studio's lifecycle. Each stage defines i
 
 ## How Stages Work
 
-When `/haiku:run` executes an intent, it progresses through stages in the order defined by the studio. Each stage:
+When `/haiku:run` executes an intent, it progresses through stages in the order defined by the studio. Each stage runs a five-step cycle:
 
-1. Activates its hats in sequence
-2. Processes units matching its `unit_types`
-3. Runs review according to its `review` mode
-4. Produces outputs that downstream stages can consume via `inputs`
+1. **Decompose** — Break the stage's work into units with completion criteria and a dependency DAG
+2. **Execute** — For each unit, run the bolt loop through the stage's hat sequence
+3. **Adversarial review** — Spawn the stage's review agents (plus any included from other stages) to verify the work
+4. **Persist** — Save stage outputs to their scoped locations
+5. **Gate** — Evaluate the review mode and advance, pause for approval, block for external review, or await an external event
 
 ## STAGE.md Schema
 
-Every stage is defined by a `STAGE.md` file with YAML frontmatter, plus a `hats/` directory containing per-hat instruction files:
+Every stage is defined by a `STAGE.md` file with YAML frontmatter, plus `hats/` and `review-agents/` directories:
 
 ```yaml
 ---
@@ -31,6 +32,11 @@ inputs:
     output: behavioral-spec
   - stage: product
     output: data-contracts
+review-agents-include:
+  - stage: design
+    agents: [consistency, accessibility]
+  - stage: product
+    agents: [completeness]
 ---
 ```
 
@@ -44,6 +50,7 @@ inputs:
 | `review` | enum | Review mode: `auto`, `ask`, or `external` |
 | `unit_types` | list | Which unit types this stage processes |
 | `inputs` | list | Artifacts required from prior stages |
+| `review-agents-include` | list | Review agents from other stages to include during adversarial review |
 
 ### Review Modes
 
@@ -52,8 +59,11 @@ inputs:
 | `auto` | Stage completes without human review if criteria pass |
 | `ask` | Prompts the human to approve before advancing |
 | `external` | Requires external review (e.g., PR approval) before advancing |
+| `await` | Stage work is complete but blocks until an external event occurs (e.g., customer response, CI result, stakeholder decision) |
 
 A stage can specify multiple review modes as a list (e.g., `[external, ask]`), meaning it uses external review first, with ask as fallback.
+
+The `await` gate is distinct from `external` — `external` pushes work for review by another person; `await` blocks because the ball is in someone else's court entirely (a customer needs to respond, a third-party approval needs to come through, a pipeline needs to finish).
 
 ## Hats Within Stages
 
@@ -75,6 +85,12 @@ stages/development/
     planner.md
     builder.md
     reviewer.md
+  review-agents/
+    correctness.md
+    security.md
+    performance.md
+    architecture.md
+    test-quality.md
 ```
 
 Each hat file follows this structure:
@@ -118,6 +134,58 @@ multi-stage review.
 - Trusting claims over evidence
 ```
 
+## Review Agents Within Stages
+
+Review agents are specialized adversarial agents that run during a stage's adversarial review step (step 3). Each agent evaluates the stage's output against a specific mandate. They are defined as files in the stage's `review-agents/` directory.
+
+### Example: Development Stage Review Agents
+
+```
+stages/development/
+  STAGE.md
+  hats/
+    planner.md
+    builder.md
+    reviewer.md
+  review-agents/
+    correctness.md
+    security.md
+    performance.md
+    architecture.md
+    test-quality.md
+```
+
+Each review agent file follows this structure:
+
+**`review-agents/security.md`:**
+```yaml
+---
+name: security
+stage: development
+studio: software
+---
+
+**Mandate:** Identify security vulnerabilities introduced by the implementation.
+
+**Check:**
+- No injection vectors (SQL, command, XSS, template injection)
+- Authentication and authorization checks are present on all protected paths
+- Secrets are not hardcoded or logged
+- Input validation occurs at system boundaries
+```
+
+### Cross-Stage Review Agents
+
+Stages can include review agents from other stages via `review-agents-include`. This enables downstream stages to verify that upstream work was not violated:
+
+```yaml
+review-agents-include:
+  - stage: design
+    agents: [consistency, accessibility]
+```
+
+The included agents run alongside the stage's own review agents during adversarial review. For example, the development stage includes the design stage's consistency and accessibility agents to verify the implementation respects the design intent.
+
 ## The requires/produces Pipeline
 
 Stages can declare **inputs** (what they need from earlier stages) and produce **outputs** (artifacts in the stage's outputs directory). This creates a pipeline:
@@ -140,23 +208,23 @@ Each stage's inputs reference specific outputs from prior stages. If a required 
 
 ### Software Studio Stages
 
-| Stage | Hats | Review | Purpose |
-|-------|------|--------|---------|
-| **inception** | architect, decomposer | auto | Problem understanding, unit decomposition |
-| **design** | designer, design-reviewer | ask | Visual/interaction design |
-| **product** | product-owner, specification-writer | external, ask | Behavioral specs, acceptance criteria |
-| **development** | planner, builder, reviewer | ask | Implementation with quality gates |
-| **operations** | ops-engineer, sre | auto | Deployment, monitoring, runbooks |
-| **security** | threat-modeler, red-team, blue-team, security-reviewer | external, ask | Threat modeling, vulnerability assessment |
+| Stage | Hats | Review Agents | Review | Purpose |
+|-------|------|---------------|--------|---------|
+| **inception** | architect, decomposer | completeness, feasibility | auto | Problem understanding, unit decomposition |
+| **design** | designer, design-reviewer | consistency, accessibility | ask | Visual/interaction design |
+| **product** | product-owner, specification-writer | completeness, feasibility | external, ask | Behavioral specs, acceptance criteria |
+| **development** | planner, builder, reviewer | correctness, security, performance, architecture, test-quality + design:consistency, design:accessibility, product:completeness | ask | Implementation with quality gates |
+| **operations** | ops-engineer, sre | reliability, observability + development:security | auto | Deployment, monitoring, runbooks |
+| **security** | threat-modeler, red-team, blue-team, security-reviewer | threat-coverage, mitigation-effectiveness + development:security, development:architecture, operations:reliability | external, ask | Threat modeling, vulnerability assessment |
 
 ### Ideation Studio Stages
 
-| Stage | Hats | Review | Purpose |
-|-------|------|--------|---------|
-| **research** | researcher, analyst | auto | Gather context, explore prior art |
-| **create** | creator, editor | ask | Generate the primary deliverable |
-| **review** | critic, fact-checker | ask | Adversarial quality review |
-| **deliver** | publisher | auto | Finalize and package |
+| Stage | Hats | Review Agents | Review | Purpose |
+|-------|------|---------------|--------|---------|
+| **research** | researcher, analyst | thoroughness | auto | Gather context, explore prior art |
+| **create** | creator, editor | quality, accuracy | ask | Generate the primary deliverable |
+| **review** | critic, fact-checker | coherence | ask | Adversarial quality review |
+| **deliver** | publisher | completeness | auto | Finalize and package |
 
 ## Completion Signals
 
@@ -173,7 +241,9 @@ To add a custom stage to a studio:
 1. Create the stage directory: `.haiku/studios/{studio}/stages/{stage}/`
 2. Write `STAGE.md` with frontmatter
 3. Create a `hats/` subdirectory with per-hat instruction files
-4. Add the stage name to the studio's `stages` list in `STUDIO.md`
+4. Create a `review-agents/` subdirectory with per-agent review mandate files
+5. Add the stage name to the studio's `stages` list in `STUDIO.md`
+6. If this stage should verify upstream work, add entries to `review-agents-include`
 
 Example custom stage:
 

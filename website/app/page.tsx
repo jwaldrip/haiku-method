@@ -102,7 +102,7 @@ export default function Home() {
 						H·AI·K·U
 					</h1>
 					<p className="mb-2 text-lg font-medium text-stone-500 dark:text-stone-400">
-						Human / AI Knowledge Unification
+						Human + AI Knowledge Unification
 					</p>
 					<p className="mx-auto mb-10 max-w-2xl text-lg text-stone-600 dark:text-stone-400">
 						A lifecycle orchestration system for any structured work.

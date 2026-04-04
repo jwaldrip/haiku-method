@@ -23,6 +23,7 @@ allowed-tools:
 /haiku:scaffold studio <name>
 /haiku:scaffold stage <studio> <stage-name>
 /haiku:scaffold hat <studio> <stage> <hat-name>
+/haiku:scaffold review-agent <studio> <stage> <agent-name>
 /haiku:scaffold provider <type>
 ```
 
@@ -43,6 +44,7 @@ Parse the first argument as the artifact type. Remaining arguments depend on the
 | `studio` | `<name>` | `/haiku:scaffold studio data-pipeline` |
 | `stage` | `<studio> <stage-name>` | `/haiku:scaffold stage data-pipeline validation` |
 | `hat` | `<studio> <stage> <hat-name>` | `/haiku:scaffold hat data-pipeline validation reviewer` |
+| `review-agent` | `<studio> <stage> <agent-name>` | `/haiku:scaffold review-agent software development security` |
 | `provider` | `<type>` | `/haiku:scaffold provider jira` |
 
 If no arguments are provided, ask the user what they want to create using `AskUserQuestion`:
@@ -51,7 +53,7 @@ If no arguments are provided, ask the user what they want to create using `AskUs
 {
   "questions": [{
     "question": "What would you like to scaffold?",
-    "options": ["Studio", "Stage", "Hat", "Provider override"]
+    "options": ["Studio", "Stage", "Hat", "Review Agent", "Provider override"]
   }]
 }
 ```
@@ -109,6 +111,7 @@ Create:
 ```
 .haiku/studios/{studio}/stages/{stage}/STAGE.md
 .haiku/studios/{studio}/stages/{stage}/hats/
+.haiku/studios/{studio}/stages/{stage}/review-agents/
 ```
 
 **STAGE.md template:**
@@ -120,7 +123,12 @@ hats: []
 review: ask
 unit_types: []
 inputs: []
+review-agents-include: []
 ---
+
+## Criteria Guidance
+
+TODO — examples of good and bad completion criteria for this stage.
 
 ## Completion Signal
 
@@ -129,7 +137,9 @@ TODO — describe the conditions under which this stage is done.
 
 Remind the user to:
 1. Add hat files in the `hats/` directory
-2. Add this stage name to the parent studio's `stages` list
+2. Add review agent files in the `review-agents/` directory
+3. Add this stage name to the parent studio's `stages` list
+4. If this stage should verify upstream work, add entries to `review-agents-include`
 
 #### Hat
 
@@ -153,6 +163,33 @@ Create:
 ```
 
 Remind the user to add this hat name to the parent stage's `hats` list.
+
+#### Review Agent
+
+Verify the parent stage exists at `.haiku/studios/{studio}/stages/{stage}/STAGE.md` or `plugin/studios/{studio}/stages/{stage}/STAGE.md`. If neither exists, error.
+
+Create:
+```
+.haiku/studios/{studio}/stages/{stage}/review-agents/{agent}.md
+```
+
+**Review agent template:**
+```yaml
+---
+name: {agent}
+stage: {stage}
+studio: {studio}
+---
+
+**Mandate:** TODO — describe what this review agent checks and why.
+
+**Check:**
+- TODO — specific verification items
+```
+
+Remind the user that:
+- The agent will run during this stage's adversarial review (step 4.3)
+- To also run this agent in downstream stages, add it to those stages' `review-agents-include` field
 
 #### Provider Override
 

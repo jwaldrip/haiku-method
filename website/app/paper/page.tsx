@@ -8,9 +8,9 @@ import PaperRevisionHistory from "./PaperRevisionHistory"
 export const metadata: Metadata = {
 	title: "H·AI·K·U Paper",
 	description:
-		"The complete H·AI·K·U methodology paper — Human AI Knowledge Unification, a universal framework for structured human-AI collaboration.",
+		"The complete H·AI·K·U methodology paper — Human + AI Knowledge Unification, a universal framework for structured human-AI collaboration.",
 	openGraph: {
-		title: "H·AI·K·U Paper — Human AI Knowledge Unification",
+		title: "H·AI·K·U Paper — Human + AI Knowledge Unification",
 		description:
 			"A universal framework for disciplined human-AI collaboration across any domain, introducing the 4-phase lifecycle and configurable operating modes.",
 	},

@@ -9,6 +9,9 @@ inputs:
     output: draft-documentation
   - stage: review
     output: review-report
+review-agents-include:
+  - stage: draft
+    agents: [accuracy]
 ---
 
 # Publish

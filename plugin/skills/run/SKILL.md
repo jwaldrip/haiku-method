@@ -49,11 +49,11 @@ allowed-tools:
 
 ## Description
 
-**User-facing command** - Resolves the active intent and stage, then runs the full stage loop: plan → build → adversarial review → output persistence → review gate.
+**User-facing command** — Resolves the active intent and runs it through the studio's stage sequence. Each stage executes a full cycle: decompose units → execute hats per unit (bolt loop) → adversarial review → persist outputs → review gate.
 
-**Modes:**
-- `/haiku:run` — Find active intent, run its next stage
-- `/haiku:run my-feature` — Run the next stage for a specific intent
+**Usage:**
+- `/haiku:run` — Find active intent, run its current stage
+- `/haiku:run my-feature` — Run the current stage for a specific intent
 - `/haiku:run my-feature inception` — Run a specific stage for a specific intent
 
 ---
@@ -89,16 +89,13 @@ Read the intent file and extract frontmatter: `studio`, `stages`, `active_stage`
 
 ### Step 2: Determine Stage
 
-**If stage argument given:** Validate it's in the studio's stage list, run that specific stage.
+Read `active_stage:` from intent frontmatter. If empty or missing, default to the studio's first stage.
 
-**If intent has `mode: continuous`:** Collapse all stages into a single merged flow. This means:
-- Union all stage `unit_types`
-- Concatenate all criteria guidance
-- Union all outputs
-- Run one plan→build→review cycle (functionally identical to old elaborate→execute)
-- The plan phase uses the first stage's hats by default, but loads context from all stages
+**If stage argument given:** Validate it's in the studio's stage list, use that stage.
 
-**If intent has `mode: discrete`:** Read `active_stage:` from intent frontmatter. Run that stage.
+**Otherwise:** Use `active_stage` from frontmatter. If the current stage is already complete, advance to the next stage via `hku_next_stage`.
+
+Both continuous and discrete modes run the **same stage loop** (Step 4). The difference is what happens at the review gate (Step 6).
 
 ### Step 3: Load Stage Definition
 
@@ -109,19 +106,19 @@ local metadata=$(hku_load_stage_metadata "$stage_name" "$studio_name")
 
 ### Step 4: Run Stage Loop
 
-The stage loop has five phases. Each phase prepares data via orchestrator.sh functions, then the SKILL.md instructions drive agent behavior.
+Each stage runs a five-step cycle. The orchestrator shell functions prepare data and context; the agent drives behavior based on the stage's definition.
 
-#### Phase 1: Plan
+#### 4.1: Decompose — Break the stage into units
 
 Source orchestrator.sh to load stage metadata, resolved inputs, and output definitions:
 ```bash
 hku_run_plan_phase "$intent_dir" "$stage_name" "$studio_name"
 ```
 
-This emits structured context. Use it to drive the plan:
+This emits structured context. Use it to decompose the stage into units:
 
-1. **Load ALL resolved input artifacts as context** — Read each file path from the resolved inputs.
-2. **If stage has existing units:** Resume — skip to Phase 2 (build).
+1. **Load ALL resolved input artifacts as context** — Read each file path from the resolved inputs. These are outputs from prior stages that feed this one (defined in the stage's `inputs:` field).
+2. **If stage has existing units:** Resume — skip to step 4.2 (execute).
 3. **If no units exist:** Run elaboration sub-skills parameterized by stage context:
    - **gather** — Stage inputs drive what to gather
    - **discover** — Stage body provides exploration focus
@@ -133,39 +130,76 @@ This emits structured context. Use it to drive the plan:
 4. For each unit, populate `## References` with specific artifacts needed (subset of resolved inputs).
 5. Write units to `.haiku/intents/{slug}/stages/{stage}/units/`.
 
-#### Phase 2: Build
+**Upstream gap detection:** During decomposition, if you discover that an upstream stage's outputs are insufficient or incorrect for this stage's work (e.g., design brief missing screens that development needs, behavioral spec ambiguous on error handling), invoke a **stage-scoped refinement** via `/haiku:refine stage:{upstream-stage}`:
 
-For each unit in DAG order:
+1. Document the gap: which upstream stage, which output, what is missing or wrong.
+2. Surface what you're doing:
+   ```
+   Gap detected: {current} stage needs {description}, but {upstream} stage output doesn't include it.
+   Running targeted refinement on the {upstream} stage to add this.
+   ```
+3. Invoke the refine skill with `stage:{upstream-stage}` — this creates a targeted unit in the upstream stage, runs it through that stage's hats, and persists the updated output.
+4. Continue decomposition with the now-complete upstream inputs.
 
-1. For each hat in STAGE.md `hats:` sequence:
-   a. Load hat guidance from STAGE.md `## {hat-name}` section
+This is a **scoped side-trip**, not a full stage restart. The current stage's progress is preserved. Only the missing output is added to the upstream stage.
+
+The user can also trigger this explicitly: "add a screen for X" during development causes the agent to refine the design stage to produce that screen, then continue.
+
+**Full stage-backs** (resetting `active_stage` to a prior stage) are always user-initiated. The agent can recommend one if the gap is too large for a scoped refinement, but never autonomously resets stage position.
+
+#### 4.2: Execute — Run the bolt loop per unit
+
+For each unit in DAG order, run the **bolt loop** (iterative hat execution):
+
+1. For each hat in the stage's `hats:` sequence:
+   a. Load hat definition from `stages/{stage}/hats/{hat}.md`
    b. Load unit's `## References` (NOT full stage inputs — only what this unit needs)
-   c. Execute hat (build, review, etc.)
+   c. Execute the hat's work
    d. Run quality gates:
       ```bash
       source "$CLAUDE_PLUGIN_ROOT/lib/config.sh"
       run_quality_gates
       ```
 2. Check unit completion criteria — all checkboxes must be checked
-3. If criteria met: mark done, advance to next unit
-4. If not met: another bolt cycle (increment iteration, retry)
+3. If criteria met: mark unit done, advance to next unit
+4. If not met: increment the bolt counter (iteration) and retry the hat sequence
 
-**CRITICAL: No questions during build.** The build phase is fully autonomous. If you encounter ambiguity, make a reasonable decision based on available context. Document assumptions in the unit's `## Notes` section.
+**CRITICAL: No questions during execution.** The bolt loop is fully autonomous. If you encounter ambiguity, make a reasonable decision based on available context. Document assumptions in the unit's `## Notes` section.
 
-#### Phase 3: Adversarial Review
+#### 4.3: Adversarial Review — Verify stage completeness
 
 ```bash
 hku_run_adversarial_phase "$intent_dir" "$stage_name"
 ```
 
-- Run adversarial review on all stage units
-- Verify all required outputs are produced
-- Verify all completion criteria are checked
-- Produce a review summary
+1. **Load review agents** from two sources:
+   - The stage's own `review-agents/` directory (all `.md` files)
+   - Any agents declared in the stage's `review-agents-include:` frontmatter (resolved from other stages)
+   ```bash
+   local stage_dir=$(hku_resolve_stage "$stage_name" "$studio_name" | sed 's/STAGE.md$//')
+   # Own agents
+   local own_agents="${stage_dir}review-agents/"
+   # Included agents from other stages
+   local includes=$(echo "$metadata" | jq -c '.["review-agents-include"] // []')
+   ```
+   Each `.md` file defines a specialized adversarial agent with a mandate and checklist. Included agents run with the same authority as the stage's own agents.
 
-If issues are found, return to Phase 2 for targeted fixes.
+2. **Spawn one subagent per review agent file**, in parallel. Each agent receives:
+   - The review agent's mandate and checklist (from the `.md` file body)
+   - The stage's unit files and outputs as context
+   - The diff of all changes made during this stage
 
-#### Phase 4: Output Persistence
+3. **Collect findings** from each agent. Each finding includes: severity (HIGH/MEDIUM/LOW), file, description, and suggested fix.
+
+4. **Verify structural completeness:**
+   - All units have completion criteria checked
+   - All required outputs defined in the stage's `outputs/` are produced
+
+5. **If HIGH findings exist:** return to step 4.2 for targeted fixes (up to 3 cycles).
+
+6. **If no HIGH findings:** produce a review summary and proceed.
+
+#### 4.4: Output Persistence — Write outputs to scoped locations
 
 ```bash
 hku_persist_stage_outputs "$intent_dir" "$stage_name" "$studio_name"
@@ -175,37 +209,35 @@ Write stage outputs to their scope-based locations:
 - `project` scope → `.haiku/knowledge/{name}.md`
 - `intent` scope → `.haiku/intents/{slug}/knowledge/{name}.md`
 - `stage` scope → `.haiku/intents/{slug}/stages/{stage}/{name}`
-- `repo` scope → Already written during build (no-op)
+- `repo` scope → Already written during execution (no-op)
 
-#### Phase 5: Review Gate
+#### 4.5: Review Gate — Determine stage transition
 
 ```bash
 hku_resolve_review_gate "$intent_dir" "$stage_name" "$studio_name" "$autopilot"
 ```
 
-Gate resolution based on STAGE.md `review:` field:
-- **`auto`** (return 0): Advance to next stage automatically
-- **`ask`** (return 1): Pause, present summary, wait for user approval via `AskUserQuestion`
-- **`external`** (return 2): Create PR or review request, block until resolved
+Gate resolution based on the stage's `review:` field in STAGE.md:
+- **`auto`** (return 0): Stage passes — advance to next stage
+- **`ask`** (return 1): Pause, present stage summary, wait for user approval via `AskUserQuestion`
+- **`external`** (return 2): Push branch and create PR/MR for external review, block until resolved
+- **`await`** (return 3): Stage work is complete but an external event must occur before advancing (e.g., customer response, CI result, stakeholder decision). Record what is being awaited and block. The user resumes with `/haiku:run` when the event has occurred.
 
-### Step 5: Stage Complete
+### Step 5: Advance Stage
 
-Update `active_stage:` in intent frontmatter to the next stage:
+Once the review gate passes (immediately for `auto`, after approval for `ask`, after external review for `external`), advance to the next stage:
+
 ```bash
 local next=$(hku_advance_stage "$intent_dir")
 ```
 
-Save stage results:
+Persist the completed stage's artifacts:
 ```bash
 source "$CLAUDE_PLUGIN_ROOT/lib/persistence.sh"
 persistence_save "{slug}" "haiku: complete stage — {stage_name}" ".haiku/intents/{slug}/stages/{stage_name}/"
 ```
 
 ### Step 6: Continue or Finish
-
-**If continuous mode and gate passed:** Automatically begin the next stage (loop back to Step 2).
-
-**If discrete mode:** Report completion and tell the user to run `/haiku:run` for the next stage.
 
 **If all stages complete:**
 ```
@@ -215,22 +247,54 @@ Studio: {studio_name}
 Ready for delivery. Run /haiku:review to verify, then create a PR.
 ```
 
+**If the review gate passed (return 0 — `auto`):**
+- **Continuous mode:** Advance `active_stage` and loop back to Step 2 to run the next stage.
+- **Discrete mode:** Report stage completion and tell the user to run `/haiku:run` for the next stage.
+
+**If the review gate returned `ask` (return 1):**
+- Present a stage summary and wait for user approval via `AskUserQuestion`.
+- On approval: advance `active_stage`.
+  - **Continuous mode:** Loop back to Step 2.
+  - **Discrete mode:** Report completion, tell the user to run `/haiku:run`.
+
+**If the review gate returned `external` (return 2):**
+- Push the current branch and create a PR/MR for the stage's work.
+- Block until the external review is resolved.
+- On resolution: advance `active_stage`.
+  - **Continuous mode:** Loop back to Step 2.
+  - **Discrete mode:** Report completion, tell the user to run `/haiku:run`.
+
+**If the review gate returned `await` (return 3):**
+- The stage's work is complete, but an external event must occur before the intent can advance.
+- Present what is being awaited:
+  ```
+  Stage "{stage}" complete. Awaiting external event before advancing:
+  {description of what the stage is waiting for — from the stage's ## Await Condition section or inferred from the stage's outputs}
+
+  When the event has occurred, run /haiku:run to continue.
+  ```
+- Save the await state to the intent's state directory.
+- Block. The intent stays at this stage until the user explicitly runs `/haiku:run`.
+- On resumption: the user confirms the event occurred, then advance `active_stage`.
+  - **Continuous mode:** Loop back to Step 2.
+  - **Discrete mode:** Report completion, tell the user to run `/haiku:run`.
+
 ---
 
-## Continuous Mode Collapse
+## Continuous vs Discrete Mode
 
-When `mode: continuous`, the run skill behaves like the old elaborate→execute flow:
+Both modes run the same stage loop. The difference is **what happens after a review gate passes.**
 
-1. Load ALL stages from the studio
-2. Merge their metadata:
-   - `hats:` — Use first stage with hats defined (typically inception)
-   - `unit_types:` — Union of all stages
-   - `outputs/` — Union of all stages
-   - `review:` — Use the most restrictive gate across all stages
-3. Run a single plan→build→review cycle
-4. All outputs written to `.haiku/intents/{slug}/knowledge/` (intent scope)
+| Behavior | Continuous | Discrete |
+|---|---|---|
+| Stage sequence | Same — follows studio's `stages:` list in order | Same |
+| Stage loop (decompose→execute→review→persist→gate) | Same | Same |
+| Review gate `auto` | Advance and run next stage automatically | Stop, tell user to run `/haiku:run` |
+| Review gate `ask` | Pause for user approval, then advance and continue | Pause for user approval, then stop |
+| Review gate `external` | Push for external review, block until resolved, then advance and continue | Push for external review, block until resolved, then stop |
+| Review gate `await` | Block until external event occurs, then advance and continue | Block until external event occurs, then stop |
 
-This ensures backward compatibility with existing workflows.
+**Continuous mode never skips or collapses stages.** Every stage runs its own decompose, execute, adversarial review, output persistence, and review gate cycle. The stage's hats, unit types, inputs, and outputs are always scoped to that stage's definition. Continuous mode simply controls whether the agent automatically proceeds to the next stage or hands control back to the user.
 
 ---
 

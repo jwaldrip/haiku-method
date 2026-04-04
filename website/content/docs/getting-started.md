@@ -4,7 +4,7 @@ description: Install H·AI·K·U, create your first intent, and deliver working 
 order: 2
 ---
 
-Get H·AI·K·U running in your project and deliver your first feature. H·AI·K·U is the software development profile of the [H·AI·K·U Method](https://haikumethod.ai) (Human AI Knowledge Unification).
+Get H·AI·K·U running in your project and deliver your first feature. H·AI·K·U is the software development profile of the [H·AI·K·U Method](https://haikumethod.ai) (Human + AI Knowledge Unification).
 
 ## Installation
 

@@ -1,6 +1,6 @@
 # H·AI·K·U Project
 
-H·AI·K·U = Human AI Knowledge Unification — a universal lifecycle framework for structured AI-assisted work.
+H·AI·K·U = Human + AI Knowledge Unification — a universal lifecycle framework for structured AI-assisted work.
 
 Three-component project: **plugin** (Claude Code plugin), **paper** (methodology spec), **website** (Next.js 15 static site).
 
@@ -18,6 +18,9 @@ When modifying any component, check if other components need corresponding updat
 | New studio | Document in Profiles section | Primary | Update docs |
 | New stage | Document in relevant profile | Primary | Update docs |
 | New hat (in stage) | Document in relevant profile | Add `hats/{hat}.md` file in stage directory | Update docs if user-facing |
+| New review agent (in stage) | Document in Quality Enforcement | Add `review-agents/{agent}.md` file in stage directory | Update docs if user-facing |
+| New operation template | Document in Operation phase | Add `operations/{op}.md` file in studio directory | Update docs if user-facing |
+| New reflection dimension | Document in Reflection phase | Add `reflections/{dim}.md` file in studio directory | Update docs if user-facing |
 | New lifecycle phase | Document as new section | Implement | Update docs |
 | Terminology change | Update all references | Update all references | Update all references |
 | New principle | Document in Principles section | Implement if applicable | Update if referenced |
@@ -32,11 +35,14 @@ When modifying any component, check if other components need corresponding updat
 - Plugin studios: `plugin/studios/*/STUDIO.md`
 - Plugin stages: `plugin/studios/*/stages/*/STAGE.md`
 - Plugin hats: `plugin/studios/*/stages/*/hats/*.md`
+- Plugin review agents: `plugin/studios/*/stages/*/review-agents/*.md`
+- Plugin operations: `plugin/studios/*/operations/*.md`
+- Plugin reflections: `plugin/studios/*/reflections/*.md`
 - Plugin hooks: `plugin/hooks/*.sh` + `plugin/.claude-plugin/hooks.json`
 - Plugin libraries: `plugin/lib/*.sh`
 - Plugin orchestration: `plugin/lib/orchestrator.sh`, `plugin/lib/stage.sh`, `plugin/lib/studio.sh`
 - Plugin persistence adapters: `plugin/lib/adapters/*.sh`
-- Plugin providers: `plugin/providers/*.md` + `plugin/schemas/providers/*.json`
+- Plugin providers: `plugin/providers/*.md` (bidirectional translation instructions) + `plugin/schemas/providers/*.json`
 - Website docs: `website/content/docs/`
 - Infrastructure: `deploy/terraform/`
 - Changelog: `CHANGELOG.md` (Keep a Changelog format)
@@ -51,7 +57,10 @@ When modifying any component, check if other components need corresponding updat
 | Studio | Profiles section | `plugin/studios/{name}/STUDIO.md` | studio.sh |
 | Stage | Profiles section | `plugin/studios/{name}/stages/{stage}/STAGE.md` | stage.sh, orchestrator.sh |
 | Hat | Profiles section | `plugin/studios/{name}/stages/{stage}/hats/{hat}.md` | hat.sh, stage.sh |
-| Review Gate | Quality Enforcement | `review:` field in STAGE.md (auto/ask/external/[external,ask]) | orchestrator.sh |
+| Review Agent | Quality Enforcement | `plugin/studios/{name}/stages/{stage}/review-agents/{agent}.md` | orchestrator.sh, run/SKILL.md |
+| Review Gate | Quality Enforcement | `review:` field in STAGE.md (auto/ask/external/await/[external,ask]) | orchestrator.sh |
+| Operation Template | Operation phase | `plugin/studios/{name}/operations/{op}.md` | operate/SKILL.md |
+| Reflection Dimension | Reflection phase | `plugin/studios/{name}/reflections/{dim}.md` | reflect/SKILL.md |
 | Completion Criteria | Throughout | `quality_gates:` in unit/intent frontmatter, harness-enforced | elaborate, execute, advance, quality-gate.sh |
 | Backpressure | Principles section | Quality gates enforced by harness, not agent | quality-gate.sh, orchestrator.sh |
 | Operating Modes | Operating Modes section | interactive=HITL, /haiku:execute=OHOTL, /haiku:autopilot=AHOTL | execute, autopilot |

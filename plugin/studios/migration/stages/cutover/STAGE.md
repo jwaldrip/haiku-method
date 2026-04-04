@@ -7,6 +7,11 @@ unit_types: [cutover]
 inputs:
   - stage: validation
     output: validation-report
+review-agents-include:
+  - stage: migrate
+    agents: [data-integrity]
+  - stage: validation
+    agents: [parity]
 ---
 
 # Cutover
