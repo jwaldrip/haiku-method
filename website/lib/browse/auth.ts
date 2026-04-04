@@ -5,7 +5,7 @@
 // GitLab: Implicit grant flow (token returned directly in URL fragment)
 
 const STORAGE_PREFIX = "haiku-browse:"
-const AUTH_PROXY_URL = "https://auth.haikumethod.ai" // Cloudflare Worker
+const AUTH_PROXY_URL = process.env.NEXT_PUBLIC_HAIKU_AUTH_PROXY_URL || "https://auth.haikumethod.ai"
 
 export interface AuthConfig {
 	provider: "github" | "gitlab"
@@ -14,8 +14,8 @@ export interface AuthConfig {
 }
 
 // Well-known OAuth client IDs — set via env or hardcoded for the hosted instance
-const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_OAUTH_CLIENT_ID || ""
-const GITLAB_CLIENT_ID = process.env.NEXT_PUBLIC_GITLAB_OAUTH_CLIENT_ID || ""
+const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_HAIKU_GITHUB_OAUTH_CLIENT_ID || ""
+const GITLAB_CLIENT_ID = process.env.NEXT_PUBLIC_HAIKU_GITLAB_OAUTH_CLIENT_ID || ""
 
 export function getAuthConfig(host: string): AuthConfig | null {
 	if (host === "github.com") {

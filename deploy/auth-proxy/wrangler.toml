@@ -5,5 +5,10 @@ compatibility_date = "2024-12-01"
 [vars]
 ALLOWED_ORIGIN = "https://haikumethod.ai"
 
-# Set secrets via: wrangler secret put GITHUB_CLIENT_ID
-#                  wrangler secret put GITHUB_CLIENT_SECRET
+# Custom domain: auth.haikumethod.ai
+routes = [
+  { pattern = "auth.haikumethod.ai/*", zone_name = "haikumethod.ai" }
+]
+
+# Set secrets via: wrangler secret put HAIKU_GITHUB_OAUTH_CLIENT_ID
+#                  wrangler secret put HAIKU_GITHUB_OAUTH_CLIENT_SECRET

@@ -9,8 +9,8 @@
 //   ALLOWED_ORIGIN — https://haikumethod.ai (CORS)
 
 interface Env {
-	GITHUB_CLIENT_ID: string
-	GITHUB_CLIENT_SECRET: string
+	HAIKU_GITHUB_OAUTH_CLIENT_ID: string
+	HAIKU_GITHUB_OAUTH_CLIENT_SECRET: string
 	ALLOWED_ORIGIN: string
 }
 
@@ -54,8 +54,8 @@ export default {
 						Accept: "application/json",
 					},
 					body: JSON.stringify({
-						client_id: env.GITHUB_CLIENT_ID,
-						client_secret: env.GITHUB_CLIENT_SECRET,
+						client_id: env.HAIKU_GITHUB_OAUTH_CLIENT_ID,
+						client_secret: env.HAIKU_GITHUB_OAUTH_CLIENT_SECRET,
 						code: body.code,
 					}),
 				})
