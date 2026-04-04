@@ -7,6 +7,11 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "gcs" {
+    bucket = "waldrip-net-terraform-state"
+    prefix = "haiku"
+  }
 }
 
 provider "google" {
