@@ -140,6 +140,24 @@ resource "google_cloudfunctions2_function" "auth_proxy" {
   }
 }
 
+# Grant the default compute service account access to secrets
+resource "google_project_iam_member" "secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${var.project_id}@appspot.gserviceaccount.com"
+}
+
+# Also grant the compute service account
+resource "google_project_iam_member" "compute_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
 # Allow unauthenticated access (public OAuth endpoint)
 resource "google_cloud_run_v2_service_iam_member" "public" {
   project  = var.project_id
