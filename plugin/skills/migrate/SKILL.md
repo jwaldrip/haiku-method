@@ -15,6 +15,8 @@ allowed-tools:
   - ToolSearch
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 # H·AI·K·U Migrate
 
 ## Name

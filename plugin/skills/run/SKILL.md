@@ -76,16 +76,18 @@ allowed-tools:
 
 ### Step 1: Resolve Intent
 
-```bash
-source "$CLAUDE_PLUGIN_ROOT/lib/state.sh"
-source "$CLAUDE_PLUGIN_ROOT/lib/orchestrator.sh"
+Use the MCP tools to find and read the active intent:
+
+```
+haiku_intent_list → find active intent(s)
+haiku_intent_get { slug, field: "studio" }
+haiku_intent_get { slug, field: "active_stage" }
+haiku_intent_get { slug, field: "mode" }
 ```
 
-- If slug provided: find `.haiku/intents/{slug}/intent.md`
-- If no slug: find active intent via `hku_find_active_intent`
+- If slug provided: read that intent directly
+- If no slug: `haiku_intent_list` and pick the active one
 - If no active intent found: error, suggest `/haiku:new`
-
-Read the intent file and extract frontmatter: `studio`, `stages`, `active_stage`, `mode`.
 
 ### Step 2: Determine Stage
 
@@ -171,9 +173,11 @@ After Step 2c determines the stage and studio to run, execution continues with S
 
 ### Step 3: Load Stage Definition
 
-```bash
-local stage_file=$(hku_resolve_stage "$stage_name" "$studio_name")
-local metadata=$(hku_load_stage_metadata "$stage_name" "$studio_name")
+Read the stage's STAGE.md from the studio directory for hats, review agents, inputs, and gate type. Then start tracking stage state:
+
+```
+haiku_stage_start { intent: slug, stage: stage_name }
+→ creates state.json with status: active, phase: decompose, started_at: now
 ```
 
 ### Step 4: Run Stage Loop
@@ -182,9 +186,10 @@ Each stage runs a five-step cycle. The orchestrator shell functions prepare data
 
 #### 4.1: Decompose — Break the stage into units
 
-Source orchestrator.sh to load stage metadata, resolved inputs, and output definitions:
-```bash
-hku_run_plan_phase "$intent_dir" "$stage_name" "$studio_name"
+Set stage phase to decompose and load context:
+```
+haiku_stage_set { intent, stage, field: "phase", value: "decompose" }
+haiku_unit_list { intent, stage } → check if units already exist
 ```
 
 This emits structured context. Use it to decompose the stage into units:
@@ -221,27 +226,44 @@ The user can also trigger this explicitly: "add a screen for X" during developme
 
 #### 4.2: Execute — Run the bolt loop per unit
 
-For each unit in DAG order, run the **bolt loop** (iterative hat execution):
+Update stage phase, then for each unit in DAG order, run the **bolt loop**:
 
-1. For each hat in the stage's `hats:` sequence:
+```
+haiku_stage_set { intent, stage, field: "phase", value: "execute" }
+haiku_unit_list { intent, stage } → get units and their status/dependencies
+```
+
+For each ready unit (status: pending, all dependencies completed):
+
+1. Start the unit:
+   ```
+   haiku_unit_start { intent, stage, unit, hat: first_hat }
+   ```
+2. For each hat in the stage's `hats:` sequence:
    a. Load hat definition from `stages/{stage}/hats/{hat}.md`
-   b. Load unit's `## References` (NOT full stage inputs — only what this unit needs)
+   b. Load unit's `## References`
    c. Execute the hat's work
-   d. Run quality gates:
-      ```bash
-      source "$CLAUDE_PLUGIN_ROOT/lib/config.sh"
-      run_quality_gates
+   d. Advance to next hat:
       ```
-2. Check unit completion criteria — all checkboxes must be checked
-3. If criteria met: mark unit done, advance to next unit
-4. If not met: increment the bolt counter (iteration) and retry the hat sequence
+      haiku_unit_advance_hat { intent, stage, unit, hat: next_hat }
+      ```
+3. Check unit completion criteria — all checkboxes must be checked
+4. If criteria met:
+   ```
+   haiku_unit_complete { intent, stage, unit }
+   ```
+5. If not met — increment bolt and retry:
+   ```
+   haiku_unit_increment_bolt { intent, stage, unit }
+   haiku_unit_advance_hat { intent, stage, unit, hat: first_hat }
+   ```
 
 **CRITICAL: No questions during execution.** The bolt loop is fully autonomous. If you encounter ambiguity, make a reasonable decision based on available context. Document assumptions in the unit's `## Notes` section.
 
 #### 4.3: Adversarial Review — Verify stage completeness
 
-```bash
-hku_run_adversarial_phase "$intent_dir" "$stage_name"
+```
+haiku_stage_set { intent, stage, field: "phase", value: "review" }
 ```
 
 1. **Load review agents** from two sources:
@@ -273,9 +295,10 @@ hku_run_adversarial_phase "$intent_dir" "$stage_name"
 
 #### 4.4: Output Persistence — Write outputs to scoped locations
 
-```bash
-hku_persist_stage_outputs "$intent_dir" "$stage_name" "$studio_name"
 ```
+haiku_stage_set { intent, stage, field: "phase", value: "persist" }
+```
+Write stage outputs to their scope-based locations. Use `haiku_knowledge_write` for intent-scoped outputs.
 
 Write stage outputs to their scope-based locations:
 - `project` scope → `.haiku/knowledge/{name}.md`
@@ -285,8 +308,9 @@ Write stage outputs to their scope-based locations:
 
 #### 4.5: Review Gate — Determine stage transition
 
-```bash
-hku_resolve_review_gate "$intent_dir" "$stage_name" "$studio_name" "$autopilot"
+```
+haiku_stage_set { intent, stage, field: "phase", value: "gate" }
+haiku_stage_set { intent, stage, field: "gate_entered_at", value: now }
 ```
 
 Gate resolution based on the stage's `review:` field in STAGE.md:
@@ -299,14 +323,15 @@ Gate resolution based on the stage's `review:` field in STAGE.md:
 
 Once the review gate passes (immediately for `auto`, after approval for `ask`, after external review for `external`), advance to the next stage:
 
-```bash
-local next=$(hku_advance_stage "$intent_dir")
+```
+haiku_stage_complete { intent, stage, gate_outcome: "advanced" }
+haiku_intent_set { slug, field: "active_stage", value: next_stage }
 ```
 
-Persist the completed stage's artifacts:
+Commit the stage's artifacts:
 ```bash
-source "$CLAUDE_PLUGIN_ROOT/lib/persistence.sh"
-persistence_save "{slug}" "haiku: complete stage — {stage_name}" ".haiku/intents/{slug}/stages/{stage_name}/"
+git add .haiku/intents/{slug}/stages/{stage_name}/
+git commit -m "haiku: complete stage — {stage_name}"
 ```
 
 ### Step 6: Continue or Finish

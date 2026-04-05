@@ -3,6 +3,8 @@ description: Refine intent, unit, or upstream stage outputs mid-execution withou
 argument-hint: "[unit-slug | stage:<stage-name>]"
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 # H·AI·K·U Refine
 
 You are refining an H·AI·K·U artifact mid-execution. Your job is to amend specs without destroying in-flight progress. Supports three targets: intent-level specs, specific units, and **upstream stage outputs** (stage-scoped refinement).
@@ -30,7 +32,7 @@ If `CLAUDE_CODE_IS_COWORK=1`, stop immediately with the message above. Do NOT pr
 # Intent slug is derived from .haiku directory structure
 INTENT_SLUG=$(basename "$(find .haiku -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)")
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-STATE=$(hku_state_load "$INTENT_DIR" "iteration.json")
+STATE=$(haiku_stage_get { intent, stage, field: "phase" })
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
 ```
 
@@ -235,8 +237,8 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 
 # Re-queue affected units and reset hat tracking in frontmatter
-ACTIVE_STAGE=$(hku_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
-STUDIO=$(hku_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
+ACTIVE_STAGE=$(haiku_intent_get { slug, field: "active_stage" } 2>/dev/null || echo "development")
+STUDIO=$(haiku_intent_get { slug, field: "studio" } 2>/dev/null || echo "software")
 FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
 [ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
 
@@ -247,7 +249,7 @@ done
 
 # Clear currentUnit in iteration.json
 STATE=$(echo "$STATE" | hku_json_set "currentUnit" "")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 
 git add "$INTENT_DIR/"
 git commit -m "refine: re-queue affected units for ${INTENT_SLUG}"
@@ -265,8 +267,8 @@ source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
 update_unit_status "$INTENT_DIR/${UNIT_NAME}.md" "pending"
 
 # Reset hat tracking in unit frontmatter
-ACTIVE_STAGE=$(hku_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "development")
-STUDIO=$(hku_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "software")
+ACTIVE_STAGE=$(haiku_intent_get { slug, field: "active_stage" } 2>/dev/null || echo "development")
+STUDIO=$(haiku_intent_get { slug, field: "studio" } 2>/dev/null || echo "software")
 FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
 [ -z "$FIRST_HAT" ] && FIRST_HAT="planner"
 hku_frontmatter_set "hat" "${FIRST_HAT}" "$INTENT_DIR/${UNIT_NAME}.md"
@@ -276,7 +278,7 @@ CURRENT_UNIT=$(echo "$STATE" | hku_json_get "currentUnit" "")
 if [ "$CURRENT_UNIT" = "$UNIT_NAME" ]; then
   STATE=$(echo "$STATE" | hku_json_set "currentUnit" "")
 fi
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 
 git add "$INTENT_DIR/"
 git commit -m "refine: re-queue ${UNIT_NAME} for ${INTENT_SLUG}"
@@ -288,7 +290,7 @@ If `integratorComplete` was set to `true` in `iteration.json`, reset it to `fals
 
 ```bash
 STATE=$(echo "$STATE" | hku_json_set "integratorComplete" "false")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 ---

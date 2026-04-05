@@ -4,6 +4,8 @@ user-invocable: true
 argument-hint: "[stage-name] <task description>"
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 # Quick Mode
 
 You are running **Quick Mode** — a streamlined path for trivial tasks that skips full elaboration and unit decomposition. The user has described a small task inline and you will execute it through a stage-based hat sequence using subagents, producing disciplined work without the overhead of full `/haiku:elaborate`.

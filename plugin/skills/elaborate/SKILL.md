@@ -37,6 +37,8 @@ allowed-tools:
   - "mcp__*__add*comment*"
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 # H·AI·K·U Mob Elaboration
 
 ## Deprecation Notice
@@ -46,7 +48,7 @@ allowed-tools:
 **Stage-based intent detection:** Before running legacy elaboration, check if the active intent has a `studio:` field in its frontmatter:
 
 ```bash
-source "$CLAUDE_PLUGIN_ROOT/lib/state.sh"
+
 source "$CLAUDE_PLUGIN_ROOT/lib/orchestrator.sh"
 local intent_dir=$(hku_find_active_intent)
 if [ -n "$intent_dir" ]; then
@@ -1225,7 +1227,7 @@ Clicking an intent navigates to the Intent Detail view which shows:
 Data sources:
 - Intent metadata: Read `.haiku/intents/{slug}/intent.md` frontmatter via filesystem API
 - Unit metadata: Read `.haiku/intents/{slug}/stages/*/units/unit-*.md` frontmatter
-- Live state: Query `hku_state_load "$INTENT_DIR" "iteration.json"` for current hat and phase
+- Live state: Query `haiku_stage_get { intent, stage, field: "phase" }` for current hat and phase
 
 This unit does NOT handle: hat visualization (unit-03), live monitoring (unit-04),
 or timeline replay (unit-05). It only renders the structural hierarchy.

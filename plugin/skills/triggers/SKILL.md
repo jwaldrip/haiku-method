@@ -26,6 +26,8 @@ allowed-tools:
   - "mcp__*__memory"
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 # H·AI·K·U Triggers
 
 ## Name
@@ -57,7 +59,7 @@ This skill polls configured providers for events since the last poll and surface
 
 ```bash
 source "$CLAUDE_PLUGIN_ROOT/lib/config.sh"
-source "$CLAUDE_PLUGIN_ROOT/lib/state.sh"
+
 
 PROVIDERS=$(load_providers)
 LAST_POLL=$(hku_state_load ".haiku" "trigger-poll.json" 2>/dev/null || echo '{"last_poll":"1970-01-01T00:00:00Z"}')
@@ -130,8 +132,8 @@ For each active intent with an `await` gate:
 ```bash
 for intent_dir in .haiku/intents/*/; do
   INTENT_FILE="$intent_dir/intent.md"
-  ACTIVE_STAGE=$(hku_frontmatter_get "active_stage" "$INTENT_FILE")
-  STUDIO=$(hku_frontmatter_get "studio" "$INTENT_FILE")
+  ACTIVE_STAGE=$(haiku_intent_get { slug, field: "active_stage" })
+  STUDIO=$(haiku_intent_get { slug, field: "studio" })
 
   # Load stage review type
   STAGE_METADATA=$(hku_load_stage_metadata "$ACTIVE_STAGE" "$STUDIO")

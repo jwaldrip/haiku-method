@@ -4,6 +4,8 @@ user-invocable: true
 argument-hint: "[intent-slug] [unit-name]"
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 ## Deprecation Notice
 
 > **This command is a backward-compatibility alias.** For stage-based intents, use `/haiku:run` instead. This command continues to work for legacy intents without studio/stage configuration.
@@ -11,7 +13,7 @@ argument-hint: "[intent-slug] [unit-name]"
 **Stage-based intent detection:** Before running legacy execution, check if the active intent has a `studio:` field:
 
 ```bash
-source "$CLAUDE_PLUGIN_ROOT/lib/state.sh"
+
 local intent_dir=$(hku_find_active_intent)
 if [ -n "$intent_dir" ]; then
   local studio=$(hku_frontmatter_get "studio" "$intent_dir/intent.md")
@@ -342,7 +344,7 @@ if [ -n "$TICKETING_TYPE" ]; then
 
   # Check epic field in intent.md
   if [ -f "$INTENT_DIR/intent.md" ]; then
-    EPIC=$(hku_frontmatter_get "epic" "$INTENT_DIR/intent.md" 2>/dev/null || echo "")
+    EPIC=$(haiku_intent_get { slug, field: "epic" } 2>/dev/null || echo "")
     if [ -z "$EPIC" ]; then
       MISSING="${MISSING}\n- intent.md: epic field is empty"
     fi
@@ -370,44 +372,29 @@ fi
 
 ### Step 1: Load State
 
-```bash
-# Intent-level state is stored in .haiku/intents/{slug}/state/
-INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-STATE=$(hku_state_load "$INTENT_DIR" "iteration.json")
-# INTENT_SLUG already derived from Step 0
+**State model:** State lives in artifact frontmatter and stage state.json — NOT in `iteration.json` (deprecated).
+
+Use MCP tools to load state:
+
+```
+haiku_intent_get { slug: INTENT_SLUG, field: "status" }
+haiku_intent_get { slug: INTENT_SLUG, field: "active_stage" }
+haiku_intent_get { slug: INTENT_SLUG, field: "studio" }
+haiku_stage_get { intent: INTENT_SLUG, stage: ACTIVE_STAGE, field: "phase" }
+haiku_unit_list { intent: INTENT_SLUG, stage: ACTIVE_STAGE }
 ```
 
-If `INTENT_SLUG` is empty (no intent exists at all):
+If no intent found:
 ```
 No H·AI·K·U state found.
-
-If you have existing intent artifacts in .haiku/, run /haiku:resume to continue.
-Otherwise, run /haiku:elaborate to start a new task.
+Run /haiku:elaborate to start a new task, or /haiku:resume <slug>.
 ```
 
-If `INTENT_SLUG` exists but `STATE` is empty (first execution run — elaboration wrote artifacts but no iteration state):
-
-Initialize `iteration.json` from the intent artifacts:
-
-```bash
-INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-INTENT_FILE="$INTENT_DIR/intent.md"
-
-# Read stage and studio from intent.md frontmatter
-ACTIVE_STAGE=$(hku_frontmatter_get "active_stage" "$INTENT_FILE" 2>/dev/null || echo "research")
-STUDIO=$(hku_frontmatter_get "studio" "$INTENT_FILE" 2>/dev/null || echo "ideation")
-[ -z "$ACTIVE_STAGE" ] && ACTIVE_STAGE="research"
-[ -z "$STUDIO" ] && STUDIO="ideation"
-
-# Get hat sequence from stage definition
-source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
-STAGE_HATS=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO")
-FIRST_HAT=$(echo "$STAGE_HATS" | awk '{print $1}')
-
-# Initialize iteration state
-STATE='{"iteration":1,"hat":"'"${FIRST_HAT}"'","status":"active"}'
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+If first execution (no stage state.json exists):
 ```
+haiku_stage_start { intent: INTENT_SLUG, stage: ACTIVE_STAGE }
+```
+This creates state.json with status: active, phase: decompose, started_at: now.
 
 If status is "completed":
 ```
@@ -424,7 +411,7 @@ else
   # Clear any stale targetUnit from previous targeted run
   STATE=$(echo "$STATE" | hku_json_set "targetUnit" "")
 fi
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 ### State Persistence
@@ -455,7 +442,7 @@ Update STATE.md at each hat transition and unit completion. This survives contex
 Use the file-based state helpers from `lib/state.sh`:
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/state.sh"
+
 
 # Write the full STATE.md
 write_state_file "$INTENT_DIR" "STATE.md" "$state_content"
@@ -544,7 +531,7 @@ Save `teamName` to `iteration.json`:
 
 ```bash
 STATE=$(echo "$STATE" | hku_json_set "teamName" "$TEAM_NAME")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 ### Step 3 (Teams): Spawn ALL Ready Units in Parallel
@@ -555,7 +542,7 @@ Loop over ALL ready units from the DAG (not just one):
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
 
 # Read active_pass from intent frontmatter for pass-filtered selection
-ACTIVE_PASS=$(hku_frontmatter_get "active_pass" "$INTENT_DIR/intent.md" 2>/dev/null || echo "")
+ACTIVE_PASS=$(haiku_intent_get { slug, field: "active_pass" } 2>/dev/null || echo "")
 
 if [ -n "$ACTIVE_PASS" ]; then
   READY_UNITS=$(find_ready_units_for_pass "$INTENT_DIR" "$ACTIVE_PASS")
@@ -564,8 +551,8 @@ else
 fi
 
 # Intent-level hat sequence from stage (default fallback)
-ACTIVE_STAGE=$(hku_frontmatter_get "active_stage" "$INTENT_DIR/intent.md" 2>/dev/null || echo "research")
-STUDIO=$(hku_frontmatter_get "studio" "$INTENT_DIR/intent.md" 2>/dev/null || echo "ideation")
+ACTIVE_STAGE=$(haiku_intent_get { slug, field: "active_stage" } 2>/dev/null || echo "research")
+STUDIO=$(haiku_intent_get { slug, field: "studio" } 2>/dev/null || echo "ideation")
 [ -z "$ACTIVE_STAGE" ] && ACTIVE_STAGE="research"
 [ -z "$STUDIO" ] && STUDIO="ideation"
 source "${CLAUDE_PLUGIN_ROOT}/lib/hat.sh"
@@ -1102,10 +1089,10 @@ Mark intent complete:
 
 ```bash
 STATE=$(echo "$STATE" | hku_json_set "status" "completed")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 
 # Update intent.md frontmatter status so it persists in git
-source "${CLAUDE_PLUGIN_ROOT}/lib/parse.sh"
+
 hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
 # Check off intent-level completion criteria checkboxes
 hku_check_intent_criteria "$INTENT_DIR"
@@ -1147,7 +1134,7 @@ if [ -n "$PASS_BACK_TARGET" ]; then
 
   # Save state
   STATE=$(echo "$STATE" | hku_json_set "status" "pass_back")
-  hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+  # State now lives in unit frontmatter and stage state.json — use MCP tools
 
   echo ""
   echo "The current pass discovered issues requiring work in the **${PASS_BACK_TARGET}** pass."
@@ -1163,9 +1150,9 @@ The pass-back stops execution immediately. The user must re-elaborate for the ta
 **Pre-delivery validation:** Verify intent.md status is "completed" before delivering. This is a safety net — Step 5b should have set it, but if it was missed (e.g., stale plugin, skipped step), catch it here.
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/parse.sh"
+
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-INTENT_STATUS=$(hku_frontmatter_get "status" "$INTENT_DIR/intent.md")
+INTENT_STATUS=$(haiku_intent_get { slug, field: "status" })
 if [ "$INTENT_STATUS" != "completed" ]; then
   echo "Fixing: intent status '$INTENT_STATUS' → 'completed'"
   hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
@@ -1431,7 +1418,7 @@ if [ -n "$TARGET_UNIT" ]; then
   UNIT_FILE="$INTENT_DIR/${TARGET_UNIT}.md"
 else
   # Read active_pass from intent frontmatter for pass-filtered selection
-  ACTIVE_PASS=$(hku_frontmatter_get "active_pass" "$INTENT_DIR/intent.md" 2>/dev/null || echo "")
+  ACTIVE_PASS=$(haiku_intent_get { slug, field: "active_pass" } 2>/dev/null || echo "")
   if [ -n "$ACTIVE_PASS" ]; then
     READY_UNIT=$(find_ready_units_for_pass "$INTENT_DIR" "$ACTIVE_PASS" | head -1)
     [ -n "$READY_UNIT" ] && UNIT_FILE="$INTENT_DIR/${READY_UNIT}.md"
@@ -1482,7 +1469,7 @@ git commit -m "status: mark $(basename "$UNIT_FILE" .md) as in_progress"
 # Update currentUnit in state, e.g., "unit-01-core-backend"
 # Intent-level state saved to current branch (intent branch)
 STATE=$(echo "$STATE" | hku_json_set "currentUnit" "$UNIT_NAME")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 #### Step 3: Spawn Subagent

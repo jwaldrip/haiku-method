@@ -4,6 +4,8 @@ argument-hint: "[intent-slug]"
 disable-model-invocation: true
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 ## Name
 
 `haiku:reflect` - Reflection phase for analyzing outcomes and capturing learnings.
@@ -73,7 +75,7 @@ Collect data from state files and artifacts:
 
 ```bash
 # Load iteration state
-STATE=$(hku_state_load "$INTENT_DIR" "iteration.json" 2>/dev/null || echo "")
+STATE=$(haiku_stage_get { intent, stage, field: "phase" } 2>/dev/null || echo "")
 OP_STATUS=$(hku_state_load "$INTENT_DIR" "operation-status.json" 2>/dev/null || echo "")
 
 # Get DAG summary

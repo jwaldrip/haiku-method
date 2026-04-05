@@ -4,6 +4,8 @@ argument-hint: "[intent-slug]"
 disable-model-invocation: true
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 ## Name
 
 `haiku:resume` - Resume an existing H·AI·K·U intent.
@@ -57,7 +59,7 @@ for intent_file in .haiku/intents/*/intent.md; do
   [ -f "$intent_file" ] || continue
   dir=$(dirname "$intent_file")
   slug=$(basename "$dir")
-  status=$(hku_frontmatter_get "status" "$intent_file" 2>/dev/null || echo "active")
+  status=$(haiku_intent_get { slug, field: "status" } 2>/dev/null || echo "active")
   [ "$status" = "active" ] && echo "$slug"
 done
 ```
@@ -148,7 +150,7 @@ Save to file-based state (intent-level state goes to the intent directory):
 # Intent slug is directory-based: .haiku/intents/{slug}/ — no separate save needed
 
 # Save iteration state to intent directory
-hku_state_save "$INTENT_DIR" "iteration.json" "{\"iteration\":1,\"hat\":\"$STARTING_HAT\",\"status\":\"active\"}"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 ### Step 5b: Restore Team (Agent Teams)

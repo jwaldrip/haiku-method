@@ -3,6 +3,8 @@ description: (Internal) Return to the previous hat in the H·AI·K·U workflow (
 user-invocable: false
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 ## Name
 
 `haiku:fail` - Return to the previous hat in the H·AI·K·U workflow.
@@ -29,7 +31,7 @@ If already at the first hat (planner by default), this command is blocked.
 
 ```bash
 # Intent-level state is stored on current branch (intent branch)
-STATE=$(hku_state_load "$INTENT_DIR" "iteration.json")
+STATE=$(haiku_stage_get { intent, stage, field: "phase" })
 ```
 
 ### Step 2: Determine Previous Hat
@@ -77,7 +79,7 @@ fi
 # Update hat to previous hat
 # Intent-level state saved to current branch (intent branch)
 # state.hat = prevHat
-hku_state_save "$INTENT_DIR" "iteration.json" '<updated JSON with hat set to previous>'
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 ```bash

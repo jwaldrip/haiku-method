@@ -3,6 +3,8 @@ description: (Internal) Advance to the next hat in the H·AI·K·U workflow
 user-invocable: false
 ---
 
+> **State Model Note:** This skill references `iteration.json` and shell-based state functions. These are deprecated. Use MCP tools instead: `haiku_intent_get/set`, `haiku_stage_get/set/start/complete`, `haiku_unit_get/set/start/complete/advance_hat/increment_bolt`. State lives in artifact frontmatter and `stages/{stage}/state.json`.
+
 ## Name
 
 `haiku:advance` - Move to the next hat in the H·AI·K·U stage hat sequence.
@@ -34,7 +36,7 @@ Advances to the next hat in the stage's hat sequence. For example, in the develo
 # Intent-level state is stored in .haiku/intents/{slug}/state/
 INTENT_DIR=$(find .haiku -maxdepth 2 -name "intent.md" -exec dirname {} \; | head -1)
 INTENT_SLUG=$(basename "$INTENT_DIR")
-STATE=$(hku_state_load "$INTENT_DIR" "iteration.json")
+STATE=$(haiku_stage_get { intent, stage, field: "phase" })
 ```
 
 ### Step 2: Verify Hard Gate and Determine Next Hat (or Handle Completion)
@@ -167,7 +169,7 @@ TARGET_UNIT=$(echo "$STATE" | hku_json_get "targetUnit" "")
 if [ -n "$TARGET_UNIT" ] && [ "$TARGET_UNIT" = "$CURRENT_UNIT" ]; then
   # Clear targetUnit from state
   STATE=$(echo "$STATE" | hku_json_set "targetUnit" "")
-  hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+  # State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 Clean up the targeted unit's team agents before exiting (if Agent Teams are enabled):
@@ -340,7 +342,7 @@ SKIP_INTEGRATOR=false
   }
   // Integration passed or skipped - Mark intent as done
   state.status = "completed";
-  // hku_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
+  // # State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 ```bash
@@ -370,7 +372,7 @@ if (READY_COUNT > 0) {
   // MORE UNITS READY - Loop back to builder
   state.hat = unitHats[2] || "builder";  // Reset to builder (index 2 in default stage)
   state.currentUnit = null;  // Will be set by /haiku:execute when it picks next unit
-  // hku_state_save "$INTENT_DIR" "iteration.json" '<updated JSON>'
+  // # State now lives in unit frontmatter and stage state.json — use MCP tools
   return `Unit completed. ${READY_COUNT} more unit(s) ready. Continuing execution...`;
 }
 
@@ -425,7 +427,7 @@ When `ALL_COMPLETE` is true and `state.integratorComplete` is not true, run inte
 
 ```bash
 STATE=$(echo "$STATE" | hku_json_set "hat" "integrator")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 ```
 
 2. Spawn the integrate skill as a subagent on the **intent worktree** (not a unit worktree):
@@ -463,7 +465,7 @@ Task({
 **If ACCEPT:**
 ```bash
 STATE=$(echo "$STATE" | hku_json_set "integratorComplete" "true" | hku_json_set "status" "completed")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 
 # Update intent.md frontmatter status so it persists in git
 hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
@@ -513,7 +515,7 @@ done
 GLOBAL_FIRST_HAT=$(hku_get_hat_sequence "$ACTIVE_STAGE" "$STUDIO" | awk '{print $1}')
 [ -z "$GLOBAL_FIRST_HAT" ] && GLOBAL_FIRST_HAT="planner"
 STATE=$(echo "$STATE" | hku_json_set "hat" "${GLOBAL_FIRST_HAT}" | hku_json_set "integratorComplete" "false")
-hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 
 # Output: "Integration rejected. Re-queued units: {list}. Run /haiku:execute to continue."
 ```
@@ -537,14 +539,14 @@ if [ "$ITERATION" -ge "$MAX_ITERATIONS" ]; then
   echo ""
   echo "**Action required:** Review the intent and unit specs, then run \`/haiku:execute\` to resume."
   STATE=$(echo "$STATE" | hku_json_set "status" "blocked" | hku_json_set "iteration" "$ITERATION")
-  hku_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+  # State now lives in unit frontmatter and stage state.json — use MCP tools
   exit 0
 fi
 
 # Update hat and signal SessionStart to increment iteration
 # Intent-level state saved to current branch (intent branch)
 # state.hat = nextHat, state.iteration = ITERATION
-hku_state_save "$INTENT_DIR" "iteration.json" '<updated JSON with hat and iteration>'
+# State now lives in unit frontmatter and stage state.json — use MCP tools
 
 source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
 haiku_telemetry_init
@@ -600,7 +602,7 @@ Create PR: gh pr create --base ${DEFAULT_BRANCH} --head haiku/{intent-slug}/main
 If the intent has configured `announcements` in its frontmatter, generate each format:
 
 ```bash
-ANNOUNCEMENTS=$(hku_frontmatter_get "announcements" "$INTENT_DIR/intent.md" 2>/dev/null || echo "[]")
+ANNOUNCEMENTS=$(haiku_intent_get { slug, field: "announcements" } 2>/dev/null || echo "[]")
 ```
 
 For each configured format, generate the announcement artifact in `.haiku/intents/{intent-slug}/`:
@@ -628,7 +630,7 @@ Before delivery, verify all statuses are correct. This guard catches cases where
 ```bash
 # PRE-DELIVERY VALIDATION: Ensure all statuses are correctly set before delivery
 source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
-source "${CLAUDE_PLUGIN_ROOT}/lib/parse.sh"
+
 
 # Verify all units are marked completed
 for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
@@ -643,7 +645,7 @@ for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
 done
 
 # Verify intent is marked completed
-INTENT_STATUS=$(hku_frontmatter_get "status" "$INTENT_DIR/intent.md")
+INTENT_STATUS=$(haiku_intent_get { slug, field: "status" })
 if [ "$INTENT_STATUS" != "completed" ]; then
   echo "Fixing: intent status '$INTENT_STATUS' → 'completed'"
   hku_frontmatter_set "status" "completed" "$INTENT_DIR/intent.md"
