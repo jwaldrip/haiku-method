@@ -659,30 +659,31 @@ done
 </div>
 
 <h2>Wave 2 Gap 2: Knowledge Decay</h2>
-<p>Knowledge artifacts pushed to the knowledge provider become stale as the product evolves. A behavioral spec from 6 months ago may describe flows that no longer exist.</p>
+<p>Knowledge artifacts become stale as the product evolves. Detection belongs at the point of use — during decomposition, when a stage loads its inputs — not on a polling schedule.</p>
 
 <div class="gap-card" style="margin-top:1rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed</span> Freshness Windows + Decay Detection</h3>
-  <p>Stage outputs declare a <code>freshness:</code> duration. The <code>/haiku:triggers</code> polling cycle checks expiry and flags stale artifacts.</p>
-  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># Stage output metadata (added during persist step)
+  <h3><span class="tag tag-done">Proposed</span> Decay Metadata on Stage Outputs</h3>
+  <p>Stage outputs declare freshness and code dependencies in their frontmatter. When a downstream stage loads the input during decomposition, Claude checks the metadata and surfaces staleness.</p>
+  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># Stage output metadata (written during output persistence, step 4.4)
 ---
 name: behavioral-spec
 stage: product
 created: 2026-03-15
-freshness: 90d              # stale after 90 days
+freshness: 90d              # advisory: consider stale after 90 days
 last_validated: 2026-03-15
 depends_on_code:             # files this artifact describes
   - src/api/routes/*.ts
   - src/services/auth.ts
 ---
 
-# Decay detection (during /haiku:triggers):
-1. Check freshness window: created + 90d < now? → flag as stale
-2. Check code drift: git log --since={last_validated} -- {depends_on_code}
-   → If files changed since validation, flag for re-validation
-3. Surface: "Behavioral spec from product stage is 120 days old and
-   the files it describes have 47 commits since last validation"</code></pre>
-  <p style="font-size:0.85rem; margin-top:0.5rem">Code-drift detection is more powerful than time-based expiry alone. A spec that describes unchanged code is still fresh regardless of age. A spec whose described files were heavily modified is stale even if recently written.</p>
+# Decay check (during decomposition, step 4.1 — when loading inputs):
+# Claude reads the input artifact, checks the metadata:
+1. freshness: created + 90d < now? → "This spec is 120 days old"
+2. code drift: git log --since={last_validated} -- {depends_on_code}
+   → "47 commits to the described files since this spec was written"
+3. Claude decides: surface as a note, trigger stage-scoped refinement,
+   or proceed if the changes are irrelevant to this stage's work</code></pre>
+  <p style="font-size:0.85rem; margin-top:0.5rem">No trigger, no polling. The check happens naturally when the artifact is consumed. Code-drift is more meaningful than time — a spec describing unchanged code is still fresh regardless of age.</p>
 </div>
 
 <h2>Wave 2 Gap 3: Studio Composition</h2>
