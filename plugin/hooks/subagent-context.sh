@@ -17,7 +17,7 @@ set -e
 
 # Source foundation libraries
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
-source "${PLUGIN_ROOT}/lib/state.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 hku_check_deps || exit 0
 
 # Check for H·AI·K·U state
@@ -196,9 +196,9 @@ if [ -d "$INTENT_DIR" ] && ls "$INTENT_DIR"/stages/*/units/unit-*.md 1>/dev/null
     for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
       [ -f "$unit_file" ] || continue
       NAME=$(basename "$unit_file" .md)
-      UNIT_STATUS=$(hku_frontmatter_get "status" "$unit_file")
+      UNIT_STATUS=$("$HAIKU_PARSE" get "$unit_file" "status")
       [ -z "$UNIT_STATUS" ] && UNIT_STATUS="pending"
-      DISCIPLINE=$(hku_frontmatter_get "discipline" "$unit_file")
+      DISCIPLINE=$("$HAIKU_PARSE" get "$unit_file" "discipline")
       [ -z "$DISCIPLINE" ] && DISCIPLINE="-"
       echo "| $NAME | $UNIT_STATUS | $DISCIPLINE |"
     done

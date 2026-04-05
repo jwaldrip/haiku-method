@@ -16,7 +16,7 @@ set -e
 
 # Source foundation libraries
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
-source "${PLUGIN_ROOT}/lib/state.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 hku_check_deps || exit 0
 
 # Check for H·AI·K·U state
@@ -128,10 +128,9 @@ echo ""
 if [ "$ALL_COMPLETE" = "true" ]; then
   # Auto-reconcile: if all units complete but intent not marked completed, fix it now
   if [ -n "$INTENT_DIR" ] && [ -f "${INTENT_DIR}/intent.md" ]; then
-    source "${PLUGIN_ROOT}/lib/parse.sh"
-    INTENT_STATUS=$(hku_frontmatter_get "status" "${INTENT_DIR}/intent.md" 2>/dev/null || echo "")
+    INTENT_STATUS=$("$HAIKU_PARSE" get "${INTENT_DIR}/intent.md" "status")
     if [ "$INTENT_STATUS" = "active" ]; then
-      hku_frontmatter_set "status" "completed" "${INTENT_DIR}/intent.md"
+      "$HAIKU_PARSE" set "${INTENT_DIR}/intent.md" "status" "completed"
       # Check off intent-level completion criteria checkboxes
       hku_check_intent_criteria "${INTENT_DIR}"
       # Also update iteration.json status

@@ -11,14 +11,14 @@ set -e
 
 # Source foundation libraries
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
-source "${PLUGIN_ROOT}/lib/parse.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 hku_check_deps || exit 0
 
 # Read stdin to get PreToolUse payload
 HOOK_INPUT=$(cat)
 
 # Extract tool name
-TOOL_NAME=$(echo "$HOOK_INPUT" | hku_json_get "tool_name")
+TOOL_NAME=$(echo "$HOOK_INPUT" | "$HAIKU_PARSE" get --stdin "tool_name")
 
 # Only intercept EnterPlanMode
 if [ "$TOOL_NAME" != "EnterPlanMode" ]; then

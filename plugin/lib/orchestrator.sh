@@ -17,10 +17,7 @@ _HKU_ORCHESTRATOR_SOURCED=1
 ORCHESTRATOR_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 # shellcheck source=deps.sh
 source "$ORCHESTRATOR_SCRIPT_DIR/deps.sh"
-# shellcheck source=parse.sh
-source "$ORCHESTRATOR_SCRIPT_DIR/parse.sh"
-# shellcheck source=state.sh
-source "$ORCHESTRATOR_SCRIPT_DIR/state.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 # shellcheck source=studio.sh
 source "$ORCHESTRATOR_SCRIPT_DIR/studio.sh"
 # shellcheck source=stage.sh
@@ -393,7 +390,7 @@ hku_resolve_review_gate() {
 hku_is_composite() {
   local intent_file="${1}/intent.md"
   local composite
-  composite=$(hku_frontmatter_get "composite" "$intent_file" 2>/dev/null || echo "")
+  composite=$("$HAIKU_PARSE" get "$intent_file" "composite")
   [ -n "$composite" ] && [ "$composite" != "null" ]
 }
 
@@ -506,10 +503,10 @@ hku_composite_advance() {
 
   # Update composite_state
   if [ -n "$next_stage" ]; then
-    hku_frontmatter_set "composite_state.${studio_name}" "$next_stage" "$intent_file"
+    "$HAIKU_PARSE" set "$intent_file" "composite_state.${studio_name}" "$next_stage"
   else
     # Studio complete — set to a sentinel value
-    hku_frontmatter_set "composite_state.${studio_name}" "complete" "$intent_file"
+    "$HAIKU_PARSE" set "$intent_file" "composite_state.${studio_name}" "complete"
   fi
 
   echo "$next_stage"
@@ -551,7 +548,7 @@ hku_next_stage() {
   studio=$(hku_get_active_studio "$intent_file")
 
   local active_stage
-  active_stage=$(hku_frontmatter_get "active_stage" "$intent_file")
+  active_stage=$("$HAIKU_PARSE" get "$intent_file" "active_stage")
 
   if [ -z "$active_stage" ]; then
     # No active stage — return first stage
@@ -601,7 +598,7 @@ hku_advance_stage() {
   next=$(hku_next_stage "$intent_dir")
 
   if [ -n "$next" ]; then
-    hku_frontmatter_set "active_stage" "$next" "$intent_file"
+    "$HAIKU_PARSE" set "$intent_file" "active_stage" "$next"
   fi
 
   echo "$next"

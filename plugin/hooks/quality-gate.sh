@@ -9,8 +9,7 @@ set -e
 
 # Source foundation libraries
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
-source "${PLUGIN_ROOT}/lib/parse.sh"
-source "${PLUGIN_ROOT}/lib/state.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 
 # Read stdin payload
 INPUT=$(cat)
@@ -26,7 +25,7 @@ hku_check_deps || exit 0
 # forever. The implication is that enforcement is one-attempt-only per stop: if the
 # builder triggers a second stop in the same session, all gates are skipped. The
 # reviewer's ratchet check (step 6) is the complementary enforcement for that gap.
-STOP_HOOK_ACTIVE=$(echo "$INPUT" | hku_json_get "stop_hook_active")
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | "$HAIKU_PARSE" get --stdin "stop_hook_active")
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
   exit 0
 fi
@@ -49,9 +48,9 @@ if ! echo "$ITERATION_JSON" | hku_json_validate; then
 fi
 
 # Extract iteration fields
-HAT=$(echo "$ITERATION_JSON" | hku_json_get "hat")
-STATUS=$(echo "$ITERATION_JSON" | hku_json_get "status")
-CURRENT_UNIT=$(echo "$ITERATION_JSON" | hku_json_get "currentUnit")
+HAT=$(echo "$ITERATION_JSON" | "$HAIKU_PARSE" get --stdin "hat")
+STATUS=$(echo "$ITERATION_JSON" | "$HAIKU_PARSE" get --stdin "status")
+CURRENT_UNIT=$(echo "$ITERATION_JSON" | "$HAIKU_PARSE" get --stdin "currentUnit")
 
 # Early exit: non-building hat
 case "$HAT" in

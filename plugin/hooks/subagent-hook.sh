@@ -13,13 +13,13 @@
 set -e
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
-source "${PLUGIN_ROOT}/lib/parse.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 
 # Read hook payload once
 PAYLOAD=$(cat)
 
 # Extract tool name
-TOOL_NAME=$(echo "$PAYLOAD" | hku_json_get "tool_name")
+TOOL_NAME=$(echo "$PAYLOAD" | "$HAIKU_PARSE" get --stdin "tool_name")
 
 # Determine target field: prompt for Agent/Task, args for Skill
 IS_AGENT_TOOL=false
@@ -30,7 +30,7 @@ if [ "$TOOL_NAME" = "Agent" ] || [ "$TOOL_NAME" = "Task" ]; then
 fi
 
 # Extract the original tool_input and the target field value
-TOOL_INPUT=$(echo "$PAYLOAD" | hku_json_get_raw "tool_input")
+TOOL_INPUT=$(echo "$PAYLOAD" | "$HAIKU_PARSE" get --stdin "tool_input")
 [ -z "$TOOL_INPUT" ] || [ "$TOOL_INPUT" = "null" ] && TOOL_INPUT="{}"
 
 ORIGINAL_VALUE=$(echo "$TOOL_INPUT" | jq -r ".${TARGET_FIELD} // \"\"" 2>/dev/null || echo "")
@@ -52,7 +52,7 @@ CONTEXT_OUTPUT=$(bash "${PLUGIN_ROOT}/hooks/subagent-context.sh" 2>/dev/null || 
 # Extract permission_mode from hook payload (for Agent/Task only)
 PERMISSION_MODE=""
 if [ "$IS_AGENT_TOOL" = true ]; then
-  PERMISSION_MODE=$(echo "$PAYLOAD" | hku_json_get "permission_mode")
+  PERMISSION_MODE=$(echo "$PAYLOAD" | "$HAIKU_PARSE" get --stdin "permission_mode")
 fi
 
 # If no context and no permission_mode to inject, exit silently

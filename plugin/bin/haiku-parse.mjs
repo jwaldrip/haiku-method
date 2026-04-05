@@ -17,15 +17,17 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { extname } from "node:path"
 
-const [,, cmd, file, key, ...rest] = process.argv
+// Support --stdin flag: haiku-parse get --stdin key (reads JSON from stdin)
+const args = process.argv.slice(2)
+const stdinFlag = args.includes("--stdin")
+const filteredArgs = args.filter(a => a !== "--stdin")
+const [cmd, file, key, ...rest] = filteredArgs
 const value = rest.join(" ")
 
-if (!cmd || !file) {
-  console.error("Usage: haiku-parse <get|set|dump|keys> <file> [key] [value]")
+if (!cmd || (!file && !stdinFlag)) {
+  console.error("Usage: haiku-parse <get|set|dump|keys> <file|--stdin> [key] [value]")
   process.exit(1)
 }
-
-const ext = extname(file).toLowerCase()
 
 // ── YAML parser (simple subset: flat keys, arrays, basic nesting) ──────────
 
@@ -125,13 +127,28 @@ function serializeFrontmatter(data, body) {
 
 // ── File I/O ──────────────────────────────────────────────────��─────────────
 
-function readData(filePath) {
-  const raw = readFileSync(filePath, "utf8")
+function readStdin() {
+  try {
+    return readFileSync(0, "utf8")
+  } catch {
+    return ""
+  }
+}
 
-  if (ext === ".json") {
+function readData(filePath) {
+  // --stdin: read JSON from stdin, no file
+  if (stdinFlag) {
+    const raw = readStdin()
     return { data: JSON.parse(raw), body: null, format: "json" }
   }
-  if (ext === ".yaml" || ext === ".yml") {
+
+  const raw = readFileSync(filePath, "utf8")
+  const fileExt = extname(filePath).toLowerCase()
+
+  if (fileExt === ".json") {
+    return { data: JSON.parse(raw), body: null, format: "json" }
+  }
+  if (fileExt === ".yaml" || fileExt === ".yml") {
     return { data: parseYaml(raw), body: null, format: "yaml" }
   }
   // .md — frontmatter
@@ -162,10 +179,13 @@ function coerceValue(v) {
 
 try {
   if (cmd === "get") {
-    if (!key) { console.error("Usage: haiku-parse get <file> <key>"); process.exit(1) }
-    const { data } = readData(file)
+    // --stdin mode: haiku-parse get --stdin key → file=key, key=undefined
+    const effectiveKey = stdinFlag ? file : key
+    const effectiveFile = stdinFlag ? null : file
+    if (!effectiveKey) { console.error("Usage: haiku-parse get <file> <key>"); process.exit(1) }
+    const { data } = readData(effectiveFile)
     // Support dotted keys: composite_state.software
-    const parts = key.split(".")
+    const parts = effectiveKey.split(".")
     let val = data
     for (const p of parts) {
       if (val == null || typeof val !== "object") { val = undefined; break }

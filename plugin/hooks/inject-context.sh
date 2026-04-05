@@ -21,7 +21,7 @@ fi
 
 # Source foundation libraries
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
-source "${PLUGIN_ROOT}/lib/state.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 hku_check_deps || exit 0
 
 # Cache git branch (used multiple times)
@@ -105,7 +105,7 @@ if [ "$CURRENT_BRANCH" = "$DEFAULT_BRANCH" ]; then
 
     # If has units and all completed, mark intent as completed
     if [ "$reconcile_has_units" = "true" ] && [ "$reconcile_all_done" = "true" ]; then
-      hku_frontmatter_set "status" "completed" "$reconcile_intent_file"
+      "$HAIKU_PARSE" set "$reconcile_intent_file" "status" "completed"
       # Check off intent-level completion criteria checkboxes
       hku_check_intent_criteria "$reconcile_dir"
       # Also check off unit criteria
@@ -587,7 +587,7 @@ if [ -n "$INTENT_DIR" ] && [ -d "$INTENT_DIR" ] && ls "$INTENT_DIR"/stages/*/uni
       for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
         [ -f "$unit_file" ] || continue
         NAME=$(basename "$unit_file" .md)
-        STATUS=$(hku_frontmatter_get "status" "$unit_file")
+        STATUS=$("$HAIKU_PARSE" get "$unit_file" "status")
         [ -z "$STATUS" ] && STATUS="pending"
         echo "| $NAME | $STATUS |"
       done

@@ -11,7 +11,7 @@ set -euo pipefail
 
 # Source foundation libraries
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
-source "${PLUGIN_ROOT}/lib/parse.sh"
+HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/..}/bin/haiku-parse.mjs"
 hku_check_deps || exit 0
 
 # Read hook input from stdin
@@ -19,8 +19,8 @@ INPUT=$(cat)
 
 # Extract conversation stats if available
 # Claude Code provides token usage in the hook payload
-TOTAL_TOKENS=$(echo "$INPUT" | hku_json_get "total_tokens" "0")
-MAX_TOKENS=$(echo "$INPUT" | hku_json_get "max_tokens" "200000")
+TOTAL_TOKENS=$(echo "$INPUT" | "$HAIKU_PARSE" get --stdin "total_tokens")
+MAX_TOKENS=$(echo "$INPUT" | "$HAIKU_PARSE" get --stdin "max_tokens")
 
 # Skip if we can't determine usage
 [ "$TOTAL_TOKENS" = "0" ] && exit 0
