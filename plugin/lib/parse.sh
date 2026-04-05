@@ -1,13 +1,13 @@
 #!/bin/bash
-# parse.sh — JSON and YAML parsing utilities for H·AI·K·U
+# parse.sh — JSON, YAML, and frontmatter parsing for H·AI·K·U
 #
-# Thin wrappers around jq and yq (mikefarah/Go) for JSON and YAML parsing.
-# All functions handle errors gracefully (return empty/default, never crash hooks).
+# Uses the bundled haiku-parse.mjs (Node.js, zero deps).
+# Falls back to jq/yq if available for stdin-based JSON operations.
 #
 # Usage:
 #   source parse.sh
-#   echo '{"status":"active"}' | hku_json_get status
 #   hku_frontmatter_get status intent.md
+#   hku_frontmatter_set status active intent.md
 
 # Guard against double-sourcing
 if [ -n "${_HKU_PARSE_SOURCED:-}" ]; then
@@ -20,8 +20,11 @@ PARSE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 # shellcheck source=deps.sh
 source "$PARSE_SCRIPT_DIR/deps.sh"
 
+# Resolve haiku-parse binary
+_HAIKU_PARSE="${CLAUDE_PLUGIN_ROOT:-$PARSE_SCRIPT_DIR/..}/bin/haiku-parse.mjs"
+
 # ============================================================================
-# JSON Functions (jq wrappers)
+# JSON Functions (stdin-based — used for piped JSON manipulation)
 # ============================================================================
 
 # Extract a field from JSON on stdin, with optional default
@@ -29,10 +32,18 @@ source "$PARSE_SCRIPT_DIR/deps.sh"
 hku_json_get() {
   local field="$1"
   local default="${2:-}"
-  if [ -n "$default" ]; then
-    jq -r ".$field // \"$default\"" 2>/dev/null || echo "$default"
+  local input
+  input=$(cat)
+  local tmp
+  tmp=$(mktemp)
+  printf '%s' "$input" > "$tmp"
+  local result
+  result=$("$_HAIKU_PARSE" get "$tmp" "$field" 2>/dev/null)
+  rm -f "$tmp"
+  if [ -z "$result" ] && [ -n "$default" ]; then
+    echo "$default"
   else
-    jq -r ".$field // empty" 2>/dev/null || echo ""
+    echo "$result"
   fi
 }
 
@@ -40,96 +51,47 @@ hku_json_get() {
 # Usage: echo '{"arr":[1,2]}' | hku_json_get_raw "arr"
 hku_json_get_raw() {
   local field="$1"
-  jq ".$field" 2>/dev/null || echo ""
+  local input
+  input=$(cat)
+  local tmp
+  tmp=$(mktemp)
+  printf '%s' "$input" > "$tmp"
+  "$_HAIKU_PARSE" get "$tmp" "$field" 2>/dev/null
+  rm -f "$tmp"
 }
 
 # Set a field in JSON on stdin, output modified JSON to stdout
-# Automatically detects boolean/number/null values for correct JSON typing.
 # Usage: echo '{}' | hku_json_set "key" "value"
 hku_json_set() {
   local field="$1"
   local value="$2"
-  # Detect JSON literal values (boolean, null, number)
-  if [[ "$value" =~ ^(true|false|null|-?[0-9]+\.?[0-9]*(e[+-]?[0-9]+)?)$ ]]; then
-    jq --argjson v "$value" ".$field = \$v" 2>/dev/null
-  else
-    jq --arg v "$value" ".$field = \$v" 2>/dev/null
-  fi
+  local input
+  input=$(cat)
+  local tmp
+  tmp=$(mktemp)
+  printf '%s' "$input" > "$tmp"
+  "$_HAIKU_PARSE" set "$tmp" "$field" "$value" 2>/dev/null
+  cat "$tmp"
+  rm -f "$tmp"
 }
 
 # Validate JSON on stdin
-# Returns 0 if valid, 1 if invalid. No output on success.
+# Returns 0 if valid, 1 if invalid.
 hku_json_validate() {
-  jq empty 2>/dev/null
+  local tmp
+  tmp=$(mktemp)
+  cat > "$tmp"
+  node -e "JSON.parse(require('fs').readFileSync('$tmp','utf8'))" 2>/dev/null
+  local rc=$?
+  rm -f "$tmp"
+  return $rc
 }
 
 # ============================================================================
-# YAML Functions (yq wrappers)
+# File-based Functions (direct file access — preferred)
 # ============================================================================
 
-# Extract a field from YAML on stdin, with optional default
-# Usage: cat file.yml | hku_yaml_get "key" ["default"]
-hku_yaml_get() {
-  local field="$1"
-  local default="${2:-}"
-  if [ -n "$default" ]; then
-    yq -r ".$field // \"$default\"" 2>/dev/null || echo "$default"
-  else
-    yq -r ".$field // \"\"" 2>/dev/null || echo ""
-  fi
-}
-
-# Extract a field from YAML on stdin as raw YAML
-# Usage: cat file.yml | hku_yaml_get_raw "key"
-hku_yaml_get_raw() {
-  local field="$1"
-  yq ".$field" 2>/dev/null || echo ""
-}
-
-# Update a YAML field in-place in a file
-# Detects .md files (uses --front-matter=process) vs .yml/.yaml (plain yq).
-# Uses tmp+mv for atomic writes.
-# Usage: hku_yaml_set "key" "value" "file.yml"
-hku_yaml_set() {
-  local field="$1"
-  local value="$2"
-  local file="$3"
-
-  if [ ! -f "$file" ]; then
-    echo "haiku: hku_yaml_set: file not found: $file" >&2
-    return 1
-  fi
-
-  local tmp="${file}.tmp.$$"
-  local expr
-  # Detect type for correct YAML encoding
-  if [[ "$value" =~ ^(true|false|null|-?[0-9]+\.?[0-9]*)$ ]]; then
-    expr=".$field = $value"
-  else
-    expr=".$field = \"$value\""
-  fi
-
-  case "$file" in
-    *.md)
-      yq --front-matter=process "$expr" "$file" > "$tmp" 2>/dev/null && mv "$tmp" "$file"
-      ;;
-    *)
-      yq "$expr" "$file" > "$tmp" 2>/dev/null && mv "$tmp" "$file"
-      ;;
-  esac
-}
-
-# Convert YAML on stdin to JSON on stdout
-# Usage: cat file.yml | hku_yaml_to_json
-hku_yaml_to_json() {
-  yq -o json 2>/dev/null || echo "{}"
-}
-
-# ============================================================================
-# Frontmatter Functions (markdown-specific)
-# ============================================================================
-
-# Extract a field from markdown frontmatter
+# Extract a field from a markdown frontmatter file
 # Usage: hku_frontmatter_get "status" "intent.md"
 hku_frontmatter_get() {
   local field="$1"
@@ -140,11 +102,10 @@ hku_frontmatter_get() {
     return 0
   fi
 
-  yq --front-matter=extract -r ".$field // \"\"" "$file" 2>/dev/null || echo ""
+  "$_HAIKU_PARSE" get "$file" "$field" 2>/dev/null || echo ""
 }
 
 # Update a field in markdown frontmatter in-place
-# Uses tmp+mv for atomic writes.
 # Usage: hku_frontmatter_set "status" "active" "intent.md"
 hku_frontmatter_set() {
   local field="$1"
@@ -156,15 +117,52 @@ hku_frontmatter_set() {
     return 1
   fi
 
-  local tmp="${file}.tmp.$$"
-  local expr
-  if [[ "$value" =~ ^(true|false|null|-?[0-9]+\.?[0-9]*)$ ]]; then
-    expr=".$field = $value"
-  else
-    expr=".$field = \"$value\""
+  "$_HAIKU_PARSE" set "$file" "$field" "$value"
+}
+
+# Dump all frontmatter/JSON/YAML fields as JSON
+# Usage: hku_dump "intent.md"
+hku_dump() {
+  local file="$1"
+  "$_HAIKU_PARSE" dump "$file" 2>/dev/null || echo "{}"
+}
+
+# ============================================================================
+# Stage State Functions (state.json files)
+# ============================================================================
+
+# Read a stage state field
+# Usage: hku_stage_state_get "phase" "$intent_dir" "$stage_name"
+hku_stage_state_get() {
+  local field="$1"
+  local intent_dir="$2"
+  local stage_name="$3"
+  local state_file="${intent_dir}/stages/${stage_name}/state.json"
+
+  if [ ! -f "$state_file" ]; then
+    echo ""
+    return 0
   fi
 
-  yq --front-matter=process "$expr" "$file" > "$tmp" 2>/dev/null && mv "$tmp" "$file"
+  "$_HAIKU_PARSE" get "$state_file" "$field" 2>/dev/null || echo ""
+}
+
+# Write a stage state field
+# Usage: hku_stage_state_set "phase" "execute" "$intent_dir" "$stage_name"
+hku_stage_state_set() {
+  local field="$1"
+  local value="$2"
+  local intent_dir="$3"
+  local stage_name="$4"
+  local state_file="${intent_dir}/stages/${stage_name}/state.json"
+
+  # Create state file if it doesn't exist
+  if [ ! -f "$state_file" ]; then
+    mkdir -p "$(dirname "$state_file")"
+    echo '{}' > "$state_file"
+  fi
+
+  "$_HAIKU_PARSE" set "$state_file" "$field" "$value"
 }
 
 # ============================================================================
@@ -172,8 +170,6 @@ hku_frontmatter_set() {
 # ============================================================================
 
 # Check off all markdown checkboxes in a file (or within a specific section)
-# Converts all "- [ ]" to "- [x]" within the target section(s).
-# If no section is specified, checks off ALL checkboxes in the file.
 # Usage: hku_check_all_criteria <file> [section_heading]
 hku_check_all_criteria() {
   local file="$1"
@@ -182,11 +178,9 @@ hku_check_all_criteria() {
   [ -f "$file" ] || return 1
 
   if [ -z "$section" ]; then
-    # No section filter: check all checkboxes in the entire file
     local tmp="${file}.tmp.$$"
     sed 's/- \[ \]/- [x]/g' "$file" > "$tmp" && mv "$tmp" "$file"
   else
-    # Section-scoped: only check boxes between the section heading and the next ## heading
     local tmp="${file}.tmp.$$"
     awk -v section="$section" '
       BEGIN { in_section = 0 }
@@ -206,7 +200,6 @@ hku_check_all_criteria() {
 }
 
 # Check off all completion criteria checkboxes in a unit file
-# Handles both "Success Criteria" and "Completion Criteria" section names
 # Usage: hku_check_unit_criteria <unit_file>
 hku_check_unit_criteria() {
   local unit_file="$1"
@@ -220,7 +213,6 @@ hku_check_unit_criteria() {
 }
 
 # Check off all completion criteria in intent-level files
-# Handles: intent.md Success Criteria section + standalone completion-criteria.md
 # Usage: hku_check_intent_criteria <intent_dir>
 hku_check_intent_criteria() {
   local intent_dir="$1"
@@ -233,7 +225,6 @@ hku_check_intent_criteria() {
     fi
   fi
 
-  # Check standalone completion-criteria.md files (all checkboxes)
   for criteria_file in "$intent_dir/completion-criteria.md" "$intent_dir/state/completion-criteria.md"; do
     [ -f "$criteria_file" ] && hku_check_all_criteria "$criteria_file"
   done

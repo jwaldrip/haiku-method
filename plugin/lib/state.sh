@@ -1,14 +1,16 @@
 #!/bin/bash
-# state.sh — File-based state management for H·AI·K·U
+# state.sh — State management for H·AI·K·U
 #
-# Filesystem-backed state management.
-# State files live at .haiku/intents/{intent-slug}/state/.
-# All writes are atomic (tmp + mv).
+# Primary state lives in artifact frontmatter (intent.md, unit-*.md)
+# and stage state files (stages/{stage}/state.json).
+#
+# This module provides convenience functions for reading/writing state
+# and for legacy compatibility with the old state/ directory approach.
 #
 # Usage:
 #   source state.sh
-#   hku_state_save "$intent_dir" "iteration.json" "$json_content"
-#   content=$(hku_state_load "$intent_dir" "iteration.json")
+#   hku_intent_set_status "$intent_dir" "active"
+#   status=$(hku_intent_get_status "$intent_dir")
 
 # Guard against double-sourcing
 if [ -n "${_HKU_STATE_SOURCED:-}" ]; then
@@ -16,12 +18,120 @@ if [ -n "${_HKU_STATE_SOURCED:-}" ]; then
 fi
 _HKU_STATE_SOURCED=1
 
-# Source parse library (which sources deps.sh)
+# Source parse library
 STATE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 # shellcheck source=parse.sh
 source "$STATE_SCRIPT_DIR/parse.sh"
 
-# Save state: atomic write (tmp + mv)
+# ============================================================================
+# Intent State (stored in intent.md frontmatter)
+# ============================================================================
+
+hku_intent_get_status() {
+  hku_frontmatter_get "status" "$1/intent.md"
+}
+
+hku_intent_set_status() {
+  local intent_dir="$1" status="$2"
+  hku_frontmatter_set "status" "$status" "$intent_dir/intent.md"
+}
+
+hku_intent_set_started() {
+  local intent_dir="$1"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  hku_frontmatter_set "started_at" "$ts" "$intent_dir/intent.md"
+}
+
+hku_intent_set_completed() {
+  local intent_dir="$1"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  hku_frontmatter_set "completed_at" "$ts" "$intent_dir/intent.md"
+  hku_frontmatter_set "status" "completed" "$intent_dir/intent.md"
+}
+
+# ============================================================================
+# Stage State (stored in stages/{stage}/state.json)
+# ============================================================================
+
+hku_stage_get_phase() {
+  hku_stage_state_get "phase" "$1" "$2"
+}
+
+hku_stage_set_phase() {
+  local intent_dir="$1" stage="$2" phase="$3"
+  hku_stage_state_set "phase" "$phase" "$intent_dir" "$stage"
+}
+
+hku_stage_set_started() {
+  local intent_dir="$1" stage="$2"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  hku_stage_state_set "status" "active" "$intent_dir" "$stage"
+  hku_stage_state_set "started_at" "$ts" "$intent_dir" "$stage"
+  hku_stage_state_set "phase" "decompose" "$intent_dir" "$stage"
+}
+
+hku_stage_set_completed() {
+  local intent_dir="$1" stage="$2" gate_outcome="${3:-advanced}"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  hku_stage_state_set "status" "completed" "$intent_dir" "$stage"
+  hku_stage_state_set "completed_at" "$ts" "$intent_dir" "$stage"
+  hku_stage_state_set "gate_outcome" "$gate_outcome" "$intent_dir" "$stage"
+}
+
+hku_stage_set_gate_entered() {
+  local intent_dir="$1" stage="$2"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  hku_stage_state_set "phase" "gate" "$intent_dir" "$stage"
+  hku_stage_state_set "gate_entered_at" "$ts" "$intent_dir" "$stage"
+}
+
+# ============================================================================
+# Unit State (stored in unit-*.md frontmatter)
+# ============================================================================
+
+hku_unit_start() {
+  local unit_file="$1"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  hku_frontmatter_set "status" "active" "$unit_file"
+  hku_frontmatter_set "started_at" "$ts" "$unit_file"
+  hku_frontmatter_set "bolt" "1" "$unit_file"
+}
+
+hku_unit_complete() {
+  local unit_file="$1"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  hku_frontmatter_set "status" "completed" "$unit_file"
+  hku_frontmatter_set "completed_at" "$ts" "$unit_file"
+}
+
+hku_unit_increment_bolt() {
+  local unit_file="$1"
+  local current
+  current=$(hku_frontmatter_get "bolt" "$unit_file")
+  current=${current:-0}
+  hku_frontmatter_set "bolt" "$(( current + 1 ))" "$unit_file"
+}
+
+hku_unit_set_hat() {
+  local unit_file="$1" hat="$2"
+  hku_frontmatter_set "hat" "$hat" "$unit_file"
+}
+
+# ============================================================================
+# Legacy Compatibility (state/ directory — deprecated)
+# ============================================================================
+
+# These functions maintain backward compatibility with the old state/ approach.
+# New code should use the frontmatter/state.json functions above.
+
+# Save to state/ directory (legacy)
 # Usage: hku_state_save <intent_dir> <key> <content>
 hku_state_save() {
   local intent_dir="$1"
@@ -30,16 +140,13 @@ hku_state_save() {
   local state_dir="${intent_dir}/state"
   local filepath="${state_dir}/${key}"
 
-  mkdir -p "$state_dir" 2>/dev/null || {
-    echo "haiku: hku_state_save: cannot create state directory: $state_dir" >&2
-    return 1
-  }
+  mkdir -p "$state_dir" 2>/dev/null || return 1
 
   local tmp="${filepath}.tmp.$$"
   printf '%s' "$content" > "$tmp" && mv "$tmp" "$filepath"
 }
 
-# Load state: return file contents or empty string if missing
+# Load from state/ directory (legacy)
 # Usage: hku_state_load <intent_dir> <key>
 hku_state_load() {
   local intent_dir="$1"
@@ -47,105 +154,16 @@ hku_state_load() {
   cat "${intent_dir}/state/${key}" 2>/dev/null || echo ""
 }
 
-# Delete state file
-# Usage: hku_state_delete <intent_dir> <key>
+# Delete from state/ directory (legacy)
 hku_state_delete() {
   local intent_dir="$1"
   local key="$2"
   rm -f "${intent_dir}/state/${key}"
 }
 
-# List state keys (filenames in state directory)
-# Usage: hku_state_list <intent_dir>
+# List state keys (legacy)
 hku_state_list() {
   local intent_dir="$1"
   local state_dir="${intent_dir}/state"
-  if [ -d "$state_dir" ]; then
-    ls "$state_dir" 2>/dev/null
-  fi
-}
-
-# Validate phase against known enum; return default if unknown
-# Usage: hku_validate_phase <phase> [default]
-hku_validate_phase() {
-  local phase="$1" default="${2:-execution}"
-  case "$phase" in
-    elaboration|execution|operation|reflection|closed) echo "$phase" ;;
-    *)
-      [ -n "$phase" ] && echo "haiku: unknown phase '$phase', defaulting to '$default'" >&2
-      echo "$default"
-      ;;
-  esac
-}
-
-# Fast YAML scalar extraction from frontmatter (pure bash, no subprocess)
-# Only handles simple "field: value" lines — used for performance-critical paths.
-_state_yaml_get_simple() {
-  local field="$1" default="$2"
-  local in_frontmatter=false value=""
-  while IFS= read -r line; do
-    [[ "$line" == "---" ]] && { $in_frontmatter && break || in_frontmatter=true; continue; }
-    $in_frontmatter || continue
-    if [[ "$line" == ${field}:* ]]; then
-      value="${line#${field}:}"
-      value="${value# }"
-      value="${value#\"}"
-      value="${value%\"}"
-      value="${value#\'}"
-      value="${value%\'}"
-      break
-    fi
-  done
-  echo "${value:-$default}"
-}
-
-# Find the first active intent directory
-# Checks .haiku/intents/*/intent.md (new structure) first, then falls back
-# to .haiku/*/intent.md (legacy structure). Works from any working directory.
-# Returns the full path to the intent directory, or empty string if none found.
-# Usage: hku_find_active_intent
-hku_find_active_intent() {
-  local repo_root
-  repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || return 0
-
-  # New structure: .haiku/intents/*/intent.md
-  local intent_file
-  for intent_file in "$repo_root"/.haiku/intents/*/intent.md; do
-    [ -f "$intent_file" ] || continue
-    local intent_status
-    intent_status=$(_state_yaml_get_simple "status" "pending" < "$intent_file")
-    if [ "$intent_status" = "active" ]; then
-      dirname "$intent_file"
-      return 0
-    fi
-  done
-
-  # Legacy structure: .haiku/*/intent.md
-  for intent_file in "$repo_root"/.haiku/*/intent.md; do
-    [ -f "$intent_file" ] || continue
-    # Skip directories that are part of the new structure
-    case "$intent_file" in
-      */.haiku/intents/*) continue ;;
-    esac
-    local intent_status
-    intent_status=$(_state_yaml_get_simple "status" "pending" < "$intent_file")
-    if [ "$intent_status" = "active" ]; then
-      dirname "$intent_file"
-      return 0
-    fi
-  done
-
-  echo ""
-}
-
-# Get intent mode (continuous | discrete)
-# Usage: hku_get_intent_mode <intent_file>
-# Returns: "continuous" or "discrete" (defaults to "continuous")
-hku_get_intent_mode() {
-  local intent_file="$1"
-  if [ ! -f "$intent_file" ]; then
-    echo "continuous"
-    return 0
-  fi
-  _state_yaml_get_simple "mode" "continuous" < "$intent_file"
+  [ -d "$state_dir" ] && ls "$state_dir" 2>/dev/null || true
 }
