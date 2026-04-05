@@ -627,15 +627,15 @@ Event detected → gate advances on next session or poll</code></pre>
 
 <div class="arch" style="margin-top:1.5rem">
   <div class="layer layer-partial">
-    <div class="layer-label">Scale Layer (Wave 2 — 4/7 resolved, 3 proposed)</div>
+    <div class="layer-label">Scale Layer (Wave 2 — 5/7 resolved, 2 proposed)</div>
     <div class="layer-grid">
       <div class="block block-done"><strong>Conflict Awareness</strong><span>Git handles conflicts; decomposition checks active branches</span></div>
-      <div class="block block-gap"><strong>Knowledge Decay</strong><span>Expiry and freshness tracking for artifacts</span></div>
+      <div class="block block-done"><strong>Knowledge Decay</strong><span>Freshness metadata on outputs, code-drift check at decomposition</span></div>
       <div class="block block-done"><strong>Composite Intents</strong><span>Multi-studio parallel stages with sync points</span></div>
       <div class="block block-done"><strong>Post-Delivery Monitoring</strong><span>Already covered by /operate — studio operations templates</span></div>
-      <div class="block block-gap"><strong>Capacity Model</strong><span>Historical throughput informing feasibility</span></div>
+      <div class="block block-gap"><strong>Capacity Model</strong><span>Historical throughput from local intent artifacts</span></div>
       <div class="block block-done"><strong>Access Control</strong><span>Handled by providers — git, ticketing, CRM enforce their own ACLs</span></div>
-      <div class="block block-gap"><strong>Studio Versioning</strong><span>Migration path when studio definitions evolve</span></div>
+      <div class="block block-gap"><strong>Studio Versioning</strong><span>Pin, lock, upgrade — studios are the product</span></div>
     </div>
   </div>
 </div>
@@ -724,37 +724,38 @@ sync:
 </div>
 
 <h2>Wave 2 Gap 5: Capacity Model</h2>
-<p>OTEL telemetry captures bolt counts, stage durations, and gate resolution times. This data can inform capacity planning without providing time estimates.</p>
+<p>OTEL is write-only from our side. Capacity analysis reads from local intent artifacts — iteration.json, unit status, stage completion timestamps. All data is already persisted in <code>.haiku/</code>.</p>
 
 <div class="gap-card" style="margin-top:1rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed</span> Historical Throughput Analysis</h3>
-  <p>A <code>/haiku:capacity</code> skill queries OTEL telemetry to show historical patterns — not predictions, but data about what has actually happened.</p>
-  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># /haiku:capacity
-→ Queries OTEL: haiku.stage.completed events for last 90 days
-→ Groups by studio and stage
+  <h3><span class="tag tag-done">Proposed</span> Historical Throughput from Local Artifacts</h3>
+  <p>A <code>/haiku:capacity</code> skill scans completed intents in <code>.haiku/intents/</code> and computes historical patterns from the artifacts themselves.</p>
+  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># /haiku:capacity — reads local .haiku/ artifacts, no OTEL query
+→ Scans .haiku/intents/*/state/iteration.json for bolt counts
+→ Reads git log for stage completion timestamps
+→ Parses unit frontmatter for status transitions
 
-Software Studio:
-  inception: median 1 session, 95th pct 2 sessions
-  development: median 3 sessions, 95th pct 8 sessions
-  Active intents: 4 (1 in development, 2 in inception, 1 in security)
+Software Studio (from 8 completed intents):
+  inception: typically 1 session
+  development: typically 3-5 sessions, highest bolt counts
+  Active: 4 intents (1 development, 2 inception, 1 security)
 
-Sales Studio:
-  Intents completed last quarter: 12
-  Avg stage transitions per intent: 8
-  Active intents: 6 (3 in proposal-await, 2 in negotiation, 1 in close)
+Sales Studio (from 12 completed intents):
+  research→qualification: fast, usually same session
+  proposal→negotiation: longest stage (await gates)
+  Active: 6 intents (3 proposal-await, 2 negotiation, 1 close)
 
-# NOT estimates. Historical data about what actually happened.</code></pre>
+# Historical data from artifacts. Not estimates. Not OTEL queries.</code></pre>
 </div>
 
 <h2>Wave 2 Gap 6: Access Control</h2>
 <p>Not H·AI·K·U's concern. Providers enforce their own access control — git repos have permissions, ticketing has team visibility, CRM has deal ownership. <code>/browse</code> inherits git provider ACLs via OAuth. No additional layer needed.</p>
 
 <h2>Wave 2 Gap 7: Studio Versioning</h2>
-<p>Studios evolve — new stages, renamed hats, new review agents. Active intents using the old definition need a migration path.</p>
+<p>Studios are the product. Versioning them is versioning the methodology itself. This is bigger than migration — users need to pin, lock, and deliberately upgrade.</p>
 
 <div class="gap-card" style="margin-top:1rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed</span> Studio Schema Version + Migration</h3>
-  <p>Studios declare a <code>version:</code>. Intents record the studio version they were created with. When versions diverge, <code>/haiku:run</code> detects it and offers migration.</p>
+  <h3><span class="tag tag-done">Proposed</span> Studio Versions as First-Class Concept</h3>
+  <p>Studios declare a <code>version:</code> with a changelog. Intents pin to the version they were created with. Users choose when to upgrade.</p>
   <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># STUDIO.md
 ---
 name: software
@@ -766,17 +767,19 @@ changelog:
     changes: "Initial 6-stage lifecycle"
 ---
 
-# intent.md
+# intent.md — pinned to version at creation time
 ---
 studio: software
-studio_version: 1        # version when intent was created
----
-
-# /haiku:run detects version mismatch:
-→ "Intent 'my-feature' was created with software studio v1, but v2 is current."
-→ "Changes in v2: added review-agents, added await gate to product."
-→ "Apply studio updates to this intent? [yes/no]"
-→ On yes: update stage definitions, add review-agents directories</code></pre>
+studio_version: 1
+---</code></pre>
+  <p style="margin-top:0.75rem"><strong>Behaviors:</strong></p>
+  <ul style="margin-top:0.5rem">
+    <li><strong>Pin:</strong> Intent runs with the studio version it was created with, even if the studio has been updated. No surprises mid-intent.</li>
+    <li><strong>Lock:</strong> Project-level setting to lock all new intents to a specific studio version: <code>studio_version: 1</code> in settings.yml.</li>
+    <li><strong>Upgrade:</strong> <code>/haiku:run</code> detects version mismatch and offers upgrade. Shows changelog. User decides. Upgrade applies new stages, hats, review agents to the active intent.</li>
+    <li><strong>Browse:</strong> The <code>/browse</code> UI shows which studio version each intent uses. Version mismatches are visible at a glance.</li>
+    <li><strong>Marketplace:</strong> When studios are distributed via the plugin marketplace, versions determine compatibility. A studio upgrade is a plugin update.</li>
+  </ul>
 </div>
 
 <h2 style="margin-top:3rem">Summary</h2>
@@ -803,7 +806,7 @@ studio_version: 1        # version when intent was created
       <li><strong style="text-decoration:line-through; opacity:0.5">Conflict detection</strong> <span style="color:var(--success)">— git handles it; decomposition checks active branches</span></li>
       <li><strong style="text-decoration:line-through; opacity:0.5">Post-delivery monitoring</strong> <span style="color:var(--success)">— already covered by /operate + studio operations</span></li>
       <li><strong style="text-decoration:line-through; opacity:0.5">Studio composition</strong> <span style="color:var(--success)">— implemented: composite intents with sync points</span></li>
-      <li><strong>Knowledge decay</strong> — freshness metadata + code-drift check at decomposition</li>
+      <li><strong style="text-decoration:line-through; opacity:0.5">Knowledge decay</strong> <span style="color:var(--success)">— done: freshness metadata + code-drift at decomposition</span></li>
       <li><strong>Capacity model</strong> — historical throughput from OTEL data</li>
       <li><strong style="text-decoration:line-through; opacity:0.5">Browse access control</strong> <span style="color:var(--success)">— providers handle ACLs; /browse inherits via OAuth</span></li>
       <li><strong>Studio versioning</strong> — schema version + migration on version mismatch</li>
