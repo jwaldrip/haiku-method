@@ -1,5 +1,5 @@
 ---
-description: Start H·AI·K·U mob elaboration to collaboratively define intent, success criteria, and decompose into units. Prefer `/haiku:new` + `/haiku:run` for stage-based workflows.
+description: "Deprecated: use /haiku:new + /haiku:run instead. Legacy elaboration for non-studio intents."
 allowed-tools:
   - Read
   - Write
