@@ -1,5 +1,5 @@
-import type { CriterionItem } from "@haiku/shared";
-import { markdownToHtml } from "@haiku/shared";
+import type { CriterionItem } from "../markdown.js";
+import { markdownToHtml } from "../markdown.js";
 import { escapeHtml, escapeAttr } from "./layout.js";
 import { statusColors } from "./styles.js";
 

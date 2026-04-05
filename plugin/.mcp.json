@@ -1,10 +1,10 @@
 {
   "mcpServers": {
-    "haiku-review": {
+    "haiku": {
       "command": "bash",
       "args": [
         "-c",
-        "exec node \"${CLAUDE_PLUGIN_ROOT}/mcp-server/dist/server.mjs\""
+        "exec node \"${CLAUDE_PLUGIN_ROOT}/bin/haiku.mjs\" mcp"
       ]
     }
   }

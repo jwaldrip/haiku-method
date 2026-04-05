@@ -7,7 +7,7 @@ import {
 	parseCriteria,
 	parseIntent,
 	toMermaidDefinition,
-} from "@haiku/shared"
+} from "./index.js"
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
@@ -697,6 +697,7 @@ process.on("SIGTERM", async () => {
 	process.exit(0)
 })
 
+// MCP server entry point — invoked by: haiku mcp
 main().catch((err) => {
 	console.error("Fatal error:", err)
 	process.exit(1)
