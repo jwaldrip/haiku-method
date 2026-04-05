@@ -6,6 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { z } from "zod"
+import { emitTelemetry } from "./telemetry.js"
 
 // ── Path resolution ────────────────────────────────────────────────────────
 
@@ -220,6 +221,12 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const data = readJson(path)
 			data[args.field as string] = args.value
 			writeJson(path, data)
+			// Emit telemetry for phase transitions and gate events
+			if (args.field === "phase") {
+				emitTelemetry("haiku.stage.phase", { intent: args.intent as string, stage: args.stage as string, phase: args.value as string })
+			} else if (args.field === "gate_entered_at") {
+				emitTelemetry("haiku.gate.entered", { intent: args.intent as string, stage: args.stage as string })
+			}
 			return text("ok")
 		}
 		case "haiku_stage_start": {
@@ -233,6 +240,7 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			data.gate_entered_at = null
 			data.gate_outcome = null
 			writeJson(path, data)
+			emitTelemetry("haiku.stage.started", { intent: args.intent as string, stage: args.stage as string })
 			return text("ok")
 		}
 		case "haiku_stage_complete": {
@@ -242,6 +250,7 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			data.completed_at = timestamp()
 			data.gate_outcome = (args.gate_outcome as string) || "advanced"
 			writeJson(path, data)
+			emitTelemetry("haiku.stage.completed", { intent: args.intent as string, stage: args.stage as string, gate_outcome: data.gate_outcome as string })
 			return text("ok")
 		}
 
@@ -274,17 +283,20 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			setFrontmatterField(path, "bolt", 1)
 			setFrontmatterField(path, "hat", args.hat)
 			setFrontmatterField(path, "started_at", timestamp())
+			emitTelemetry("haiku.unit.started", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, hat: args.hat as string })
 			return text("ok")
 		}
 		case "haiku_unit_complete": {
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
 			setFrontmatterField(path, "status", "completed")
 			setFrontmatterField(path, "completed_at", timestamp())
+			emitTelemetry("haiku.unit.completed", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string })
 			return text("ok")
 		}
 		case "haiku_unit_advance_hat": {
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
 			setFrontmatterField(path, "hat", args.hat)
+			emitTelemetry("haiku.hat.transition", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, hat: args.hat as string })
 			return text("ok")
 		}
 		case "haiku_unit_increment_bolt": {
@@ -292,6 +304,7 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const { data } = parseFrontmatter(readFileSync(path, "utf8"))
 			const current = (data.bolt as number) || 0
 			setFrontmatterField(path, "bolt", current + 1)
+			emitTelemetry("haiku.bolt.iteration", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, bolt: String(current + 1) })
 			return text(String(current + 1))
 		}
 
