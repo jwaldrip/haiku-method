@@ -634,7 +634,7 @@ Event detected → gate advances on next session or poll</code></pre>
       <div class="block block-done"><strong>Composite Intents</strong><span>Multi-studio parallel stages with sync points</span></div>
       <div class="block block-done"><strong>Post-Delivery Monitoring</strong><span>Already covered by /operate — studio operations templates</span></div>
       <div class="block block-gap"><strong>Capacity Model</strong><span>Historical throughput informing feasibility</span></div>
-      <div class="block block-gap"><strong>Browse Access Control</strong><span>Intent-level visibility and sensitive data masking</span></div>
+      <div class="block block-done"><strong>Access Control</strong><span>Handled by providers — git, ticketing, CRM enforce their own ACLs</span></div>
       <div class="block block-gap"><strong>Studio Versioning</strong><span>Migration path when studio definitions evolve</span></div>
     </div>
   </div>
@@ -746,27 +746,8 @@ Sales Studio:
 # NOT estimates. Historical data about what actually happened.</code></pre>
 </div>
 
-<h2>Wave 2 Gap 6: Browse Access Control</h2>
-<p>The /browse feature shows everything in <code>.haiku/</code>. Sales intents contain confidential deal terms. HR intents contain compensation data.</p>
-
-<div class="gap-card" style="margin-top:1rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed</span> Intent Visibility Tags</h3>
-  <p>Intents declare a <code>visibility:</code> in frontmatter. The /browse SPA filters based on the authenticated user's team membership (from the git provider's team/group API).</p>
-  <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># intent.md
----
-visibility: team      # public | team | private
-team: sales           # which team can see this intent
-sensitive_fields:     # fields to mask in /browse for non-team viewers
-  - deal_amount
-  - contract_terms
----
-
-# /browse behavior:
-# 1. After OAuth, query git provider for user's team memberships
-# 2. Filter intents by visibility + team match
-# 3. Mask sensitive_fields for users outside the team
-# 4. Private intents visible only to the intent creator</code></pre>
-</div>
+<h2>Wave 2 Gap 6: Access Control</h2>
+<p>Not H·AI·K·U's concern. Providers enforce their own access control — git repos have permissions, ticketing has team visibility, CRM has deal ownership. <code>/browse</code> inherits git provider ACLs via OAuth. No additional layer needed.</p>
 
 <h2>Wave 2 Gap 7: Studio Versioning</h2>
 <p>Studios evolve — new stages, renamed hats, new review agents. Active intents using the old definition need a migration path.</p>
@@ -824,7 +805,7 @@ studio_version: 1        # version when intent was created
       <li><strong style="text-decoration:line-through; opacity:0.5">Studio composition</strong> <span style="color:var(--success)">— implemented: composite intents with sync points</span></li>
       <li><strong>Knowledge decay</strong> — freshness metadata + code-drift check at decomposition</li>
       <li><strong>Capacity model</strong> — historical throughput from OTEL data</li>
-      <li><strong>Browse access control</strong> — intent visibility + sensitive field masking</li>
+      <li><strong style="text-decoration:line-through; opacity:0.5">Browse access control</strong> <span style="color:var(--success)">— providers handle ACLs; /browse inherits via OAuth</span></li>
       <li><strong>Studio versioning</strong> — schema version + migration on version mismatch</li>
     </ul>
   </div>
