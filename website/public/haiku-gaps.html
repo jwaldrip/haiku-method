@@ -414,7 +414,7 @@ triggers:
 </div>
 
 <div class="gap-card" style="margin-top:1.5rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed Fix</span> Studio Templates Directory</h3>
+  <h3><span class="tag tag-done">Implemented</span> Studio Templates Directory</h3>
   <p>Add <code>templates/</code> to the studio directory. Each template is a pre-filled intent with parameterized fields.</p>
   <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># customer-success/templates/new-customer-onboarding.md
 ---
@@ -662,7 +662,7 @@ done
 <p>Knowledge artifacts become stale as the product evolves. Detection belongs at the point of use — during decomposition, when a stage loads its inputs — not on a polling schedule.</p>
 
 <div class="gap-card" style="margin-top:1rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed</span> Decay Metadata on Stage Outputs</h3>
+  <h3><span class="tag tag-done">Implemented</span> Decay Metadata on Stage Outputs</h3>
   <p>Stage outputs declare freshness and code dependencies in their frontmatter. When a downstream stage loads the input during decomposition, Claude checks the metadata and surfaces staleness.</p>
   <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># Stage output metadata (written during output persistence, step 4.4)
 ---
@@ -690,7 +690,7 @@ depends_on_code:             # files this artifact describes
 <p>A product launch needs marketing AND software stages running in parallel with sync points. A compliance remediation might require both software development AND documentation. Today, these are separate intents with manual coordination.</p>
 
 <div class="gap-card" style="margin-top:1rem; border-color:var(--accent)">
-  <h3><span class="tag tag-done">Proposed</span> Composite Intents</h3>
+  <h3><span class="tag tag-done">Implemented</span> Composite Intents</h3>
   <p>An intent can declare multiple studios with sync points. Each studio's stages run independently, but specified stages must sync before either can advance.</p>
   <pre style="margin-top:0.75rem; padding:1rem; background:var(--accent-bg); border-radius:0.5rem; font-size:0.8rem; overflow-x:auto; color:var(--accent)"><code># intent.md for a product launch
 ---
@@ -752,7 +752,7 @@ sync:
     </ul>
   </div>
   <div>
-    <h3 style="color:var(--warn)">Wave 2: Proposed</h3>
+    <h3 style="color:var(--success)">Wave 2: All Resolved</h3>
     <ul style="margin-top:0.5rem">
       <li><strong style="text-decoration:line-through; opacity:0.5">Conflict detection</strong> <span style="color:var(--success)">— git handles it; decomposition checks active branches</span></li>
       <li><strong style="text-decoration:line-through; opacity:0.5">Post-delivery monitoring</strong> <span style="color:var(--success)">— already covered by /operate + studio operations</span></li>
