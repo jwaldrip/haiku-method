@@ -125,12 +125,16 @@ const server = new Server(
 	},
 )
 
+import { stateToolDefs, handleStateTool } from "./state-tools.js"
+
 // Inject MCP server into HTTP module for channel notifications
 setMcpServer(server)
 
 // List tools
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
 	tools: [
+		// State management tools
+		...stateToolDefs,
 		{
 			name: "open_review",
 			description:
@@ -313,6 +317,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 // Call tools
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
 	const { name, arguments: args } = request.params
+
+	// State management tools
+	if (name.startsWith("haiku_")) {
+		return handleStateTool(name, (args ?? {}) as Record<string, unknown>)
+	}
 
 	if (name === "open_review") {
 		const input = OpenReviewInput.parse(args)

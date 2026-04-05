@@ -2,6 +2,7 @@ export type {
   IntentGit,
   IntentFrontmatter,
   UnitFrontmatter,
+  StageState,
   DiscoveryFrontmatter,
   Section,
   CriterionItem,

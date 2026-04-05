@@ -5,23 +5,41 @@ export interface IntentGit {
 }
 
 export interface IntentFrontmatter {
-  workflow: string;
-  git: IntentGit;
-  announcements: string[];
+  title?: string;
+  studio: string;
+  mode: string;
+  active_stage: string;
+  status: string;
+  started_at?: string;
+  completed_at?: string | null;
+  // Legacy fields
+  workflow?: string;
+  git?: IntentGit;
+  announcements?: string[];
   passes?: string[];
   active_pass?: string;
   iterates_on?: string;
-  created: string;
-  status: string;
+  created?: string;
   epic?: string;
+  // Composite intents
+  composite?: Array<{ studio: string; stages: string[] }>;
+  sync?: Array<{ wait: string[]; then: string[] }>;
+  composite_state?: Record<string, string>;
 }
 
 export interface UnitFrontmatter {
+  name?: string;
+  type: string;
   status: string;
-  last_updated: string;
   depends_on: string[];
-  branch: string;
-  discipline: string;
+  bolt: number;
+  hat: string;
+  started_at?: string;
+  completed_at?: string | null;
+  // Legacy fields
+  last_updated?: string;
+  branch?: string;
+  discipline?: string;
   pass?: string;
   workflow?: string;
   ticket?: string;
@@ -30,6 +48,16 @@ export interface UnitFrontmatter {
   deployment?: Record<string, unknown>;
   monitoring?: Record<string, unknown>;
   operations?: Record<string, unknown>;
+}
+
+export interface StageState {
+  stage: string;
+  status: string;            // pending | active | completed
+  phase: string;             // decompose | execute | review | persist | gate
+  started_at?: string;
+  completed_at?: string | null;
+  gate_entered_at?: string | null;
+  gate_outcome?: string | null; // advanced | paused | blocked | awaiting
 }
 
 export interface DiscoveryFrontmatter {
