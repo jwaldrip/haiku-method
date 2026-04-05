@@ -1040,9 +1040,8 @@ TeamDelete()
 
 ```bash
 # Read pass configuration from intent.md
-INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-PASSES=$(grep '^passes:' "$INTENT_DIR/intent.md" | sed 's/passes: *//' | sed 's/\[//;s/\]//' | tr ',' '\n' | sed 's/ //g' | grep -v '^$')
-ACTIVE_PASS=$(grep '^active_pass:' "$INTENT_DIR/intent.md" | sed 's/active_pass: *//' | tr -d '"')
+PASSES=$(haiku_intent_get { slug: INTENT_SLUG, field: "passes" })
+ACTIVE_PASS=$(haiku_intent_get { slug: INTENT_SLUG, field: "active_pass" })
 
 if [ -n "$PASSES" ] && [ -n "$ACTIVE_PASS" ]; then
   # Find the next pass after the active one

@@ -89,8 +89,8 @@ done
 
 Metrics to extract:
 - **Units completed** vs total
-- **Total bolts** (from unit frontmatter via `haiku_unit_get { field: "bolt" }`)
-- **Studio used** (from intent frontmatter via `haiku_intent_get { field: "studio" }`)
+- **Total bolts** (from unit frontmatter via `haiku_unit_get { intent, stage, unit, field: "bolt" }` for each unit)
+- **Studio used** (from intent frontmatter via `haiku_intent_get { slug, field: "studio" }`)
 - **Blockers encountered** (from unit scratchpads and state)
 - **Quality gate pass/fail history** (from state if recorded)
 - **Operational task status** (from operation-status.json)
@@ -474,10 +474,8 @@ Format for org memory entries:
 ```
 
 4. **Archive intent** by setting status to archived:
-```bash
-# Update intent.md frontmatter
-sed -i.bak 's/^status:.*$/status: archived/' "$INTENT_DIR/intent.md"
-rm -f "$INTENT_DIR/intent.md.bak"
+```
+haiku_intent_set { slug: INTENT_SLUG, field: "status", value: "archived" }
 ```
 
 5. **Output**:

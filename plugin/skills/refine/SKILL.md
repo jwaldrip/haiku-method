@@ -30,8 +30,7 @@ If `CLAUDE_CODE_IS_COWORK=1`, stop immediately with the message above. Do NOT pr
 # Intent slug is derived from .haiku directory structure
 INTENT_SLUG=$(basename "$(find .haiku -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)")
 INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
-STATE=$(haiku_stage_get { intent, stage, field: "phase" })
-INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
+STATE=$(haiku_stage_get { intent: INTENT_SLUG, stage: ACTIVE_STAGE, field: "phase" })
 ```
 
 If no state exists:

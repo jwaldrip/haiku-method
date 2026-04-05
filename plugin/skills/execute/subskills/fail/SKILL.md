@@ -28,8 +28,10 @@ If already at the first hat (planner by default), this command is blocked.
 ### Step 1: Load Current State
 
 ```bash
-# Intent-level state is stored on current branch (intent branch)
-STATE=$(haiku_stage_get { intent, stage, field: "phase" })
+# Discover active intent and stage
+INTENT_SLUG=$(basename "$(find .haiku -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)")
+ACTIVE_STAGE=$(haiku_intent_get { slug: INTENT_SLUG, field: "active_stage" })
+PHASE=$(haiku_stage_get { intent: INTENT_SLUG, stage: ACTIVE_STAGE, field: "phase" })
 ```
 
 ### Step 2: Determine Previous Hat
