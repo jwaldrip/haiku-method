@@ -27466,21 +27466,181 @@ var init_subagent_hook = __esm({
   }
 });
 
-// src/hooks/inject-context.ts
-import { existsSync as existsSync7, readFileSync as readFileSync6, readdirSync as readdirSync6 } from "node:fs";
+// src/migrate.ts
+var migrate_exports = {};
+__export(migrate_exports, {
+  runMigrate: () => runMigrate
+});
+import { existsSync as existsSync7, mkdirSync as mkdirSync3, readFileSync as readFileSync6, readdirSync as readdirSync6, writeFileSync as writeFileSync4, cpSync } from "node:fs";
 import { join as join10, basename as basename5 } from "node:path";
+function readFrontmatter2(filePath) {
+  const raw = readFileSync6(filePath, "utf8");
+  const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!match) return { data: {}, body: raw };
+  const data = {};
+  for (const line of match[1].split("\n")) {
+    const kv = line.match(/^([\w][\w-]*):\s*(.*)$/);
+    if (kv) {
+      const [, k2, v2] = kv;
+      if (v2 === "null") data[k2] = null;
+      else if (v2 === "true") data[k2] = true;
+      else if (v2 === "false") data[k2] = false;
+      else if (/^-?\d+$/.test(v2)) data[k2] = parseInt(v2, 10);
+      else if (v2.startsWith("[") && v2.endsWith("]")) {
+        data[k2] = v2.slice(1, -1).split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+      } else data[k2] = v2.replace(/^["']|["']$/g, "");
+    }
+  }
+  return { data, body: match[2].trim() };
+}
+function timestamp2() {
+  return (/* @__PURE__ */ new Date()).toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+async function runMigrate(args2) {
+  const dryRun = args2.includes("--dry-run");
+  const cwd = process.cwd();
+  const oldDir = join10(cwd, ".ai-dlc");
+  const newDir = join10(cwd, ".haiku", "intents");
+  if (!existsSync7(oldDir)) {
+    console.log("No .ai-dlc/ directory found. Nothing to migrate.");
+    return;
+  }
+  const entries = readdirSync6(oldDir).filter((d) => {
+    const path = join10(oldDir, d);
+    return existsSync7(join10(path, "intent.md"));
+  });
+  if (entries.length === 0) {
+    console.log("No intents found in .ai-dlc/. Nothing to migrate.");
+    return;
+  }
+  console.log(`Found ${entries.length} intent(s) to migrate.
+`);
+  let migrated = 0;
+  let skipped = 0;
+  for (const slug of entries) {
+    const srcDir = join10(oldDir, slug);
+    const destDir = join10(newDir, slug);
+    if (existsSync7(destDir)) {
+      console.log(`  SKIP: ${slug} (already exists in .haiku/intents/)`);
+      skipped++;
+      continue;
+    }
+    const { data: intentFm, body: intentBody } = readFrontmatter2(join10(srcDir, "intent.md"));
+    const status = intentFm.status || "active";
+    const created = intentFm.created || timestamp2().split("T")[0];
+    const title = intentBody.match(/^# (.+)$/m)?.[1] || slug;
+    if (dryRun) {
+      console.log(`  DRY RUN: ${slug} (status: ${status})`);
+      migrated++;
+      continue;
+    }
+    mkdirSync3(join10(destDir, "knowledge"), { recursive: true });
+    if (status === "completed") {
+      mkdirSync3(join10(destDir, "stages", "development", "units"), { recursive: true });
+      writeFileSync4(
+        join10(destDir, "intent.md"),
+        `---
+title: "${title}"
+studio: software
+mode: continuous
+active_stage: development
+status: completed
+started_at: ${created}T00:00:00Z
+completed_at: ${created}T23:59:59Z
+---
+
+${intentBody}
+`
+      );
+      writeFileSync4(
+        join10(destDir, "stages", "development", "state.json"),
+        JSON.stringify({ stage: "development", status: "completed", phase: "gate", started_at: `${created}T00:00:00Z`, completed_at: `${created}T23:59:59Z`, gate_entered_at: null, gate_outcome: "advanced" }, null, 2) + "\n"
+      );
+      const unitFiles = readdirSync6(srcDir).filter((f) => f.startsWith("unit-") && f.endsWith(".md"));
+      for (const unitFile of unitFiles) {
+        const { data: unitFm, body: unitBody } = readFrontmatter2(join10(srcDir, unitFile));
+        const uStatus = unitFm.status || "pending";
+        const uDeps = unitFm.depends_on || [];
+        const uDiscipline = unitFm.discipline || "fullstack";
+        const uUpdated = unitFm.last_updated || null;
+        writeFileSync4(
+          join10(destDir, "stages", "development", "units", unitFile),
+          `---
+name: ${basename5(unitFile, ".md")}
+type: ${uDiscipline}
+status: ${uStatus}
+depends_on: [${uDeps.join(", ")}]
+bolt: 0
+hat: ""
+started_at: ${uUpdated || "null"}
+completed_at: ${uStatus === "completed" ? uUpdated || "null" : "null"}
+---
+
+${unitBody}
+`
+        );
+      }
+      console.log(`  MIGRATED: ${slug} (completed, ${unitFiles.length} units)`);
+    } else {
+      writeFileSync4(
+        join10(destDir, "intent.md"),
+        `---
+title: "${title}"
+studio: software
+mode: continuous
+active_stage: ""
+status: active
+started_at: ${timestamp2()}
+completed_at: null
+---
+
+${intentBody}
+`
+      );
+      console.log(`  MIGRATED: ${slug} (active \u2014 reset for fresh start, run /haiku:run)`);
+    }
+    if (existsSync7(join10(srcDir, "discovery.md"))) {
+      cpSync(join10(srcDir, "discovery.md"), join10(destDir, "knowledge", "discovery.md"));
+    }
+    if (existsSync7(join10(srcDir, "knowledge"))) {
+      try {
+        cpSync(join10(srcDir, "knowledge"), join10(destDir, "knowledge"), { recursive: true });
+      } catch {
+      }
+    }
+    migrated++;
+  }
+  console.log(`
+Migration complete: ${migrated} migrated, ${skipped} skipped.`);
+  if (dryRun) {
+    console.log("(Dry run \u2014 no files were written. Run without --dry-run to migrate.)");
+  } else {
+    console.log("\nNext steps:");
+    console.log("  git add .haiku/intents/ && git commit -m 'haiku: migrate intents from .ai-dlc/'");
+    console.log("  For active intents: run /haiku:run to start from inception");
+  }
+}
+var init_migrate = __esm({
+  "src/migrate.ts"() {
+    "use strict";
+  }
+});
+
+// src/hooks/inject-context.ts
+import { existsSync as existsSync8, readFileSync as readFileSync7, readdirSync as readdirSync7 } from "node:fs";
+import { join as join11, basename as basename6 } from "node:path";
 import { execSync as execSync4 } from "node:child_process";
 function out3(s) {
   process.stdout.write(s + "\n");
 }
 function getHatSequence2(stageName, studioName, pluginRoot) {
-  const stageFile = join10(pluginRoot, "studios", studioName, "stages", stageName, "STAGE.md");
-  const projectStageFile = join10(process.cwd(), ".haiku", "studios", studioName, "stages", stageName, "STAGE.md");
+  const stageFile = join11(pluginRoot, "studios", studioName, "stages", stageName, "STAGE.md");
+  const projectStageFile = join11(process.cwd(), ".haiku", "studios", studioName, "stages", stageName, "STAGE.md");
   let targetFile = "";
-  if (existsSync7(projectStageFile)) targetFile = projectStageFile;
-  else if (existsSync7(stageFile)) targetFile = stageFile;
+  if (existsSync8(projectStageFile)) targetFile = projectStageFile;
+  else if (existsSync8(stageFile)) targetFile = stageFile;
   if (!targetFile) return "planner \u2192 builder \u2192 reviewer";
-  const content = readFileSync6(targetFile, "utf8");
+  const content = readFileSync7(targetFile, "utf8");
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
   if (!fmMatch) return "planner \u2192 builder \u2192 reviewer";
   const fm = fmMatch[1];
@@ -27500,13 +27660,13 @@ function getHatSequence2(stageName, studioName, pluginRoot) {
   return hats.length > 0 ? hats.join(" \u2192 ") : "planner \u2192 builder \u2192 reviewer";
 }
 function readHatInstructions2(hatName, stageName, studioName, pluginRoot) {
-  const projectHatFile = join10(process.cwd(), ".haiku", "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
-  const pluginHatFile = join10(pluginRoot, "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
+  const projectHatFile = join11(process.cwd(), ".haiku", "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
+  const pluginHatFile = join11(pluginRoot, "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
   let hatFile = "";
-  if (existsSync7(projectHatFile)) hatFile = projectHatFile;
-  else if (existsSync7(pluginHatFile)) hatFile = pluginHatFile;
+  if (existsSync8(projectHatFile)) hatFile = projectHatFile;
+  else if (existsSync8(pluginHatFile)) hatFile = pluginHatFile;
   if (!hatFile) return "";
-  const content = readFileSync6(hatFile, "utf8");
+  const content = readFileSync7(hatFile, "utf8");
   const parts = content.split("---");
   if (parts.length >= 3) {
     return parts.slice(2).join("---").trim();
@@ -27514,11 +27674,11 @@ function readHatInstructions2(hatName, stageName, studioName, pluginRoot) {
   return content;
 }
 function readHatMetadata2(hatName, stageName, studioName, pluginRoot) {
-  const projectHatFile = join10(process.cwd(), ".haiku", "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
-  const pluginHatFile = join10(pluginRoot, "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
+  const projectHatFile = join11(process.cwd(), ".haiku", "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
+  const pluginHatFile = join11(pluginRoot, "studios", studioName, "stages", stageName, "hats", `${hatName}.md`);
   let hatFile = "";
-  if (existsSync7(projectHatFile)) hatFile = projectHatFile;
-  else if (existsSync7(pluginHatFile)) hatFile = pluginHatFile;
+  if (existsSync8(projectHatFile)) hatFile = projectHatFile;
+  else if (existsSync8(pluginHatFile)) hatFile = pluginHatFile;
   if (!hatFile) return { name: "", description: "" };
   return {
     name: readFrontmatterField(hatFile, "name"),
@@ -27545,7 +27705,7 @@ function outputTaskRouting() {
   out3("");
 }
 function outputSetupHint() {
-  if (!existsSync7(join10(process.cwd(), ".haiku", "settings.yml"))) {
+  if (!existsSync8(join11(process.cwd(), ".haiku", "settings.yml"))) {
     out3("> **First time?** Run `/haiku:setup` to configure H\xB7AI\xB7K\xB7U for this project (auto-detects providers, VCS settings, etc.)");
     out3("");
   }
@@ -27562,16 +27722,33 @@ async function injectContext(input, pluginRoot) {
   const source = input.source ?? "startup";
   const currentBranch = getCurrentBranch();
   const repoRoot = getRepoRoot();
+  const oldAiDlcDir = join11(repoRoot, ".ai-dlc");
+  if (existsSync8(oldAiDlcDir)) {
+    const haikuIntentsDir = join11(repoRoot, ".haiku", "intents");
+    const oldEntries = readdirSync7(oldAiDlcDir).filter(
+      (d) => existsSync8(join11(oldAiDlcDir, d, "intent.md"))
+    );
+    const needsMigration = oldEntries.some(
+      (slug) => !existsSync8(join11(haikuIntentsDir, slug, "intent.md"))
+    );
+    if (needsMigration) {
+      try {
+        const { runMigrate: runMigrate2 } = await Promise.resolve().then(() => (init_migrate(), migrate_exports));
+        await runMigrate2([]);
+      } catch {
+      }
+    }
+  }
   const defaultBranch = getDefaultBranch();
   if (currentBranch === defaultBranch) {
-    const intentsDir = join10(repoRoot, ".haiku", "intents");
-    if (existsSync7(intentsDir)) {
-      for (const slug of readdirSync6(intentsDir)) {
-        const intentFile = join10(intentsDir, slug, "intent.md");
-        if (!existsSync7(intentFile)) continue;
+    const intentsDir = join11(repoRoot, ".haiku", "intents");
+    if (existsSync8(intentsDir)) {
+      for (const slug of readdirSync7(intentsDir)) {
+        const intentFile = join11(intentsDir, slug, "intent.md");
+        if (!existsSync8(intentFile)) continue;
         const reconcileStatus = readFrontmatterField(intentFile, "status");
         if (reconcileStatus !== "active") continue;
-        const unitFiles = findUnitFiles(join10(intentsDir, slug));
+        const unitFiles = findUnitFiles(join11(intentsDir, slug));
         if (unitFiles.length === 0) continue;
         let allDone = true;
         for (const uf of unitFiles) {
@@ -27583,7 +27760,7 @@ async function injectContext(input, pluginRoot) {
         }
         if (allDone) {
           setFrontmatterField2(intentFile, "status", "completed");
-          checkIntentCriteria(join10(intentsDir, slug));
+          checkIntentCriteria(join11(intentsDir, slug));
         }
       }
     }
@@ -27594,15 +27771,15 @@ async function injectContext(input, pluginRoot) {
     iterationJson = stateLoad(intentDir2, "iteration.json");
   }
   if (!iterationJson) {
-    const intentsDir = join10(repoRoot, ".haiku", "intents");
+    const intentsDir = join11(repoRoot, ".haiku", "intents");
     const filesystemIntents = [];
-    if (existsSync7(intentsDir)) {
-      for (const slug of readdirSync6(intentsDir)) {
-        const intentFile = join10(intentsDir, slug, "intent.md");
-        if (!existsSync7(intentFile)) continue;
+    if (existsSync8(intentsDir)) {
+      for (const slug of readdirSync7(intentsDir)) {
+        const intentFile = join11(intentsDir, slug, "intent.md");
+        if (!existsSync8(intentFile)) continue;
         const status2 = readFrontmatterField(intentFile, "status");
         if (status2 !== "active") continue;
-        const unitFiles = findUnitFiles(join10(intentsDir, slug));
+        const unitFiles = findUnitFiles(join11(intentsDir, slug));
         let completed = 0;
         for (const uf of unitFiles) {
           if (readFrontmatterField(uf, "status") === "completed") completed++;
@@ -27625,7 +27802,7 @@ async function injectContext(input, pluginRoot) {
       out3("");
       out3("**To resume:** `/haiku:resume <slug>` or `/haiku:resume` if only one");
       out3("");
-      if (!existsSync7(join10(process.cwd(), ".haiku", "settings.yml"))) {
+      if (!existsSync8(join11(process.cwd(), ".haiku", "settings.yml"))) {
         out3("> **Tip:** Run `/haiku:setup` to configure providers and VCS settings. This enables automatic ticket sync during elaboration.");
         out3("");
       }
@@ -27678,15 +27855,15 @@ async function injectContext(input, pluginRoot) {
   let activeStage = "";
   let studio = "";
   let activePass = "";
-  if (intentDir2 && existsSync7(join10(intentDir2, "intent.md"))) {
-    activeStage = readFrontmatterField(join10(intentDir2, "intent.md"), "active_stage");
-    studio = readFrontmatterField(join10(intentDir2, "intent.md"), "studio");
-    activePass = readFrontmatterField(join10(intentDir2, "intent.md"), "active_pass");
+  if (intentDir2 && existsSync8(join11(intentDir2, "intent.md"))) {
+    activeStage = readFrontmatterField(join11(intentDir2, "intent.md"), "active_stage");
+    studio = readFrontmatterField(join11(intentDir2, "intent.md"), "studio");
+    activePass = readFrontmatterField(join11(intentDir2, "intent.md"), "active_pass");
   }
   if (!activeStage) activeStage = "research";
   if (!studio) studio = "ideation";
   const stageHatsStr = getHatSequence2(activeStage, studio, pluginRoot);
-  const intentSlug = intentDir2 ? basename5(intentDir2) : "";
+  const intentSlug = intentDir2 ? basename6(intentDir2) : "";
   if (status === "complete" || status === "completed") {
     out3("## H\xB7AI\xB7K\xB7U: Task Complete");
     out3("");
@@ -27701,10 +27878,10 @@ async function injectContext(input, pluginRoot) {
   }
   out3(statusLine);
   out3("");
-  const learningsDir = join10(process.cwd(), "docs", "solutions");
-  if (existsSync7(learningsDir)) {
+  const learningsDir = join11(process.cwd(), "docs", "solutions");
+  if (existsSync8(learningsDir)) {
     try {
-      const files = readdirSync6(learningsDir).filter((f) => f.endsWith(".md"));
+      const files = readdirSync7(learningsDir).filter((f) => f.endsWith(".md"));
       if (files.length > 0) {
         out3("");
         out3(`\u{1F4DA} **${files.length} compound learnings available** in \`docs/solutions/\`.`);
@@ -27714,20 +27891,20 @@ async function injectContext(input, pluginRoot) {
     } catch {
     }
   }
-  if (intentDir2 && existsSync7(join10(intentDir2, "intent.md"))) {
+  if (intentDir2 && existsSync8(join11(intentDir2, "intent.md"))) {
     out3("### Intent");
     out3("");
-    out3(readFileSync6(join10(intentDir2, "intent.md"), "utf8"));
+    out3(readFileSync7(join11(intentDir2, "intent.md"), "utf8"));
     out3("");
   }
-  if (intentDir2 && existsSync7(join10(intentDir2, "completion-criteria.md"))) {
+  if (intentDir2 && existsSync8(join11(intentDir2, "completion-criteria.md"))) {
     out3("### Completion Criteria");
     out3("");
-    out3(readFileSync6(join10(intentDir2, "completion-criteria.md"), "utf8"));
+    out3(readFileSync7(join11(intentDir2, "completion-criteria.md"), "utf8"));
     out3("");
   }
-  if (intentDir2 && existsSync7(join10(intentDir2, "discovery.md"))) {
-    const discoveryContent = readFileSync6(join10(intentDir2, "discovery.md"), "utf8");
+  if (intentDir2 && existsSync8(join11(intentDir2, "discovery.md"))) {
+    const discoveryContent = readFileSync7(join11(intentDir2, "discovery.md"), "utf8");
     const sectionCount = discoveryContent.split("\n").filter((l) => l.startsWith("## ")).length;
     if (sectionCount > 0) {
       out3("### Discovery Log");
@@ -27777,7 +27954,7 @@ async function injectContext(input, pluginRoot) {
       let blocked = 0;
       let ready = 0;
       for (const uf of unitFiles) {
-        const name = basename5(uf, ".md");
+        const name = basename6(uf, ".md");
         const unitStatus = readFrontmatterField(uf, "status") || "pending";
         out3(`| ${name} | ${unitStatus} |`);
         switch (unitStatus) {
@@ -27807,8 +27984,8 @@ async function injectContext(input, pluginRoot) {
     const teamName = `haiku-${intentSlug}`;
     const configDir = process.env.CLAUDE_CONFIG_DIR ?? "";
     if (configDir) {
-      const teamConfig = join10(configDir, "teams", teamName, "config.json");
-      if (existsSync7(teamConfig)) {
+      const teamConfig = join11(configDir, "teams", teamName, "config.json");
+      if (existsSync8(teamConfig)) {
         out3("### Agent Teams");
         out3("");
         out3(`**Team:** \`${teamName}\``);
@@ -27910,10 +28087,10 @@ var hooks_exports = {};
 __export(hooks_exports, {
   runHook: () => runHook
 });
-import { readFileSync as readFileSync7 } from "node:fs";
+import { readFileSync as readFileSync8 } from "node:fs";
 function readStdin() {
   try {
-    return readFileSync7(0, "utf8");
+    return readFileSync8(0, "utf8");
   } catch {
     return "";
   }
@@ -27975,166 +28152,6 @@ var init_hooks = __esm({
     init_subagent_hook();
     init_subagent_context();
     init_inject_context();
-  }
-});
-
-// src/migrate.ts
-var migrate_exports = {};
-__export(migrate_exports, {
-  runMigrate: () => runMigrate
-});
-import { existsSync as existsSync8, mkdirSync as mkdirSync3, readFileSync as readFileSync8, readdirSync as readdirSync7, writeFileSync as writeFileSync4, cpSync } from "node:fs";
-import { join as join11, basename as basename6 } from "node:path";
-function readFrontmatter2(filePath) {
-  const raw = readFileSync8(filePath, "utf8");
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) return { data: {}, body: raw };
-  const data = {};
-  for (const line of match[1].split("\n")) {
-    const kv = line.match(/^([\w][\w-]*):\s*(.*)$/);
-    if (kv) {
-      const [, k2, v2] = kv;
-      if (v2 === "null") data[k2] = null;
-      else if (v2 === "true") data[k2] = true;
-      else if (v2 === "false") data[k2] = false;
-      else if (/^-?\d+$/.test(v2)) data[k2] = parseInt(v2, 10);
-      else if (v2.startsWith("[") && v2.endsWith("]")) {
-        data[k2] = v2.slice(1, -1).split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
-      } else data[k2] = v2.replace(/^["']|["']$/g, "");
-    }
-  }
-  return { data, body: match[2].trim() };
-}
-function timestamp2() {
-  return (/* @__PURE__ */ new Date()).toISOString().replace(/\.\d{3}Z$/, "Z");
-}
-async function runMigrate(args2) {
-  const dryRun = args2.includes("--dry-run");
-  const cwd = process.cwd();
-  const oldDir = join11(cwd, ".ai-dlc");
-  const newDir = join11(cwd, ".haiku", "intents");
-  if (!existsSync8(oldDir)) {
-    console.log("No .ai-dlc/ directory found. Nothing to migrate.");
-    return;
-  }
-  const entries = readdirSync7(oldDir).filter((d) => {
-    const path = join11(oldDir, d);
-    return existsSync8(join11(path, "intent.md"));
-  });
-  if (entries.length === 0) {
-    console.log("No intents found in .ai-dlc/. Nothing to migrate.");
-    return;
-  }
-  console.log(`Found ${entries.length} intent(s) to migrate.
-`);
-  let migrated = 0;
-  let skipped = 0;
-  for (const slug of entries) {
-    const srcDir = join11(oldDir, slug);
-    const destDir = join11(newDir, slug);
-    if (existsSync8(destDir)) {
-      console.log(`  SKIP: ${slug} (already exists in .haiku/intents/)`);
-      skipped++;
-      continue;
-    }
-    const { data: intentFm, body: intentBody } = readFrontmatter2(join11(srcDir, "intent.md"));
-    const status = intentFm.status || "active";
-    const created = intentFm.created || timestamp2().split("T")[0];
-    const title = intentBody.match(/^# (.+)$/m)?.[1] || slug;
-    if (dryRun) {
-      console.log(`  DRY RUN: ${slug} (status: ${status})`);
-      migrated++;
-      continue;
-    }
-    mkdirSync3(join11(destDir, "knowledge"), { recursive: true });
-    if (status === "completed") {
-      mkdirSync3(join11(destDir, "stages", "development", "units"), { recursive: true });
-      writeFileSync4(
-        join11(destDir, "intent.md"),
-        `---
-title: "${title}"
-studio: software
-mode: continuous
-active_stage: development
-status: completed
-started_at: ${created}T00:00:00Z
-completed_at: ${created}T23:59:59Z
----
-
-${intentBody}
-`
-      );
-      writeFileSync4(
-        join11(destDir, "stages", "development", "state.json"),
-        JSON.stringify({ stage: "development", status: "completed", phase: "gate", started_at: `${created}T00:00:00Z`, completed_at: `${created}T23:59:59Z`, gate_entered_at: null, gate_outcome: "advanced" }, null, 2) + "\n"
-      );
-      const unitFiles = readdirSync7(srcDir).filter((f) => f.startsWith("unit-") && f.endsWith(".md"));
-      for (const unitFile of unitFiles) {
-        const { data: unitFm, body: unitBody } = readFrontmatter2(join11(srcDir, unitFile));
-        const uStatus = unitFm.status || "pending";
-        const uDeps = unitFm.depends_on || [];
-        const uDiscipline = unitFm.discipline || "fullstack";
-        const uUpdated = unitFm.last_updated || null;
-        writeFileSync4(
-          join11(destDir, "stages", "development", "units", unitFile),
-          `---
-name: ${basename6(unitFile, ".md")}
-type: ${uDiscipline}
-status: ${uStatus}
-depends_on: [${uDeps.join(", ")}]
-bolt: 0
-hat: ""
-started_at: ${uUpdated || "null"}
-completed_at: ${uStatus === "completed" ? uUpdated || "null" : "null"}
----
-
-${unitBody}
-`
-        );
-      }
-      console.log(`  MIGRATED: ${slug} (completed, ${unitFiles.length} units)`);
-    } else {
-      writeFileSync4(
-        join11(destDir, "intent.md"),
-        `---
-title: "${title}"
-studio: software
-mode: continuous
-active_stage: ""
-status: active
-started_at: ${timestamp2()}
-completed_at: null
----
-
-${intentBody}
-`
-      );
-      console.log(`  MIGRATED: ${slug} (active \u2014 reset for fresh start, run /haiku:run)`);
-    }
-    if (existsSync8(join11(srcDir, "discovery.md"))) {
-      cpSync(join11(srcDir, "discovery.md"), join11(destDir, "knowledge", "discovery.md"));
-    }
-    if (existsSync8(join11(srcDir, "knowledge"))) {
-      try {
-        cpSync(join11(srcDir, "knowledge"), join11(destDir, "knowledge"), { recursive: true });
-      } catch {
-      }
-    }
-    migrated++;
-  }
-  console.log(`
-Migration complete: ${migrated} migrated, ${skipped} skipped.`);
-  if (dryRun) {
-    console.log("(Dry run \u2014 no files were written. Run without --dry-run to migrate.)");
-  } else {
-    console.log("\nNext steps:");
-    console.log("  git add .haiku/intents/ && git commit -m 'haiku: migrate intents from .ai-dlc/'");
-    console.log("  For active intents: run /haiku:run to start from inception");
-  }
-}
-var init_migrate = __esm({
-  "src/migrate.ts"() {
-    "use strict";
   }
 });
 

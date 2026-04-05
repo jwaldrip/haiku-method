@@ -138,6 +138,26 @@ export async function injectContext(input: Record<string, unknown>, pluginRoot: 
 	const repoRoot = getRepoRoot()
 
 	// ========================================================================
+	// AUTO-MIGRATE: Convert .ai-dlc/ intents to .haiku/ on session start
+	// ========================================================================
+	const oldAiDlcDir = join(repoRoot, ".ai-dlc")
+	if (existsSync(oldAiDlcDir)) {
+		const haikuIntentsDir = join(repoRoot, ".haiku", "intents")
+		const oldEntries = readdirSync(oldAiDlcDir).filter(d =>
+			existsSync(join(oldAiDlcDir, d, "intent.md"))
+		)
+		const needsMigration = oldEntries.some(slug =>
+			!existsSync(join(haikuIntentsDir, slug, "intent.md"))
+		)
+		if (needsMigration) {
+			try {
+				const { runMigrate } = await import("../migrate.js")
+				await runMigrate([])
+			} catch { /* migration failure is non-fatal */ }
+		}
+	}
+
+	// ========================================================================
 	// POST-MERGE RECONCILIATION: Fix stale statuses on default branch
 	// ========================================================================
 	const defaultBranch = getDefaultBranch()
