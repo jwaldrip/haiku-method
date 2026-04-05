@@ -117,7 +117,7 @@ hku_run_plan_phase "$intent_dir" "$stage_name" "$studio_name"
 
 This emits structured context. Use it to decompose the stage into units:
 
-1. **Load ALL resolved input artifacts as context** — Read each file path from the resolved inputs. These are outputs from prior stages that feed this one (defined in the stage's `inputs:` field).
+1. **Load ALL resolved input artifacts as context** — Read each file path from the resolved inputs. These are outputs from prior stages that feed this one (defined in the stage's `inputs:` field). Check input freshness metadata (`freshness:`, `depends_on_code:`) — if an input is stale or its described code has drifted, surface this and consider a stage-scoped refinement.
 2. **If stage has existing units:** Resume — skip to step 4.2 (execute).
 3. **If no units exist:** Run elaboration sub-skills parameterized by stage context:
    - **gather** — Stage inputs drive what to gather
