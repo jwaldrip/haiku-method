@@ -80,11 +80,7 @@ Studios are selected during `/haiku:new` and their stages run automatically via 
 
 #### Stage Constraints
 
-<<<<<<< HEAD
 Each stage restricts which hats are available during its execution. Hats are defined as files in `stages/{stage}/hats/{hat}.md`, ensuring the right discipline is applied at the right time.
-=======
-Each stage restricts which hats are available during its execution. Hats are defined as separate files at `stages/{stage}/hats/{hat}.md`, ensuring the right discipline is applied at the right time.
->>>>>>> 88bf3585c47301617dc53f3f900fe85e8303f2f3
 
 | Stage | Available Hats | Focus |
 |-------|---------------|-------|
