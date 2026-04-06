@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import type { BrowseProvider, HaikuIntentDetail, HaikuStageState, HaikuUnit } from "@/lib/browse/types"
+import type { BrowseProvider, HaikuAsset, HaikuIntentDetail, HaikuStageState, HaikuUnit } from "@/lib/browse/types"
 import { formatDate, formatDuration } from "@/lib/browse/types"
 import { buildBrowseUrl } from "@/lib/browse/url"
 import type { BrowseLocation } from "@/lib/browse/url"
@@ -12,6 +12,8 @@ import { resolveLinks } from "@/lib/browse/resolve-links"
 import type { ProviderLink } from "@/lib/browse/resolve-links"
 import { UnitDetailView } from "./UnitDetailView"
 import { IntentKanban } from "./KanbanView"
+import { AuthenticatedMedia } from "./AuthenticatedMedia"
+import { AssetLightbox } from "./AssetLightbox"
 
 function titleCase(s: string): string {
 	return s
@@ -47,6 +49,9 @@ export function IntentDetailView({ intent, provider, location, onBack }: Props) 
 	const [viewMode, setViewMode] = useState<"pipeline" | "board">("pipeline")
 	const [gateAction, setGateAction] = useState<"idle" | "approving" | "rejecting" | "success" | "error">("idle")
 	const [settings, setSettings] = useState<Record<string, unknown> | null>(null)
+	const [lightboxAsset, setLightboxAsset] = useState<HaikuAsset | null>(null)
+
+	const host = location?.host || ""
 
 	// Load settings once for provider link resolution
 	useEffect(() => {
@@ -402,6 +407,20 @@ export function IntentDetailView({ intent, provider, location, onBack }: Props) 
 					</div>
 				</section>
 			)}
+
+			{/* Assets */}
+			{intent.assets.length > 0 && host && (
+				<AssetsSection assets={intent.assets} host={host} onSelect={setLightboxAsset} />
+			)}
+
+			{/* Asset Lightbox */}
+			{lightboxAsset && host && (
+				<AssetLightbox
+					asset={lightboxAsset}
+					host={host}
+					onClose={() => setLightboxAsset(null)}
+				/>
+			)}
 		</div>
 	)
 }
@@ -544,5 +563,62 @@ function StageDetail({ stage, onSelectUnit }: { stage: HaikuStageState; onSelect
 				)
 			})}
 		</div>
+	)
+}
+
+/** Group assets by their directory path and render as a grid with thumbnails */
+function AssetsSection({ assets, host, onSelect }: { assets: HaikuAsset[]; host: string; onSelect: (a: HaikuAsset) => void }) {
+	// Group assets by directory
+	const grouped = new Map<string, HaikuAsset[]>()
+	for (const asset of assets) {
+		const dir = asset.path.includes("/")
+			? asset.path.substring(0, asset.path.lastIndexOf("/") + 1)
+			: ""
+		const existing = grouped.get(dir) || []
+		existing.push(asset)
+		grouped.set(dir, existing)
+	}
+
+	return (
+		<section className="mb-8">
+			<h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-stone-400">
+				Assets
+			</h2>
+			<div className="space-y-6">
+				{Array.from(grouped.entries()).map(([dir, dirAssets]) => (
+					<div key={dir || "__root__"}>
+						{dir && (
+							<h3 className="mb-2 text-xs font-mono text-stone-500 dark:text-stone-400">
+								{dir}
+							</h3>
+						)}
+						<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+							{dirAssets.map((asset) => (
+								<button
+									key={asset.path}
+									onClick={() => onSelect(asset)}
+									className="group overflow-hidden rounded-lg border border-stone-200 transition hover:border-teal-300 hover:shadow-sm dark:border-stone-700 dark:hover:border-teal-700"
+								>
+									<div className="overflow-hidden">
+										<AuthenticatedMedia
+											rawUrl={asset.rawUrl}
+											name={asset.name}
+											host={host}
+											onClick={() => onSelect(asset)}
+											className="rounded-t-lg"
+										/>
+									</div>
+									<div className="border-t border-stone-100 px-3 py-2 dark:border-stone-800">
+										<p className="truncate text-xs font-medium text-stone-700 group-hover:text-teal-600 dark:text-stone-300 dark:group-hover:text-teal-400">
+											{asset.name}
+										</p>
+									</div>
+								</button>
+							))}
+						</div>
+					</div>
+				))}
+			</div>
+		</section>
 	)
 }
