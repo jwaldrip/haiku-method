@@ -49,7 +49,7 @@ When `--template` is provided, the intent is seeded from a studio template file:
 3. **Apply parameter substitution**: Replace `{{ param }}` placeholders in unit criteria and content.
 4. **Create units**: Write pre-filled unit files from the template's `units:` section to the appropriate stage directories.
 5. **Apply stage override**: If the template specifies `stages-override:`, only those stages are active (others skipped).
-6. **Skip decomposition**: Since units are pre-defined, the first `/haiku:run` skips the decompose step and goes straight to execution.
+6. **Skip elaboration**: Since units are pre-defined, the first `/haiku:run` skips the elaboration step and goes straight to execution.
 
 **Example:**
 ```

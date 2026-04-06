@@ -1,6 +1,6 @@
 ---
 name: inception
-description: Understand the problem, define success, and decompose into units
+description: Understand the problem, define success, and elaborate into units
 hats: [architect, decomposer]
 review: ask
 unit_types: [research, backend, frontend]
@@ -19,11 +19,11 @@ Good criteria examples:
 Bad criteria examples:
 - "Domain is understood"
 - "Units have criteria"
-- "Decomposition is complete"
+- "Elaboration is complete"
 
 ## Overlap Awareness
 
-During decomposition, check for other active H·AI·K·U branches working on overlapping files:
+During elaboration, check for other active H·AI·K·U branches working on overlapping files:
 
 ```bash
 # List active haiku branches and their changed files

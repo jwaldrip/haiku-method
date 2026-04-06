@@ -161,4 +161,4 @@ DESIGN_KNOWLEDGE=$(# Read knowledge via MCP: haiku_knowledge_read { type }
 haiku_knowledge_read "design" 2>/dev/null || echo "")
 ```
 
-If domain or product knowledge exists, carry it forward as additional context for subsequent sub-skills (workflow selection, criteria, decomposition). This enriches unit specs with domain vocabulary and business rules already captured in knowledge artifacts.
+If domain or product knowledge exists, carry it forward as additional context for subsequent sub-skills (workflow selection, criteria, elaboration). This enriches unit specs with domain vocabulary and business rules already captured in knowledge artifacts.

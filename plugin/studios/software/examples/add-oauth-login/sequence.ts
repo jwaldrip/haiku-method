@@ -19,7 +19,7 @@ export const config: DemoConfig = {
     { delay: 1200, actions: [{ type: "removeTyping" }, { type: "msg", role: "agent", label: "agent", text: "Creating intent: add-oauth-login..." }, { type: "file", path: `${P}/intent.md` }] },
     { delay: 800, actions: [{ type: "msg", role: "system", label: "system", text: "Intent created. Studio: software. 6 stages: inception \u2192 design \u2192 product \u2192 development \u2192 operations \u2192 security" }] },
 
-    // Step 3: Inception - decompose (collaborative)
+    // Step 3: Inception - elaborate (collaborative)
     { delay: 1000, actions: [{ type: "activateStage", stage: "inception" }, { type: "msg", role: "agent", label: "agent", text: "Entering inception stage. Hat: decomposer." }, { type: "file", path: `${P}/stages/inception/state.json` }] },
     { delay: 1200, actions: [{ type: "msg", role: "agent", label: "agent", text: "What OAuth providers do you need to support?" }] },
     { delay: 2000, actions: [{ type: "msg", role: "user", label: "you", text: "Google and GitHub. Maybe Apple later." }] },
@@ -44,7 +44,7 @@ export const config: DemoConfig = {
     // Step 5: Inception gate - auto
     { delay: 1000, actions: [{ type: "msg", role: "system", label: "system", text: "Inception complete. Review gate: auto. All criteria met \u2014 advancing." }, { type: "msg", role: "agent", label: "agent", text: "Advancing to design stage." }] },
 
-    // Step 6: Design - decompose
+    // Step 6: Design - elaborate
     { delay: 1000, actions: [{ type: "activateStage", stage: "design" }, { type: "msg", role: "agent", label: "agent", text: "Entering design stage. Hat: designer.\nDecomposing design work..." }, { type: "file", path: `${P}/stages/design/state.json` }] },
     { delay: 800, actions: [{ type: "file", path: `${P}/stages/design/units/unit-01-login-screen.md` }, { type: "file", path: `${P}/stages/design/units/unit-02-oauth-flow.md` }, { type: "card", stage: "design", name: "login-screen", status: "in-progress" }, { type: "card", stage: "design", name: "oauth-flow", status: "" }, { type: "msg", role: "agent", label: "agent", text: "2 units: login-screen and oauth-flow." }] },
 

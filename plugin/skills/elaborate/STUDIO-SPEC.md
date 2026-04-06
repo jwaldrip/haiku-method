@@ -402,7 +402,7 @@ Sub-skills are generic — they contain no hard-coded knowledge about specific s
 | Sub-Skill | Reads From | What It Gets |
 |-----------|-----------|--------------|
 | `criteria` | `phases/ELABORATION.md` → `## Criteria Guidance` | Good/bad examples, focus area |
-| `decompose` | `STAGE.md` → `unit_types` | Allowed unit disciplines |
+| `elaborate` | `STAGE.md` → `unit_types` | Allowed unit disciplines |
 | `workflow-select` | `STAGE.md` → `available_workflows` | Constrained workflow list |
 | `wireframes` | `phases/ELABORATION.md` → `wireframe_fidelity` | high / low / skip |
 | Builder hat | `phases/EXECUTION.md` → `## Builder Focus` | Construction guidance |

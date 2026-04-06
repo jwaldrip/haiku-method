@@ -104,7 +104,7 @@ For each studio, compute:
 
 **Patterns:**
 - Development is the bottleneck — highest bolt counts and longest duration
-- Inception is consistently fast — good decomposition
+- Inception is consistently fast — good elaboration
 - 2 of 3 active intents are in development stage
 
 ### Sales Studio

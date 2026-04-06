@@ -6,7 +6,7 @@ argument-hint: "[stage-name] <task description>"
 
 # Quick Mode
 
-You are running **Quick Mode** — a streamlined path for trivial tasks that skips full elaboration and unit decomposition. The user has described a small task inline and you will execute it through a stage-based hat sequence using subagents, producing disciplined work without the overhead of full `/haiku:elaborate`.
+You are running **Quick Mode** — a streamlined path for trivial tasks that skips full elaboration and unit elaboration. The user has described a small task inline and you will execute it through a stage-based hat sequence using subagents, producing disciplined work without the overhead of full `/haiku:elaborate`.
 
 ---
 
@@ -24,7 +24,7 @@ Tasks that would take a human less than a few minutes:
 
 ## When NOT to Use
 
-Anything that needs multi-unit decomposition, touches multiple subsystems, or involves architectural decisions. If you are unsure, tell the user and suggest `/haiku:elaborate` instead.
+Anything that needs multi-unit elaboration, touches multiple subsystems, or involves architectural decisions. If you are unsure, tell the user and suggest `/haiku:elaborate` instead.
 
 ---
 
@@ -233,7 +233,7 @@ When a reviewer rejects:
 2. If rejection count < 3: Loop back to the most recent building-archetype hat. The building subagent receives the reviewer's findings as additional context.
 3. If rejection count >= 3: Stop the loop and tell the user:
    > Quick mode hit the review cycle limit (3 attempts). This task may be more complex than expected.
-   > Consider using `/haiku:elaborate` for proper planning and decomposition.
+   > Consider using `/haiku:elaborate` for proper planning and elaboration.
 4. After the builder re-implements, resume the hat sequence from the builder's position (i.e., advance to the reviewer again).
 
 ---

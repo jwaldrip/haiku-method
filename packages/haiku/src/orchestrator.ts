@@ -171,12 +171,12 @@ export function runNext(slug: string): OrchestratorAction {
 			phase: "decompose",
 			...(follows ? { follows, parent_knowledge: parentKnowledge } : {}),
 			message: follows
-				? `Start stage '${currentStage}' — this intent follows '${follows}'. Load parent knowledge before decomposing.`
-				: `Start stage '${currentStage}' — decompose the work into units`,
+				? `Start stage '${currentStage}' — this intent follows '${follows}'. Load parent knowledge before elaborating.`
+				: `Start stage '${currentStage}' — elaborate the work into units`,
 		}
 	}
 
-	// Stage in decompose phase
+	// Stage in elaboration phase
 	if (phase === "decompose") {
 		const unitsDir = join(intentDir, "stages", currentStage, "units")
 		const hasUnits = existsSync(unitsDir) && readdirSync(unitsDir).filter(f => f.endsWith(".md")).length > 0
@@ -186,7 +186,7 @@ export function runNext(slug: string): OrchestratorAction {
 				intent: slug,
 				studio,
 				stage: currentStage,
-				message: `Decompose stage '${currentStage}' into units with completion criteria`,
+				message: `Elaborate stage '${currentStage}' into units with completion criteria`,
 			}
 		}
 		// Units exist — move to execute
@@ -457,7 +457,7 @@ export const orchestratorToolDefs = [
 		name: "haiku_run_next",
 		description:
 			"Get the next action for an intent. Returns what the agent should do next: " +
-			"start a stage, decompose, execute a unit, review, advance, or report completion. " +
+			"start a stage, elaborate, execute a unit, review, advance, or report completion. " +
 			"The orchestrator handles all state logic — the agent just follows the returned action.",
 		inputSchema: {
 			type: "object" as const,

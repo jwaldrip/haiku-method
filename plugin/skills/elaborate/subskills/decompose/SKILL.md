@@ -1,11 +1,11 @@
 ---
-description: (Internal) Unit decomposition, cross-cutting concerns, and spec flow analysis for H·AI·K·U elaboration
+description: (Internal) Unit elaboration, cross-cutting concerns, and spec flow analysis for H·AI·K·U elaboration
 user-invocable: false
 ---
 
 # Elaborate: Decompose
 
-Composable sub-skill for decomposing an intent into units with dependency graphs, cross-cutting concern analysis, and spec flow validation. Used by single-stage and stage-elaborate mode sub-skills.
+Composable sub-skill for elaborating an intent into units with dependency graphs, cross-cutting concern analysis, and spec flow validation. Used by single-stage and stage-elaborate mode sub-skills.
 
 **This sub-skill runs inline** — it has access to `AskUserQuestion` and the full conversation context.
 
@@ -24,14 +24,14 @@ Composable sub-skill for decomposing an intent into units with dependency graphs
 
 ---
 
-## Step 1: Decompose into Units
+## Step 1: Elaborate into Units
 
-Decompose the intent into **Units** — independent pieces of work. **You decide** whether decomposition is needed based on the scope:
+Elaborate the intent into **Units** — independent pieces of work. **You decide** whether elaboration is needed based on the scope:
 
-- **Single unit**: The intent touches one concern, one area of code, one deliverable. No decomposition needed — create one unit and proceed.
-- **Multiple units**: The intent spans multiple concerns, systems, layers, or deliverables. Decompose into 2-5 units.
+- **Single unit**: The intent touches one concern, one area of code, one deliverable. No elaboration needed — create one unit and proceed.
+- **Multiple units**: The intent spans multiple concerns, systems, layers, or deliverables. Elaborate into 2-5 units.
 
-Do NOT ask the user whether to decompose. Assess the complexity from the domain model, success criteria, and data sources — then decompose accordingly.
+Do NOT ask the user whether to elaborate. Assess the complexity from the domain model, success criteria, and data sources — then elaborate accordingly.
 
 ### Unit Type Filtering
 
@@ -137,7 +137,7 @@ After units are defined, identify concerns that span multiple units (authenticat
 
 ## Step 4: Spec Flow Analysis
 
-After decomposing into units, analyze the specification flow for gaps:
+After elaborating into units, analyze the specification flow for gaps:
 
 1. **Trace user flows end-to-end** — For each key user flow, verify every step has a unit covering it.
 2. **Check data flow completeness** — For each data entity, verify CRUD operations are covered where applicable.
@@ -197,7 +197,7 @@ Check if visual review is enabled and `ask_user_visual_question` MCP tool is ava
     "header": "Alignment",
     "options": [
       {"label": "Looks right", "description": "The intent, units, and scope are correct — proceed to write detailed specs"},
-      {"label": "Wrong breakdown", "description": "The unit decomposition needs changes"},
+      {"label": "Wrong breakdown", "description": "The unit elaboration needs changes"},
       {"label": "Wrong direction", "description": "The overall approach needs rethinking"}
     ],
     "multiSelect": false
@@ -215,4 +215,4 @@ Check if visual review is enabled and `ask_user_visual_question` MCP tool is ava
 
 ## Output
 
-The decomposed unit list (with disciplines, dependencies, specs, and criteria) is carried forward to the calling mode sub-skill for artifact writing (Phase 6).
+The elaborated unit list (with disciplines, dependencies, specs, and criteria) is carried forward to the calling mode sub-skill for artifact writing (Phase 6).

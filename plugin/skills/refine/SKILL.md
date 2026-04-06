@@ -138,7 +138,7 @@ When the target is an upstream stage, the goal is to add or update a **specific 
    ```
 
 6. **Return to the current stage:**
-   - The current stage's decomposition or execution can now reference the new/updated upstream output
+   - The current stage's elaboration or execution can now reference the new/updated upstream output
    - Do NOT change `active_stage` — the upstream refinement is a scoped side-trip
 
 7. **Commit:**
@@ -147,7 +147,7 @@ When the target is an upstream stage, the goal is to add or update a **specific 
    git commit -m "refine: add output to ${TARGET_STAGE} stage for ${INTENT_SLUG}"
    ```
 
-**This can be invoked by the agent autonomously** during decomposition (step 4.1 of the stage loop) when a gap is detected, or by the user explicitly via `/haiku:refine stage:<name>`. When invoked by the agent, it should still surface what it's doing:
+**This can be invoked by the agent autonomously** during elaboration (step 4.1 of the stage loop) when a gap is detected, or by the user explicitly via `/haiku:refine stage:<name>`. When invoked by the agent, it should still surface what it's doing:
 
 ```
 Gap detected: development stage needs a design for screen X, but design stage output doesn't include it.

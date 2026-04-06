@@ -14,7 +14,7 @@ Work breakdown, resource allocations, and critical path for the project.
 
 Structure the plan for execution tracking:
 
-- **Work breakdown structure** -- all in-scope deliverables decomposed to trackable work packages
+- **Work breakdown structure** -- all in-scope deliverables elaborated into trackable work packages
 - **Dependencies** -- inter-package dependencies with sequencing rationale
 - **Resource allocations** -- each work package assigned to a named owner with availability confirmed
 - **Effort estimates** -- estimates with methodology, assumptions, and confidence ranges

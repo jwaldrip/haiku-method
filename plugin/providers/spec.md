@@ -12,9 +12,9 @@ description: Bidirectional spec provider — sync specifications and knowledge b
 - Pull content and distill into H·AI·K·U context (intent references, unit criteria)
 - Reference specific spec documents in intent.md Context section
 
-### During Stage Decomposition
+### During Stage Elaboration
 - Verify referenced specs haven't changed since the previous stage
-- Check for updated specs before decomposing units
+- Check for updated specs before elaborating units
 - Pull cross-studio knowledge: if this intent was triggered by another studio, read the source studio's outputs from the spec provider
 
 ### Translation (Provider → H·AI·K·U)

@@ -4,7 +4,7 @@ stage: inception
 studio: software
 ---
 
-**Mandate:** Challenge whether the decomposition is technically achievable given the codebase, dependencies, and constraints discovered.
+**Mandate:** Challenge whether the elaboration is technically achievable given the codebase, dependencies, and constraints discovered.
 
 **Check:**
 - Proposed approaches are compatible with existing architecture (frameworks, patterns, conventions)

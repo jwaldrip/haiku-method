@@ -84,7 +84,7 @@ For each selected studio, show its stages and let the user select which ones to 
     "question": "Which stages from the Software studio?",
     "header": "Software Stages",
     "options": [
-      {"label": "inception", "description": "Problem understanding, unit decomposition"},
+      {"label": "inception", "description": "Problem understanding, unit elaboration"},
       {"label": "design", "description": "Visual and interaction design"},
       {"label": "development", "description": "Implementation with quality gates"}
     ],

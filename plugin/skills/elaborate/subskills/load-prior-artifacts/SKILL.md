@@ -150,7 +150,7 @@ Synthesize the loaded artifacts into a structured context summary:
 
 The prior stage context is carried forward to the calling mode sub-skill. This context is used by:
 - **criteria** — to reference or extend prior stage criteria without duplicating
-- **decompose** — to create units that build on prior stage units
+- **elaborate** — to create units that build on prior stage units
 - **workflow-select** — to understand what workflows were already used
 - **discover** — to focus exploration on areas not yet covered
 

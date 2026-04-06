@@ -25,7 +25,7 @@
 			"type": "string",
 			"enum": ["coarse", "standard", "fine"],
 			"default": "standard",
-			"description": "coarse: fewer, larger units with minimal process. standard: balanced unit decomposition. fine: many small units with detailed specs."
+			"description": "coarse: fewer, larger units with minimal process. standard: balanced unit elaboration. fine: many small units with detailed specs."
 		},
 		"studio": {
 			"type": "string",
