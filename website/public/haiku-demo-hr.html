@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H&#183;AI&#183;K&#183;U HR Studio &mdash; A Simulated Session</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0c0a09;--bg-panel:#1c1917;--bg-panel-alt:#292524;
+    --text:#e7e5e4;--text-dim:#a8a29e;--text-muted:#78716c;
+    --accent:#2dd4bf;--accent-dim:#0d9488;--accent-glow:rgba(45,212,191,.15);
+    --user:#818cf8;--agent:#2dd4bf;--system:#fbbf24;
+    --green:#22c55e;--red:#ef4444;--orange:#f59e0b;
+    --border:#44403c;--border-dim:#292524;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",ui-sans-serif,system-ui,sans-serif;
+  }
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden}
+  .app{display:flex;flex-direction:column;height:100vh}
+  .top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border-dim);background:var(--bg);z-index:10;flex-shrink:0}
+  .top-bar h1{font-size:16px;font-weight:600;letter-spacing:.5px;color:var(--accent)}
+  .top-bar h1 span{color:var(--text-dim);font-weight:400}
+  .controls{display:flex;align-items:center;gap:12px}
+  .controls button{background:var(--bg-panel);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-family:var(--sans);transition:all .15s}
+  .controls button:hover{border-color:var(--accent);color:var(--accent)}
+  .controls button.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+  .speed-btns{display:flex;gap:4px}
+  .speed-btns button{padding:4px 10px;font-size:12px;border-radius:4px}
+  .progress-wrap{flex-shrink:0;height:3px;background:var(--bg-panel-alt);position:relative}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent-dim),var(--accent));width:0;transition:width .3s ease}
+  .main{display:flex;flex:1;overflow:hidden}
+  .terminal-panel{flex:0 0 60%;display:flex;flex-direction:column;border-right:1px solid var(--border-dim);background:var(--bg)}
+  .terminal-header{padding:10px 16px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border-dim);display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .terminal-header .dots{display:flex;gap:6px}
+  .terminal-header .dot{width:10px;height:10px;border-radius:50%}
+  .dot-r{background:#ef4444}.dot-y{background:#fbbf24}.dot-g{background:#22c55e}
+  .terminal-body{flex:1;overflow-y:auto;padding:16px 20px;font-family:var(--mono);font-size:13px;line-height:1.7;scroll-behavior:smooth}
+  .terminal-body::-webkit-scrollbar{width:6px}
+  .terminal-body::-webkit-scrollbar-track{background:transparent}
+  .terminal-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .msg{margin-bottom:12px;animation:fadeSlideIn .3s ease}
+  .msg-user .msg-label{color:var(--user);font-weight:600}
+  .msg-agent .msg-label{color:var(--agent);font-weight:600}
+  .msg-system .msg-label{color:var(--system);font-weight:600}
+  .msg-label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+  .msg-text{color:var(--text);white-space:pre-wrap}
+  .msg-system .msg-text{color:var(--system);font-style:italic}
+  .typing-indicator{display:inline-flex;gap:4px;padding:4px 0}
+  .typing-indicator span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:typingDot .8s infinite}
+  .typing-indicator span:nth-child(2){animation-delay:.15s}
+  .typing-indicator span:nth-child(3){animation-delay:.3s}
+  .ff-indicator{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg-panel-alt);border-radius:6px;color:var(--system);font-size:12px;margin:8px 0;animation:pulse 1.5s ease-in-out infinite}
+  .ff-indicator svg{width:14px;height:14px}
+  .right-panels{flex:0 0 40%;display:flex;flex-direction:column;overflow:hidden}
+  .artifact-panel{flex:1;border-bottom:1px solid var(--border-dim);display:flex;flex-direction:column;background:var(--bg-panel);overflow:hidden}
+  .panel-header{padding:10px 16px;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border-dim);flex-shrink:0}
+  .file-tree{flex:1;overflow-y:auto;padding:12px 16px;font-family:var(--mono);font-size:12px;line-height:1.8}
+  .file-tree::-webkit-scrollbar{width:6px}
+  .file-tree::-webkit-scrollbar-track{background:transparent}
+  .file-tree::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .tree-item{color:var(--text-dim);white-space:nowrap;animation:fadeSlideIn .3s ease}
+  .tree-item.highlight{color:var(--accent);text-shadow:0 0 8px var(--accent-glow)}
+  .tree-item.folder{color:var(--text-muted)}
+  .tree-item .icon{margin-right:6px;display:inline-block;width:16px;text-align:center}
+  .board-panel{flex:0 0 auto;min-height:200px;max-height:260px;display:flex;flex-direction:column;background:var(--bg-panel);overflow:hidden}
+  .board-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:12px 16px;display:flex;gap:10px}
+  .board-scroll::-webkit-scrollbar{height:6px}
+  .board-scroll::-webkit-scrollbar-track{background:transparent}
+  .board-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .board-col{flex:0 0 130px;display:flex;flex-direction:column;gap:6px;transition:opacity .3s}
+  .board-col.dimmed{opacity:.35}
+  .board-col.active .col-header{color:var(--accent);border-color:var(--accent)}
+  .board-col.completed .col-header{color:var(--green);border-color:var(--green)}
+  .col-header{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);padding-bottom:6px;border-bottom:2px solid var(--border);transition:all .3s}
+  .col-cards{display:flex;flex-direction:column;gap:4px;min-height:30px}
+  .card{padding:6px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);background:var(--bg-panel-alt);border:1px solid var(--border);color:var(--text-dim);animation:fadeSlideIn .3s ease;transition:all .3s}
+  .card.in-progress{border-color:var(--accent);color:var(--accent);background:rgba(45,212,191,.08)}
+  .card.completed{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.08)}
+  @keyframes fadeSlideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes typingDot{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+  @keyframes pulse{0%,100%{opacity:.7}50%{opacity:1}}
+  @keyframes highlightFade{0%{color:var(--accent);text-shadow:0 0 12px var(--accent-glow)}100%{color:var(--text-dim);text-shadow:none}}
+  @media(max-width:900px){.main{flex-direction:column}.terminal-panel{flex:0 0 55%;border-right:none;border-bottom:1px solid var(--border-dim)}.right-panels{flex:1}.board-col{flex:0 0 110px}}
+  @media(max-width:600px){.terminal-panel{flex:0 0 50%}.top-bar h1{font-size:13px}.controls button{padding:4px 10px;font-size:11px}}
+  .completion-overlay{position:fixed;inset:0;background:rgba(12,10,9,.85);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .5s}
+  .completion-overlay.visible{opacity:1;pointer-events:auto}
+  .completion-card{text-align:center;padding:40px 60px;background:var(--bg-panel);border:1px solid var(--accent);border-radius:16px;box-shadow:0 0 60px rgba(45,212,191,.15);animation:fadeSlideIn .5s ease}
+  .completion-card h2{color:var(--accent);font-size:24px;margin-bottom:8px}
+  .completion-card p{color:var(--text-dim);font-size:14px;margin-bottom:20px}
+  .completion-card button{background:var(--accent);color:var(--bg);border:none;padding:10px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+  .completion-card button:hover{opacity:.85}
+  .step-counter{font-size:12px;color:var(--text-muted);font-family:var(--mono);letter-spacing:.5px}
+  .step-counter .current-stage{color:var(--accent);font-weight:600;margin-left:8px}
+  .stage-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent-dim);margin-left:auto;transition:all .3s}
+  .stage-badge.idle{color:var(--text-muted);background:transparent;border-color:var(--border)}
+  .kbd-hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--text-muted);font-family:var(--mono);opacity:.5;z-index:5;pointer-events:none}
+  .kbd-hint kbd{display:inline-block;padding:1px 6px;border:1px solid var(--border);border-radius:3px;background:var(--bg-panel-alt);font-size:10px;margin:0 2px}
+  .stage-flash{animation:stageFlash .6s ease}
+  @keyframes stageFlash{0%{box-shadow:0 0 0 0 rgba(45,212,191,.4)}50%{box-shadow:0 0 20px 4px rgba(45,212,191,.2)}100%{box-shadow:0 0 0 0 transparent}}
+  .review-overlay{position:fixed;inset:0;background:rgba(12,10,9,.92);display:flex;align-items:center;justify-content:center;z-index:90;opacity:0;pointer-events:none;transition:opacity .4s}
+  .review-overlay.visible{opacity:1;pointer-events:auto}
+  .review-card{width:480px;max-width:90vw;background:var(--bg-panel);border:1px solid var(--accent-dim);border-radius:16px;box-shadow:0 0 60px rgba(45,212,191,.12);animation:fadeSlideIn .4s ease;overflow:hidden}
+  .review-card-header{padding:16px 24px;border-bottom:1px solid var(--border-dim);display:flex;align-items:center;justify-content:space-between}
+  .review-card-header h3{font-size:16px;font-weight:700;color:var(--accent)}
+  .review-card-header .review-tag{font-size:11px;padding:3px 10px;border-radius:10px;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent-dim)}
+  .review-card-body{padding:20px 24px}
+  .review-card-body h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px}
+  .review-criteria{list-style:none;padding:0;margin:0 0 16px 0}
+  .review-criteria li{font-size:12px;font-family:var(--mono);color:var(--text-dim);padding:4px 0;display:flex;align-items:center;gap:8px}
+  .review-criteria li .check{width:14px;height:14px;border:1px solid var(--border);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:var(--green);transition:all .3s}
+  .review-criteria li.checked .check{border-color:var(--green);background:rgba(34,197,94,.15)}
+  .review-actions{display:flex;gap:12px;padding:16px 24px;border-top:1px solid var(--border-dim)}
+  .review-btn{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:default;transition:all .3s}
+  .review-btn.approve{background:var(--green);color:var(--bg)}
+  .review-btn.reject{background:var(--bg-panel-alt);color:var(--text-dim);border:1px solid var(--border)}
+  .review-btn.approve.highlight{box-shadow:0 0 16px rgba(34,197,94,.4);transform:scale(1.03)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-bar">
+    <h1>H&#183;AI&#183;K&#183;U <span>HR Studio</span></h1>
+    <div class="controls">
+      <span class="step-counter" id="step-counter"></span>
+      <button id="btn-play" class="active">&#9654; Play</button>
+      <div class="speed-btns">
+        <button class="speed-btn active" data-speed="1">1x</button>
+        <button class="speed-btn" data-speed="2">2x</button>
+        <button class="speed-btn" data-speed="4">4x</button>
+      </div>
+      <button id="btn-restart">&#8634; Restart</button>
+    </div>
+  </div>
+  <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+  <div class="main">
+    <div class="terminal-panel">
+      <div class="terminal-header">
+        <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+        <span>claude &mdash; ~/talent-ops</span>
+        <span class="stage-badge idle" id="stage-badge">ready</span>
+      </div>
+      <div class="terminal-body" id="terminal"></div>
+    </div>
+    <div class="right-panels">
+      <div class="artifact-panel">
+        <div class="panel-header">Artifacts</div>
+        <div class="file-tree" id="file-tree"></div>
+      </div>
+      <div class="board-panel">
+        <div class="panel-header">Lifecycle Board</div>
+        <div class="board-scroll" id="board"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="review-overlay" id="review-overlay"><div class="review-card" id="review-card"></div></div>
+<div class="completion-overlay" id="completion-overlay">
+  <div class="completion-card">
+    <h2>Intent Complete</h2>
+    <p>All 5 stages passed. hire-senior-backend-engineer delivered.</p>
+    <button id="btn-replay">Replay Demo</button>
+  </div>
+</div>
+<div class="kbd-hint"><kbd>Space</kbd> play/pause &nbsp; <kbd>R</kbd> restart &nbsp; <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd> speed</div>
+
+<script>
+(function(){
+"use strict";
+const termEl=document.getElementById("terminal"),treeEl=document.getElementById("file-tree"),boardEl=document.getElementById("board"),progressEl=document.getElementById("progress-bar"),playBtn=document.getElementById("btn-play"),restartBtn=document.getElementById("btn-restart"),replayBtn=document.getElementById("btn-replay"),overlay=document.getElementById("completion-overlay"),reviewOverlay=document.getElementById("review-overlay"),reviewCard=document.getElementById("review-card"),speedBtns=document.querySelectorAll(".speed-btn"),stepCounterEl=document.getElementById("step-counter"),stageBadgeEl=document.getElementById("stage-badge");
+let playing=true,speed=1,stepIdx=0,timer=null,files=[],columns={},currentStage=null;
+const STAGES=["requisition","sourcing","screening","interview","offer"];
+const SLUG="hire-senior-backend-engineer";
+function scrollTerminal(){termEl.scrollTop=termEl.scrollHeight}
+function escHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function addMsg(type,label,text){var d=document.createElement("div");d.className="msg msg-"+type;d.innerHTML='<div class="msg-label">'+label+'</div><div class="msg-text">'+escHtml(text)+'</div>';termEl.appendChild(d);scrollTerminal()}
+function addTyping(){var d=document.createElement("div");d.className="msg msg-agent";d.id="typing-msg";d.innerHTML='<div class="msg-label">agent</div><div class="typing-indicator"><span></span><span></span><span></span></div>';termEl.appendChild(d);scrollTerminal()}
+function removeTyping(){var e=document.getElementById("typing-msg");if(e)e.remove()}
+function addFastForward(s){var d=document.createElement("div");d.className="ff-indicator";d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 19 22 12 13 5"/><polygon points="2 19 11 12 2 5"/></svg> Fast-forwarding '+s+'s of deep work...';d.id="ff-indicator";termEl.appendChild(d);scrollTerminal()}
+function removeFastForward(){var e=document.getElementById("ff-indicator");if(e)e.remove()}
+function showCriteriaReview(stageName,intentTitle,criteria,gateType){var items=criteria.map(function(c){return'<li><span class="check"></span>'+escHtml(c)+'</li>'}).join("");reviewCard.innerHTML='<div class="review-card-header"><h3>'+escHtml(stageName)+' Review</h3><span class="review-tag">'+escHtml(gateType)+' gate</span></div><div class="review-card-body"><h4>'+escHtml(intentTitle)+'</h4><ul class="review-criteria" id="review-criteria-list">'+items+'</ul></div><div class="review-actions"><button class="review-btn reject">Request Changes</button><button class="review-btn approve" id="review-approve-btn">Approve Stage</button></div>';reviewOverlay.classList.add("visible")}
+function animateCheckmarks(){var items=document.querySelectorAll("#review-criteria-list li");items.forEach(function(li,i){setTimeout(function(){li.classList.add("checked");li.querySelector(".check").textContent="\u2713"},(i+1)*400)})}
+function highlightApproveBtn(){var b=document.getElementById("review-approve-btn");if(b)b.classList.add("highlight")}
+function hideReviewOverlay(){reviewOverlay.classList.remove("visible")}
+function addFile(path){if(files.includes(path))return;files.push(path);renderTree();setTimeout(function(){var items=treeEl.querySelectorAll(".tree-item");items.forEach(function(it){it.classList.remove("highlight")});var last=treeEl.querySelector('[data-path="'+path+'"]');if(last)last.classList.add("highlight");setTimeout(function(){if(last)last.classList.remove("highlight")},2000)},50)}
+function renderTree(){var root={};files.forEach(function(p){var parts=p.split("/");var node=root;parts.forEach(function(seg,i){if(!node[seg])node[seg]=(i===parts.length-1)?null:{};if(node[seg]!==null)node=node[seg]})});treeEl.innerHTML="";renderNode(root,0,"")}
+function renderNode(node,depth,parentPath){var keys=Object.keys(node).sort(function(a,b){var aD=node[a]!==null,bD=node[b]!==null;if(aD&&!bD)return-1;if(!aD&&bD)return 1;return a.localeCompare(b)});keys.forEach(function(key){var fullPath=parentPath?parentPath+"/"+key:key;var isDir=node[key]!==null;var div=document.createElement("div");div.className="tree-item"+(isDir?" folder":"");div.setAttribute("data-path",fullPath);div.style.paddingLeft=(depth*16+4)+"px";div.innerHTML='<span class="icon">'+(isDir?"\uD83D\uDCC1":"\uD83D\uDCC4")+"</span>"+key;treeEl.appendChild(div);if(isDir)renderNode(node[key],depth+1,fullPath)})}
+function initBoard(){boardEl.innerHTML="";columns={};STAGES.forEach(function(stage){var col=document.createElement("div");col.className="board-col dimmed";col.innerHTML='<div class="col-header">'+stage+'</div><div class="col-cards"></div>';boardEl.appendChild(col);columns[stage]={el:col,cards:{}}})}
+function activateStage(stage){currentStage=stage;STAGES.forEach(function(s){var c=columns[s];c.el.classList.remove("active","stage-flash");if(STAGES.indexOf(s)<STAGES.indexOf(stage)){c.el.classList.remove("dimmed");c.el.classList.add("completed")}else if(s===stage){c.el.classList.remove("dimmed");c.el.classList.add("active");void c.el.offsetWidth;c.el.classList.add("stage-flash")}else{c.el.classList.add("dimmed")}});stageBadgeEl.textContent=stage;stageBadgeEl.classList.remove("idle")}
+function addCard(stage,name,status){var cardsEl=columns[stage].el.querySelector(".col-cards");var card=document.createElement("div");card.className="card"+(status?" "+status:"");card.textContent=name;cardsEl.appendChild(card);columns[stage].cards[name]=card}
+function updateCard(stage,name,status){var card=columns[stage].cards[name];if(card)card.className="card "+status}
+function completeAllStages(){currentStage="complete";STAGES.forEach(function(s){var c=columns[s];c.el.classList.remove("dimmed","active");c.el.classList.add("completed");Object.keys(c.cards).forEach(function(n){c.cards[n].className="card completed"})});stageBadgeEl.textContent="complete";stageBadgeEl.style.color="var(--green)";stageBadgeEl.style.borderColor="var(--green)";stageBadgeEl.style.background="rgba(34,197,94,.1)"}
+
+var P=".haiku/intents/"+SLUG;
+const steps=[
+  // Init
+  {delay:800,actions:[function(){addMsg("user","you","/haiku:new")}]},
+  {delay:1200,actions:[function(){addTyping()}]},
+  {delay:1000,actions:[function(){removeTyping();addMsg("agent","agent","What do you want to accomplish?")}]},
+  {delay:1500,actions:[function(){addMsg("user","you","Hire a senior backend engineer for the platform team")}]},
+  {delay:800,actions:[function(){addTyping()}]},
+  {delay:1200,actions:[function(){removeTyping();addMsg("agent","agent","Creating intent: hire-senior-backend-engineer...");addFile(P+"/intent.md")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Intent created. Studio: hr. 5 stages: requisition \u2192 sourcing \u2192 screening \u2192 interview \u2192 offer")}]},
+
+  // === REQUISITION (hats: hiring-manager, recruiter | review: ask) ===
+  {delay:1000,actions:[function(){activateStage("requisition");addMsg("agent","agent","Entering requisition stage. Hat: hiring-manager.\nLet\u2019s define the role. What\u2019s the primary tech stack?");addFile(P+"/stages/requisition/state.json")}]},
+  {delay:2000,actions:[function(){addMsg("user","you","Go, PostgreSQL, gRPC. Must have distributed systems experience. Nice-to-have: Kubernetes, event-driven architecture.")}]},
+  {delay:800,actions:[function(){addTyping()}]},
+  {delay:1200,actions:[function(){removeTyping();addMsg("agent","agent","Got it. What level are we targeting? And is this backfill or growth?");addFile(P+"/stages/requisition/units/unit-01-role-definition.md");addFile(P+"/stages/requisition/units/unit-02-job-description.md");addCard("requisition","role-definition","in-progress");addCard("requisition","job-description","")}]},
+  {delay:1800,actions:[function(){addMsg("user","you","Growth. L5/L6 equivalent. 5+ years experience. Remote OK but US time zones only.")}]},
+  {delay:500,actions:[function(){addFastForward("35")}]},
+  {delay:2000,actions:[function(){removeFastForward();addMsg("agent","agent","Hat: recruiter. Role definition complete. Compensation benchmarked against 3 sources:\n  Levels.fyi: $185-225K base\n  Glassdoor: $175-215K base\n  Internal band: $180-220K base\nRecommended range: $185-220K + equity. Job spec separates must-have from nice-to-have qualifications.");addFile(P+"/knowledge/JOB-SPEC.md");updateCard("requisition","role-definition","completed");updateCard("requisition","job-description","in-progress")}]},
+  {delay:500,actions:[function(){addFastForward("20")}]},
+  {delay:1200,actions:[function(){removeFastForward();addMsg("agent","agent","Job description written. Emphasizes impact over requirements list. Inclusive language verified.");updateCard("requisition","job-description","completed")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Requisition complete. Review gate: ask.")}]},
+  {delay:1500,actions:[function(){addMsg("user","you","Approved. Post it.");addMsg("agent","agent","Advancing to sourcing stage.")}]},
+
+  // === SOURCING (hats: sourcer, recruiter | review: auto) ===
+  {delay:1000,actions:[function(){activateStage("sourcing");addMsg("agent","agent","Entering sourcing stage. Hat: sourcer.\nLoading requisition outputs...");addFile(P+"/stages/sourcing/state.json")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Resolved inputs \u2192 requisition/job-spec (knowledge/JOB-SPEC.md)");addFile(P+"/stages/sourcing/units/unit-01-channel-sourcing.md");addFile(P+"/stages/sourcing/units/unit-02-outreach.md");addCard("sourcing","channel-sourcing","in-progress");addCard("sourcing","outreach","")}]},
+  {delay:500,actions:[function(){addFastForward("40")}]},
+  {delay:2000,actions:[function(){removeFastForward();addMsg("agent","agent","Hat: recruiter. Pipeline built from 4 channels:\n  LinkedIn: 12 prospects\n  GitHub (Go contributors): 5 prospects\n  Referrals: 4 prospects\n  Job boards: 6 prospects\n27 total qualified candidates with initial fit assessments.");updateCard("sourcing","channel-sourcing","completed");updateCard("sourcing","outreach","in-progress")}]},
+  {delay:500,actions:[function(){addFastForward("25")}]},
+  {delay:1500,actions:[function(){removeFastForward();addMsg("agent","agent","Personalized outreach sent. Each message references the candidate\u2019s specific background and our platform challenges. Response rate tracking initiated.");addFile(P+"/knowledge/CANDIDATE-PIPELINE.md");updateCard("sourcing","outreach","completed")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Sourcing complete. Review gate: auto. Pipeline volume sufficient \u2014 advancing.")}]},
+
+  // === SCREENING (hats: screener, assessor | review: auto) ===
+  {delay:1000,actions:[function(){activateStage("screening");addMsg("agent","agent","Entering screening stage. Hat: screener.\nLoading upstream outputs...");addFile(P+"/stages/screening/state.json")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Resolved inputs \u2192 sourcing/candidate-pipeline (knowledge/CANDIDATE-PIPELINE.md), requisition/job-spec (knowledge/JOB-SPEC.md)");addFile(P+"/stages/screening/units/unit-01-resume-screening.md");addFile(P+"/stages/screening/units/unit-02-scoring.md");addCard("screening","resume-screening","in-progress");addCard("screening","scoring","")}]},
+  {delay:500,actions:[function(){addFastForward("45")}]},
+  {delay:2000,actions:[function(){removeFastForward();addMsg("agent","agent","Hat: assessor. 27 candidates scored against must-have criteria:\n  Pass: 14 candidates\n  Fail: 13 candidates (8 insufficient Go experience, 3 no distributed systems, 2 timezone mismatch)\nDisqualification reasons traced to specific job spec requirements.");updateCard("screening","resume-screening","completed");updateCard("screening","scoring","in-progress")}]},
+  {delay:500,actions:[function(){addFastForward("20")}]},
+  {delay:1200,actions:[function(){removeFastForward();addMsg("agent","agent","Top 8 ranked by composite fit score. Scoring methodology consistent across all candidates. Top 3:\n  1. Sarah Chen \u2014 92/100 (Go at scale, Kubernetes, 7yr)\n  2. Marcus Rivera \u2014 88/100 (distributed systems lead, 6yr)\n  3. Priya Patel \u2014 85/100 (gRPC expert, event-driven, 5yr)");addFile(P+"/knowledge/SCREENING-REPORT.md");updateCard("screening","scoring","completed")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Screening complete. Review gate: auto. All candidates scored consistently \u2014 advancing.")}]},
+
+  // === INTERVIEW (hats: interviewer, evaluator | review: ask) ===
+  {delay:1000,actions:[function(){activateStage("interview");addMsg("agent","agent","Entering interview stage. Hat: interviewer.\nLoading screening results...");addFile(P+"/stages/interview/state.json")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Resolved inputs \u2192 screening/screening-report (knowledge/SCREENING-REPORT.md), requisition/job-spec (knowledge/JOB-SPEC.md)");addFile(P+"/stages/interview/units/unit-01-structured-interviews.md");addFile(P+"/stages/interview/units/unit-02-evaluation.md");addCard("interview","structured-interviews","in-progress");addCard("interview","evaluation","")}]},
+  {delay:1200,actions:[function(){addMsg("agent","agent","I\u2019ve prepared structured interview rubrics across 4 competency dimensions:\n  1. Technical depth (system design, Go proficiency)\n  2. Collaboration (cross-team work, code review approach)\n  3. Problem solving (ambiguity handling, debugging)\n  4. Domain fit (distributed systems, scalability thinking)\n\nWant to adjust the dimensions or weights?")}]},
+  {delay:2200,actions:[function(){addMsg("user","you","Add a 5th dimension: ownership mentality. We need someone who drives initiatives, not just executes tickets.")}]},
+  {delay:800,actions:[function(){addTyping()}]},
+  {delay:1000,actions:[function(){removeTyping();addMsg("agent","agent","Added ownership mentality as dimension 5 with behavioral anchors. Interview guides updated for all 8 candidates.")}]},
+  {delay:500,actions:[function(){addFastForward("50")}]},
+  {delay:2000,actions:[function(){removeFastForward();addMsg("agent","agent","Hat: evaluator. Interview scorecards complete for top 8. Synthesized debrief:\n  Strong hire: Sarah Chen (95 avg \u2014 exceptional system design, strong ownership examples)\n  Hire: Marcus Rivera (87 avg \u2014 solid technical, weaker on ownership dimension)\n  Hire: Priya Patel (84 avg \u2014 deep gRPC expertise, growing into leadership)\n  No hire: 5 candidates below threshold");addFile(P+"/knowledge/INTERVIEW-SCORECARD.md");updateCard("interview","structured-interviews","completed");updateCard("interview","evaluation","in-progress")}]},
+  {delay:500,actions:[function(){addFastForward("15")}]},
+  {delay:1200,actions:[function(){removeFastForward();addMsg("agent","agent","Each recommendation backed by specific behavioral evidence from interviews. Comparative ranking documented.");updateCard("interview","evaluation","completed")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Interview stage complete. Review gate: ask.")}]},
+  {delay:1500,actions:[function(){addMsg("user","you","Agreed on Sarah as #1. Let\u2019s move to offer.");addMsg("agent","agent","Advancing to offer stage with Sarah Chen as primary candidate.")}]},
+
+  // === OFFER (hats: compensator, closer | review: external) ===
+  {delay:1000,actions:[function(){activateStage("offer");addMsg("agent","agent","Entering offer stage. Hat: compensator.\nLoading interview results...");addFile(P+"/stages/offer/state.json")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Resolved inputs \u2192 interview/interview-scorecard (knowledge/INTERVIEW-SCORECARD.md), requisition/job-spec (knowledge/JOB-SPEC.md)");addFile(P+"/stages/offer/units/unit-01-compensation-analysis.md");addFile(P+"/stages/offer/units/unit-02-offer-package.md");addCard("offer","comp-analysis","in-progress");addCard("offer","offer-package","")}]},
+  {delay:500,actions:[function(){addFastForward("30")}]},
+  {delay:1800,actions:[function(){removeFastForward();addMsg("agent","agent","Compensation analysis for Sarah Chen:\n  Current comp (estimated): $195K base + RSUs\n  Market benchmark: $205K median for L5 in her metro\n  Internal equity: aligns with existing L5 band\n  Recommendation: $210K base + 0.05% equity + $15K signing\n\nPositioned at 75th percentile to reflect strong hire signal. Want to adjust?");updateCard("offer","comp-analysis","completed");updateCard("offer","offer-package","in-progress")}]},
+  {delay:2000,actions:[function(){addMsg("user","you","Bump equity to 0.08%. She\u2019s a strong hire and equity is our differentiator.")}]},
+  {delay:800,actions:[function(){addTyping()}]},
+  {delay:1000,actions:[function(){removeTyping();addMsg("agent","agent","Hat: closer. Updated to 0.08% equity. Offer letter drafted with all material terms. Fallback plan: Marcus Rivera as backup with adjusted comp at $195K base.");addFile(P+"/stages/offer/artifacts/offer-letter-sarah-chen.md");updateCard("offer","offer-package","completed")}]},
+  {delay:800,actions:[function(){addMsg("system","system","Offer stage complete. Review gate: external.");addMsg("agent","agent","Sharing offer package for VP Engineering approval...")}]},
+  {delay:1000,actions:[function(){showCriteriaReview("Offer","hire-senior-backend-engineer",["Compensation benchmarked against market and internal equity","Offer letter includes all material terms","Equity positioning reflects strong-hire signal","Fallback candidate identified with adjusted package","All approval workflows complete"],"external")}]},
+  {delay:800,actions:[function(){animateCheckmarks()}]},
+  {delay:2400,actions:[function(){highlightApproveBtn()}]},
+  {delay:1200,actions:[function(){hideReviewOverlay();addMsg("system","system","External approval received. Offer ready to extend.")}]},
+
+  // === COMPLETE ===
+  {delay:1200,actions:[function(){completeAllStages();addMsg("agent","agent","All 5 stages complete for hire-senior-backend-engineer.\n\nDelivered:\n  \u2022 Job spec with must-have/nice-to-have qualifications and comp benchmarks\n  \u2022 27-candidate pipeline from 4 sourcing channels with personalized outreach\n  \u2022 Structured screening with composite scoring \u2014 14 candidates passed\n  \u2022 5-dimension interview rubric with behavioral evidence for all 8 finalists\n  \u2022 Offer package for Sarah Chen: $210K + 0.08% equity + $15K signing\n\nIntent status: complete.")}]},
+  {delay:1500,actions:[function(){overlay.classList.add("visible")}]}
+];
+
+function getTotalSteps(){return steps.length}
+function updateProgress(){progressEl.style.width=Math.min(100,(stepIdx/getTotalSteps())*100)+"%"}
+function updateStepCounter(){var t=currentStage?'<span class="current-stage">'+currentStage+"</span>":"";stepCounterEl.innerHTML=stepIdx+"/"+getTotalSteps()+t}
+function runStep(){if(!playing||stepIdx>=steps.length)return;var step=steps[stepIdx];step.actions.forEach(function(fn){fn()});stepIdx++;updateProgress();updateStepCounter();if(stepIdx<steps.length){timer=setTimeout(runStep,steps[stepIdx].delay/speed)}else{updateProgress()}}
+function start(){if(stepIdx<steps.length){timer=setTimeout(runStep,steps[stepIdx].delay/speed)}}
+function pause(){clearTimeout(timer);timer=null}
+function reset(){pause();stepIdx=0;playing=true;currentStage=null;termEl.innerHTML="";treeEl.innerHTML="";files=[];overlay.classList.remove("visible");reviewOverlay.classList.remove("visible");stageBadgeEl.textContent="ready";stageBadgeEl.classList.add("idle");stageBadgeEl.style.color="";stageBadgeEl.style.borderColor="";stageBadgeEl.style.background="";initBoard();updateProgress();updateStepCounter();updatePlayBtn();start()}
+function updatePlayBtn(){playBtn.textContent=playing?"\u23F8 Pause":"\u25B6 Play";playBtn.classList.toggle("active",playing)}
+function setSpeed(s){speed=s;speedBtns.forEach(function(b){b.classList.toggle("active",parseFloat(b.dataset.speed)===s)});if(playing){pause();start()}}
+playBtn.addEventListener("click",function(){playing=!playing;updatePlayBtn();if(playing)start();else pause()});
+restartBtn.addEventListener("click",reset);replayBtn.addEventListener("click",reset);
+speedBtns.forEach(function(btn){btn.addEventListener("click",function(){setSpeed(parseFloat(btn.dataset.speed))})});
+document.addEventListener("keydown",function(e){if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")return;switch(e.key){case" ":e.preventDefault();playing=!playing;updatePlayBtn();if(playing)start();else pause();break;case"r":case"R":reset();break;case"1":setSpeed(1);break;case"2":setSpeed(2);break;case"4":setSpeed(4);break}});
+initBoard();updateProgress();updateStepCounter();start();
+})();
+</script>
+</body>
+</html>
