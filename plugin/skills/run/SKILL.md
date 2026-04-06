@@ -115,7 +115,12 @@ Elaborate on the stage: research the problem space, produce knowledge artifacts,
 5. Elaborate the work into units with completion criteria and a dependency DAG
 7. For each unit, populate `refs:` in frontmatter — an array of paths to upstream artifacts relevant to that unit.
 8. Write unit files to `.haiku/intents/{slug}/stages/{stage}/units/`
-9. **ENGAGE THE USER.** Present the elaboration plan: the units, their dependencies, the discovery artifacts you produced, and (for design) the wireframes. Ask the user to review and confirm before proceeding. This is a collaborative checkpoint — do NOT silently advance to execute. Wait for the user's explicit approval or feedback.
+9. **ENGAGE THE USER via visual review.** Use `ask_user_visual_question` to present the elaboration plan visually. Include:
+   - A markdown summary of the units, their dependencies, and discovery artifacts
+   - Questions: "Approve this plan?" with options [Approve, Request changes]
+   - Optionally "Which aspects need adjustment?" with multi-select of unit names
+   
+   The tool blocks until the user responds in the browser — their answer returns directly. Do NOT present the plan as text in the conversation. Use the visual tool.
 10. After user approval: `haiku_stage_set { intent, stage, field: "phase", value: "execute" }`
 11. Call `haiku_run_next` again
 
