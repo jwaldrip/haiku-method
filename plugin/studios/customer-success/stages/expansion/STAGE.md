@@ -2,7 +2,7 @@
 name: expansion
 description: Identify and pursue upsell/cross-sell opportunities
 hats: [growth-strategist, value-consultant]
-review: ask
+review: [ask, await]
 unit_types: [expansion, upsell]
 inputs:
   - stage: health-check
