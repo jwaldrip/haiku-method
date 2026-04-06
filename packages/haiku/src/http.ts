@@ -1,7 +1,6 @@
 import { createServer, type Server as HttpServer } from "node:http"
 import { readFile, realpath } from "node:fs/promises"
 import { extname, join, resolve } from "node:path"
-import type { Server } from "@modelcontextprotocol/sdk/server/index.js"
 import { z } from "zod"
 import { getSession, updateDesignDirectionSession, updateQuestionSession, updateSession } from "./sessions.js"
 import type { QuestionAnswer, ReviewAnnotations } from "./sessions.js"
@@ -9,13 +8,6 @@ import { REVIEW_APP_HTML } from "./review-app-html.js"
 
 let httpServer: HttpServer | null = null
 let actualPort: number | null = null
-
-/** Dependency-injected MCP server reference */
-let mcpServer: Server | null = null
-
-export function setMcpServer(server: Server): void {
-	mcpServer = server
-}
 
 export function getActualPort(): number | null {
 	return actualPort
@@ -161,64 +153,6 @@ async function handleDecidePost(
 		annotations,
 	})
 
-	// Push channel notification to Claude Code
-	if (mcpServer) {
-		try {
-			// Build notification content: feedback text + structured annotation summary
-			let notificationContent = feedback
-			if (annotations?.pins?.length) {
-				notificationContent +=
-					"\n\n--- Annotation Pins ---\n" +
-					annotations.pins
-						.map(
-							(p, i) =>
-								`[${i + 1}] (${p.x.toFixed(1)}%, ${p.y.toFixed(1)}%) ${p.text}`,
-						)
-						.join("\n")
-			}
-			if (annotations?.comments?.length) {
-				notificationContent +=
-					"\n\n--- Inline Comments ---\n" +
-					annotations.comments
-						.map(
-							(c, i) =>
-								`[${i + 1}] "${c.selectedText}" -> ${c.comment} (paragraph ${c.paragraph})`,
-						)
-						.join("\n")
-			}
-
-			const meta: Record<string, unknown> = {
-				decision,
-				review_type: session.review_type,
-				target: session.target || "",
-				session_id: sessionId,
-			}
-			if (annotations) {
-				meta.has_annotations = true
-				if (annotations.screenshot) {
-					meta.has_screenshot = true
-				}
-				if (annotations.pins?.length) {
-					meta.pin_count = annotations.pins.length
-				}
-				if (annotations.comments?.length) {
-					meta.comment_count = annotations.comments.length
-				}
-			}
-
-			await mcpServer.notification({
-				// biome-ignore lint/suspicious/noExplicitAny: Claude channel API not typed
-				method: "notifications/claude/channel" as any,
-				params: {
-					content: notificationContent,
-					meta,
-				},
-				// biome-ignore lint/suspicious/noExplicitAny: Claude channel API not typed
-			} as any)
-		} catch (err) {
-			console.error("Failed to push channel notification:", err)
-		}
-	}
 
 	return Response.json({ ok: true, decision, feedback })
 }
@@ -393,26 +327,6 @@ async function handleQuestionAnswerPost(
 		answers: body.answers,
 	})
 
-	// Push channel notification to Claude Code
-	if (mcpServer) {
-		try {
-			await mcpServer.notification({
-				// biome-ignore lint/suspicious/noExplicitAny: Claude channel API not typed
-				method: "notifications/claude/channel" as any,
-				params: {
-					content: JSON.stringify(body.answers),
-					meta: {
-						response_type: "question_answers",
-						session_id: sessionId,
-						question_count: body.answers.length,
-					},
-				},
-				// biome-ignore lint/suspicious/noExplicitAny: Claude channel API not typed
-			} as any)
-		} catch (err) {
-			console.error("Failed to push channel notification:", err)
-		}
-	}
 
 	return Response.json({ ok: true })
 }
@@ -461,30 +375,6 @@ async function handleDirectionSelectPost(
 		selection: { archetype: body.archetype, parameters: body.parameters },
 	})
 
-	// Push channel notification to Claude Code
-	if (mcpServer) {
-		try {
-			await mcpServer.notification({
-				// biome-ignore lint/suspicious/noExplicitAny: Claude channel API not typed
-				method: "notifications/claude/channel" as any,
-				params: {
-					content: JSON.stringify({
-						archetype: body.archetype,
-						parameters: body.parameters,
-					}),
-					meta: {
-						response_type: "design_direction_selection",
-						session_id: sessionId,
-						intent_slug: session.intent_slug,
-						archetype: body.archetype,
-					},
-				},
-				// biome-ignore lint/suspicious/noExplicitAny: Claude channel API not typed
-			} as any)
-		} catch (err) {
-			console.error("Failed to push channel notification:", err)
-		}
-	}
 
 	return Response.json({ ok: true })
 }

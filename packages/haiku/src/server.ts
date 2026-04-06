@@ -18,7 +18,7 @@ import {
 	ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
 import { z } from "zod"
-import { getActualPort, setMcpServer, startHttpServer } from "./http.js"
+import { getActualPort, startHttpServer } from "./http.js"
 import { createDesignDirectionSession, createQuestionSession, createSession, getSession } from "./sessions.js"
 import type { DesignArchetypeData, DesignParameterData, QuestionDef } from "./sessions.js"
 import { type MockupInfo, renderReviewPage } from "./templates/index.js"
@@ -120,19 +120,12 @@ const server = new Server(
 	{
 		capabilities: {
 			tools: {},
-			experimental: {
-				"claude/channel": {},
-				// biome-ignore lint/suspicious/noExplicitAny: Claude channel API not typed
-			} as any,
 		},
 	},
 )
 
 import { stateToolDefs, handleStateTool } from "./state-tools.js"
 import { orchestratorToolDefs, handleOrchestratorTool } from "./orchestrator.js"
-
-// Inject MCP server into HTTP module for channel notifications
-setMcpServer(server)
 
 // List tools
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -794,7 +787,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 		})
 
 		// Start HTTP server (idempotent)
-		const port = startHttpServer()
+		const port = await startHttpServer()
 		const directionUrl = `http://127.0.0.1:${port}/direction/${session.session_id}`
 
 		// Open browser
