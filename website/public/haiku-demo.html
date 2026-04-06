@@ -509,28 +509,73 @@ const steps = [
     addMsg("system","system","Intent created. Studio: software. 6 stages: inception \u2192 design \u2192 product \u2192 development \u2192 operations \u2192 security");
   }]},
 
-  // === Step 3: Inception - decompose ===
+  // === Step 3: Inception - decompose (collaborative) ===
   { delay: 1000, actions: [function(){
     activateStage("inception");
-    addMsg("agent","agent","Entering inception stage. Hat: decomposer.\nDecomposing into units...");
+    addMsg("agent","agent","Entering inception stage. Hat: decomposer.");
     addFile(".haiku/intents/add-oauth-login/stages/inception/state.json");
   }]},
+  { delay: 1200, actions: [function(){
+    addMsg("agent","agent","What OAuth providers do you need to support?");
+  }]},
+  { delay: 2000, actions: [function(){
+    addMsg("user","you","Google and GitHub. Maybe Apple later.");
+  }]},
+  { delay: 800, actions: [function(){ addTyping(); }]},
+  { delay: 1200, actions: [function(){
+    removeTyping();
+    addMsg("agent","agent","I\u2019ll set up the provider abstraction to make adding Apple easy. Here\u2019s the breakdown:");
+  }]},
   { delay: 1000, actions: [function(){
-    addFile(".haiku/intents/add-oauth-login/stages/inception/units/unit-01-discovery.md");
-    addCard("inception","discovery","in-progress");
-    addMsg("agent","agent","1 unit created: discovery. Starting execution.");
+    addMsg("agent","agent","3 units: OAuth provider setup, callback handler, session management");
+    addFile(".haiku/intents/add-oauth-login/stages/inception/units/unit-01-oauth-provider-setup.md");
+    addFile(".haiku/intents/add-oauth-login/stages/inception/units/unit-02-callback-handler.md");
+    addFile(".haiku/intents/add-oauth-login/stages/inception/units/unit-03-session-management.md");
+    addCard("inception","oauth-provider-setup","in-progress");
+    addCard("inception","callback-handler","");
+    addCard("inception","session-management","");
+  }]},
+  { delay: 2200, actions: [function(){
+    addMsg("user","you","Split the callback into its own unit \u2014 it has complex error handling");
+  }]},
+  { delay: 800, actions: [function(){ addTyping(); }]},
+  { delay: 1000, actions: [function(){
+    removeTyping();
+    addMsg("agent","agent","Good call. Updated to 4 units.");
+    addFile(".haiku/intents/add-oauth-login/stages/inception/units/unit-04-callback-error-handling.md");
+    addCard("inception","callback-errors","");
   }]},
 
   // === Step 4: Inception - execute ===
   { delay: 800, actions: [function(){
-    addMsg("agent","agent","Hat: architect. Analyzing the codebase for domain entities, auth surfaces, and integration points...");
+    addMsg("agent","agent","Hat: architect. Starting OAuth provider setup \u2014 mapping provider abstraction layer...");
   }]},
   { delay: 600, actions: [function(){ addFastForward("30"); }]},
   { delay: 2000, actions: [function(){
     removeFastForward();
-    addMsg("agent","agent","Discovery complete. Domain model mapped: User, Session, OAuthProvider, Token entities identified. 3 existing auth touchpoints found.");
-    addFile(".haiku/intents/add-oauth-login/knowledge/discovery.md");
-    updateCard("inception","discovery","completed");
+    addMsg("agent","agent","Provider setup complete. Abstraction layer supports Google and GitHub with a clean interface for adding Apple later.");
+    addFile(".haiku/intents/add-oauth-login/knowledge/provider-analysis.md");
+    updateCard("inception","oauth-provider-setup","completed");
+    updateCard("inception","callback-handler","in-progress");
+  }]},
+  { delay: 500, actions: [function(){ addFastForward("25"); }]},
+  { delay: 1500, actions: [function(){
+    removeFastForward();
+    addMsg("agent","agent","Callback handler analysis done. Google uses server-side code exchange, GitHub\u2019s token endpoint differs. Both mapped.");
+    updateCard("inception","callback-handler","completed");
+    updateCard("inception","session-management","in-progress");
+  }]},
+  { delay: 500, actions: [function(){ addFastForward("20"); }]},
+  { delay: 1200, actions: [function(){
+    removeFastForward();
+    updateCard("inception","session-management","completed");
+    updateCard("inception","callback-errors","in-progress");
+  }]},
+  { delay: 500, actions: [function(){ addFastForward("20"); }]},
+  { delay: 1200, actions: [function(){
+    removeFastForward();
+    addMsg("agent","agent","All 4 units complete. Callback error handling confirmed your instinct \u2014 the two providers need separate error paths due to different failure modes.");
+    updateCard("inception","callback-errors","completed");
   }]},
 
   // === Step 5: Inception gate - auto ===
@@ -550,30 +595,43 @@ const steps = [
     addFile(".haiku/intents/add-oauth-login/stages/design/units/unit-02-oauth-flow.md");
     addCard("design","login-screen","in-progress");
     addCard("design","oauth-flow","");
-    addMsg("agent","agent","2 units created: login-screen, oauth-flow.");
+    addMsg("agent","agent","2 units: login-screen and oauth-flow.");
   }]},
 
-  // === Step 7: Design - execute ===
-  { delay: 800, actions: [function(){
-    addMsg("agent","agent","Hat: designer. Creating screen layouts and interaction specs for login screen...");
+  // === Step 7: Design - execute (collaborative) ===
+  { delay: 1200, actions: [function(){
+    addMsg("agent","agent","For the login screen \u2014 modal overlay or full page?");
+  }]},
+  { delay: 2200, actions: [function(){
+    addMsg("user","you","Full page with the app logo. Social buttons prominent.");
+  }]},
+  { delay: 800, actions: [function(){ addTyping(); }]},
+  { delay: 1200, actions: [function(){
+    removeTyping();
+    addMsg("agent","agent","Opening visual review... (ask_user_visual_question)");
   }]},
   { delay: 500, actions: [function(){ addFastForward("45"); }]},
   { delay: 2000, actions: [function(){
     removeFastForward();
+    addMsg("agent","agent","Wireframe ready. Take a look.");
+  }]},
+  { delay: 2200, actions: [function(){
+    addMsg("user","you","Add a 'forgot password' link below the form");
+  }]},
+  { delay: 800, actions: [function(){ addTyping(); }]},
+  { delay: 1000, actions: [function(){
+    removeTyping();
+    addMsg("agent","agent","Added. Design brief updated.");
     updateCard("design","login-screen","completed");
     updateCard("design","oauth-flow","in-progress");
-    addMsg("agent","agent","Login screen layout complete. Moving to OAuth flow diagrams...");
   }]},
   { delay: 500, actions: [function(){ addFastForward("30"); }]},
   { delay: 1500, actions: [function(){
     removeFastForward();
     updateCard("design","oauth-flow","completed");
     addFile(".haiku/intents/add-oauth-login/stages/design/outputs/design-brief.md");
-    addFile(".haiku/intents/add-oauth-login/stages/design/outputs/design-tokens.json");
-    addMsg("agent","agent","Design brief complete. Hat: design-reviewer. Running review...");
-  }]},
-  { delay: 800, actions: [function(){
-    addMsg("agent","agent","Review passed: layouts specified for 3 breakpoints, all interactive states defined, accessible color contrast verified.");
+    addFile(".haiku/intents/add-oauth-login/stages/design/outputs/design-tokens.md");
+    addMsg("agent","agent","Design brief and tokens finalized. All breakpoints specified, interactive states defined, accessible color contrast verified.");
   }]},
 
   // === Step 8: Design gate - ask ===
@@ -587,7 +645,7 @@ const steps = [
     addMsg("agent","agent","Advancing to product stage.");
   }]},
 
-  // === Step 9: Product stage ===
+  // === Step 9: Product stage (collaborative) ===
   { delay: 1000, actions: [function(){
     activateStage("product");
     addMsg("agent","agent","Entering product stage. Hat: product-owner.\nDefining behavioral specifications...");
@@ -598,7 +656,18 @@ const steps = [
   { delay: 500, actions: [function(){ addFastForward("40"); }]},
   { delay: 1800, actions: [function(){
     removeFastForward();
-    addMsg("agent","agent","Hat: specification-writer. Behavioral spec covers happy path + 4 error scenarios. Data contracts defined for /auth/callback and /auth/token endpoints.");
+    addMsg("agent","agent","Here are the acceptance criteria for the callback flow:");
+  }]},
+  { delay: 1000, actions: [function(){
+    addMsg("agent","agent","1. Valid code \u2192 token exchange \u2192 session created\n2. Invalid code \u2192 400 error\n3. Expired code \u2192 redirect to login");
+  }]},
+  { delay: 2500, actions: [function(){
+    addMsg("user","you","Add a rate limiting scenario \u2014 what happens at 100 requests/minute?");
+  }]},
+  { delay: 800, actions: [function(){ addTyping(); }]},
+  { delay: 1200, actions: [function(){
+    removeTyping();
+    addMsg("agent","agent","Added: rate limit returns 429 with retry-after header.");
     addFile(".haiku/intents/add-oauth-login/stages/product/outputs/behavioral-spec.md");
     addFile(".haiku/intents/add-oauth-login/stages/product/outputs/data-contracts.md");
     updateCard("product","auth-spec","completed");
@@ -611,7 +680,7 @@ const steps = [
     addMsg("agent","agent","Advancing to development stage.");
   }]},
 
-  // === Step 10: Development stage (bolt loop) ===
+  // === Step 10: Development stage (bolt loop, collaborative) ===
   { delay: 1000, actions: [function(){
     activateStage("development");
     addMsg("agent","agent","Entering development stage. Hat: planner.\nPlanning implementation units...");
@@ -625,26 +694,29 @@ const steps = [
   }]},
   // Bolt 1
   { delay: 800, actions: [function(){
-    addMsg("agent","agent","Unit: oauth-provider. Bolt 1. Hat: builder.\nImplementing OAuth provider integration...");
+    addMsg("agent","agent","Unit: oauth-provider. Bolt 1. Hat: builder.\nImplementing OAuth provider integration for Google and GitHub...");
   }]},
   { delay: 500, actions: [function(){ addFastForward("60"); }]},
   { delay: 2000, actions: [function(){
     removeFastForward();
-    addMsg("agent","agent","Bolt 1 complete. Hat: reviewer. Running code review...");
+    addMsg("agent","agent","Bolt 1 complete. Hat: reviewer. Running code review...\n\nFound an issue: there\u2019s a race condition in the token refresh flow. If two requests hit the refresh endpoint simultaneously, both read the old refresh token, one succeeds and invalidates it, and the second fails. Need a mutex or token rotation strategy.");
   }]},
-  { delay: 1000, actions: [function(){
-    addMsg("agent","agent","Review: 1 issue found \u2014 token refresh not handling expired refresh tokens. Bolt 2. Hat: builder. Fixing...");
+  { delay: 2200, actions: [function(){
+    addMsg("user","you","Good catch. Fix the race condition \u2014 use a mutex lock on the refresh operation with a short TTL so we don\u2019t deadlock if the process crashes.");
+  }]},
+  { delay: 800, actions: [function(){
+    addMsg("agent","agent","On it. Bolt 2. Hat: builder. Adding a Redis-based distributed lock with a 5s TTL on token refresh...");
   }]},
   { delay: 500, actions: [function(){ addFastForward("20"); }]},
   { delay: 1200, actions: [function(){
     removeFastForward();
-    addMsg("agent","agent","Fix applied. Hat: reviewer. Re-reviewing... Approved.");
+    addMsg("agent","agent","Fix applied \u2014 refresh is now atomic with a 5s TTL lock. Hat: reviewer. Re-reviewing... Approved. Race condition resolved.");
     updateCard("development","oauth-provider","completed");
     updateCard("development","login-ui","in-progress");
   }]},
-  // Unit 2 & 3 abbreviated
+  // Unit 2
   { delay: 800, actions: [function(){
-    addMsg("agent","agent","Unit: login-ui. Hat: builder. Building login components...");
+    addMsg("agent","agent","Unit: login-ui. Hat: builder. Building login components with the forgot-password link from the design brief...");
   }]},
   { delay: 500, actions: [function(){ addFastForward("45"); }]},
   { delay: 1500, actions: [function(){
@@ -653,14 +725,18 @@ const steps = [
     updateCard("development","login-ui","completed");
     updateCard("development","session-mgmt","in-progress");
   }]},
+  // Unit 3
   { delay: 800, actions: [function(){
-    addMsg("agent","agent","Unit: session-mgmt. Hat: builder. Implementing session lifecycle...");
+    addMsg("agent","agent","Unit: session-mgmt. Hat: builder. Implementing session lifecycle with the rate limiting from the product spec...");
   }]},
   { delay: 500, actions: [function(){ addFastForward("50"); }]},
   { delay: 1500, actions: [function(){
     removeFastForward();
-    addMsg("agent","agent","Session management complete. All 3 units delivered. Running design consistency and accessibility review agents...");
+    addMsg("agent","agent","Session management complete \u2014 includes the 429 rate limiting on the callback endpoint. All 3 units delivered.");
     updateCard("development","session-mgmt","completed");
+  }]},
+  { delay: 800, actions: [function(){
+    addMsg("agent","agent","Running design consistency and accessibility review agents...");
   }]},
   { delay: 1000, actions: [function(){
     addMsg("agent","agent","Review agents passed: design consistency OK, accessibility OK.");
@@ -675,18 +751,24 @@ const steps = [
     addMsg("agent","agent","Advancing to operations stage.");
   }]},
 
-  // === Step 11: Operations stage ===
+  // === Step 11: Operations stage (collaborative) ===
   { delay: 1000, actions: [function(){
     activateStage("operations");
-    addMsg("agent","agent","Entering operations stage. Hat: ops-engineer.\nAssessing deployment and monitoring needs...");
+    addMsg("agent","agent","Entering operations stage. Hat: ops-engineer.\nI see you\u2019re on Kubernetes with Helm charts. For the OAuth secrets (client IDs, client secrets), do you want me to use your existing Vault setup or Kubernetes secrets?");
     addFile(".haiku/intents/add-oauth-login/stages/operations/state.json");
     addFile(".haiku/intents/add-oauth-login/stages/operations/units/unit-01-deploy-config.md");
     addCard("operations","deploy-config","in-progress");
   }]},
+  { delay: 2000, actions: [function(){
+    addMsg("user","you","Use Vault. We\u2019re migrating everything there. Kubernetes secrets are being phased out.");
+  }]},
+  { delay: 800, actions: [function(){
+    addMsg("agent","agent","Got it. I\u2019ll wire the OAuth secrets through Vault with the existing injector sidecar pattern. Updating the Helm values and adding the Vault policy.");
+  }]},
   { delay: 500, actions: [function(){ addFastForward("35"); }]},
   { delay: 1500, actions: [function(){
     removeFastForward();
-    addMsg("agent","agent","Hat: sre. Environment variables configured, health checks added, rollback plan documented. Security review agent passed.");
+    addMsg("agent","agent","Hat: sre. Vault policies configured, health checks added for both provider endpoints, rollback plan documented with secret rotation procedure.");
     updateCard("operations","deploy-config","completed");
     addFile(".haiku/intents/add-oauth-login/stages/operations/outputs/deploy-plan.md");
   }]},
@@ -695,7 +777,7 @@ const steps = [
     addMsg("agent","agent","Advancing to security stage.");
   }]},
 
-  // === Step 12: Security stage ===
+  // === Step 12: Security stage (collaborative) ===
   { delay: 1000, actions: [function(){
     activateStage("security");
     addMsg("agent","agent","Entering security stage. Running review agents in parallel:\n  \u2022 Hat: threat-modeler \u2014 STRIDE analysis\n  \u2022 Hat: red-team \u2014 attack surface scan\n  \u2022 Hat: blue-team \u2014 defense validation");
@@ -708,7 +790,18 @@ const steps = [
   { delay: 500, actions: [function(){ addFastForward("60"); }]},
   { delay: 2000, actions: [function(){
     removeFastForward();
-    addMsg("agent","agent","Threat model: 2 medium-risk findings mitigated. CSRF protection verified. Token storage uses httpOnly cookies. PKCE flow confirmed.");
+    addMsg("agent","agent","Threat model found 2 medium-risk items:\n  1. GitHub OAuth doesn\u2019t support PKCE \u2014 relying on state param + client_secret only\n  2. Token stored in localStorage on one code path (should be httpOnly cookie everywhere)\n\nItem 2 is a code fix. Item 1 is an accepted limitation \u2014 want me to document it as a known risk or is there a mitigation you prefer?");
+  }]},
+  { delay: 2200, actions: [function(){
+    addMsg("user","you","Document it as a known risk. GitHub doesn\u2019t support PKCE, that\u2019s on them. Fix the localStorage issue though \u2014 that should never have been there.");
+  }]},
+  { delay: 800, actions: [function(){
+    addMsg("agent","agent","Agreed. Fixing the localStorage path now and documenting GitHub\u2019s PKCE gap as accepted risk with compensating controls (strict state validation + short-lived tokens).");
+  }]},
+  { delay: 500, actions: [function(){ addFastForward("15"); }]},
+  { delay: 1200, actions: [function(){
+    removeFastForward();
+    addMsg("agent","agent","Fixed. All token storage now uses httpOnly cookies. CSRF protection verified across both providers.");
     updateCard("security","threat-model","completed");
     updateCard("security","pen-test","completed");
     addFile(".haiku/intents/add-oauth-login/stages/security/outputs/threat-model.md");
@@ -727,7 +820,7 @@ const steps = [
   // === Step 13: Intent complete ===
   { delay: 1200, actions: [function(){
     completeAllStages();
-    addMsg("agent","agent","All 6 stages complete for add-oauth-login.\n\nDelivered:\n  \u2022 OAuth provider integration (Google, GitHub)\n  \u2022 Login UI with 3-breakpoint responsive design\n  \u2022 Session management with secure token handling\n  \u2022 Deploy config with health checks and rollback plan\n  \u2022 Security review with STRIDE threat model\n\nIntent status: complete.");
+    addMsg("agent","agent","All 6 stages complete for add-oauth-login.\n\nDelivered:\n  \u2022 OAuth provider integration (Google, GitHub) with separate callback handlers\n  \u2022 Login UI with forgot-password link, 3-breakpoint responsive design\n  \u2022 Session management with 429 rate limiting on callback endpoint\n  \u2022 Race-condition-safe token refresh with distributed mutex lock\n  \u2022 Deploy config with Vault secret management and rollback plan\n  \u2022 Security review with STRIDE threat model, localStorage fix applied\n\nIntent status: complete.");
   }]},
   { delay: 1500, actions: [function(){
     overlay.classList.add("visible");
