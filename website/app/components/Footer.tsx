@@ -20,16 +20,7 @@ export function Footer() {
 							H·AI·K·U
 						</Link>
 						<p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
-							Structured human-AI collaboration, powered by the{" "}
-							<a
-								href="https://haikumethod.ai"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="underline hover:text-stone-900 dark:hover:text-white"
-							>
-								H·AI·K·U Method
-							</a>
-							.
+							Human + AI Knowledge Unification.
 						</p>
 						{/* Social links */}
 						<div className="mt-4 flex gap-3">
