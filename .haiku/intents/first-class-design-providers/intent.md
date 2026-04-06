@@ -3,7 +3,7 @@ title: "First-Class Design Providers"
 studio: software
 stages: [inception, design, product, development, operations, security]
 mode: continuous
-active_stage: development
+active_stage: security
 status: completed
 started_at: 2026-04-01T09:55:37Z
 completed_at: 2026-04-01T14:34:57Z

@@ -84,19 +84,24 @@ export async function runMigrate(args: string[]): Promise<void> {
 		// Create directory structure
 		mkdirSync(join(destDir, "knowledge"), { recursive: true })
 
+		const allStages = ["inception", "design", "product", "development", "operations", "security"]
+
 		if (status === "completed") {
-			// Completed: migrate as historical record with completed development stage
+			// Completed: migrate as historical record — all stages marked complete
 			mkdirSync(join(destDir, "stages", "development", "units"), { recursive: true })
 
-			// Write intent.md
+			// Write intent.md — active_stage is last stage so stagesComplete is correct
 			writeFileSync(join(destDir, "intent.md"),
-				`---\ntitle: "${title}"\nstudio: software\nstages: [inception, design, product, development, operations, security]\nmode: continuous\nactive_stage: development\nstatus: completed\nstarted_at: ${created}T00:00:00Z\ncompleted_at: ${created}T23:59:59Z\n---\n\n${intentBody}\n`)
+				`---\ntitle: "${title}"\nstudio: software\nstages: [inception, design, product, development, operations, security]\nmode: continuous\nactive_stage: security\nstatus: completed\nstarted_at: ${created}T00:00:00Z\ncompleted_at: ${created}T23:59:59Z\n---\n\n${intentBody}\n`)
 
-			// Write stage state
-			writeFileSync(join(destDir, "stages", "development", "state.json"),
-				JSON.stringify({ stage: "development", status: "completed", phase: "gate", started_at: `${created}T00:00:00Z`, completed_at: `${created}T23:59:59Z`, gate_entered_at: null, gate_outcome: "advanced" }, null, 2) + "\n")
+			// Write state.json for ALL stages so browse shows them all as complete
+			for (const stage of allStages) {
+				mkdirSync(join(destDir, "stages", stage), { recursive: true })
+				writeFileSync(join(destDir, "stages", stage, "state.json"),
+					JSON.stringify({ stage, status: "completed", phase: "gate", started_at: `${created}T00:00:00Z`, completed_at: `${created}T23:59:59Z`, gate_entered_at: null, gate_outcome: "advanced" }, null, 2) + "\n")
+			}
 
-			// Migrate units
+			// Migrate units into development stage
 			const unitFiles = readdirSync(srcDir).filter(f => f.startsWith("unit-") && f.endsWith(".md"))
 			for (const unitFile of unitFiles) {
 				const { data: unitFm, body: unitBody } = readFrontmatter(join(srcDir, unitFile))

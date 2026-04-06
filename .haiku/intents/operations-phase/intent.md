@@ -3,7 +3,7 @@ title: "Full AI-DLC Operations Phase"
 studio: software
 stages: [inception, design, product, development, operations, security]
 mode: continuous
-active_stage: development
+active_stage: security
 status: completed
 started_at: 2026-03-27T23:06:56Z
 completed_at: 2026-04-01T13:21:44Z
