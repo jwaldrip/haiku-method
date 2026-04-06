@@ -91,10 +91,8 @@ export default async function StudioDetailPage({ params }: Props) {
 					</span>
 				</div>
 				<div className="mt-6">
-					<a
-						href={slug === "software" ? "/haiku-demo.html" : `/haiku-demo-${slug}.html`}
-						target="_blank"
-						rel="noopener noreferrer"
+					<Link
+						href={`/studios/${slug}/demo/`}
 						className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
 					>
 						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -102,7 +100,7 @@ export default async function StudioDetailPage({ params }: Props) {
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 						</svg>
 						Simulate a Session
-					</a>
+					</Link>
 				</div>
 			</header>
 

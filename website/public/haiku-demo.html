@@ -396,7 +396,7 @@
 <div class="completion-overlay" id="completion-overlay">
   <div class="completion-card">
     <h2>Intent Complete</h2>
-    <p>All 6 stages passed. add-oauth-login delivered.</p>
+    <p id="completion-text">All 6 stages passed. add-oauth-login delivered.</p>
     <button id="btn-replay">Replay Demo</button>
   </div>
 </div>
@@ -407,35 +407,33 @@
 </div>
 
 <script>
-(function(){
-"use strict";
-
-// ── DOM refs ──
-const termEl     = document.getElementById("terminal");
-const treeEl     = document.getElementById("file-tree");
-const boardEl    = document.getElementById("board");
-const progressEl = document.getElementById("progress-bar");
-const playBtn    = document.getElementById("btn-play");
-const restartBtn = document.getElementById("btn-restart");
-const replayBtn  = document.getElementById("btn-replay");
-const overlay    = document.getElementById("completion-overlay");
-const reviewOverlay = document.getElementById("review-overlay");
-const reviewCard    = document.getElementById("review-card");
-const speedBtns  = document.querySelectorAll(".speed-btn");
-const stepCounterEl = document.getElementById("step-counter");
-const stageBadgeEl  = document.getElementById("stage-badge");
+// ── DOM refs (globals for studio config scripts) ──
+var termEl     = document.getElementById("terminal");
+var treeEl     = document.getElementById("file-tree");
+var boardEl    = document.getElementById("board");
+var progressEl = document.getElementById("progress-bar");
+var playBtn    = document.getElementById("btn-play");
+var restartBtn = document.getElementById("btn-restart");
+var replayBtn  = document.getElementById("btn-replay");
+var overlay    = document.getElementById("completion-overlay");
+var reviewOverlay = document.getElementById("review-overlay");
+var reviewCard    = document.getElementById("review-card");
+var speedBtns  = document.querySelectorAll(".speed-btn");
+var stepCounterEl = document.getElementById("step-counter");
+var stageBadgeEl  = document.getElementById("stage-badge");
+var completionTextEl = document.getElementById("completion-text");
 
 // ── State ──
-let playing  = true;
-let speed    = 1;
-let stepIdx  = 0;
-let timer    = null;
-let files    = [];     // track added files
-let columns  = {};     // stage -> {el, cards:{}}
-let currentStage = null;
+var playing  = true;
+var speed    = 1;
+var stepIdx  = 0;
+var timer    = null;
+var files    = [];
+var columns  = {};
+var currentStage = null;
 
-// ── Stages ──
-const STAGES = ["inception","design","product","development","operations","security"];
+// ── Stages (overridden by config if present) ──
+var STAGES = ["inception","design","product","development","operations","security"];
 
 // ── Helpers ──
 function scrollTerminal(){ termEl.scrollTop = termEl.scrollHeight; }
@@ -501,14 +499,17 @@ function showDesignReview(stageName, intentTitle){
   reviewOverlay.classList.add("visible");
 }
 
-function showCriteriaReview(stageName, intentTitle, criteria){
+function showCriteriaReview(stageName, intentTitle, criteria, gateType){
+  var tag = gateType || "external gate";
+  // Normalize: if gateType doesn't already end with "gate", append it
+  if(tag.indexOf("gate") === -1) tag = tag + " gate";
   var items = criteria.map(function(c){
     return '<li><span class="check"></span>' + escHtml(c) + '</li>';
   }).join("");
   reviewCard.innerHTML =
     '<div class="review-card-header">' +
       '<h3>' + escHtml(stageName) + ' Review</h3>' +
-      '<span class="review-tag">external gate</span>' +
+      '<span class="review-tag">' + escHtml(tag) + '</span>' +
     '</div>' +
     '<div class="review-card-body">' +
       '<h4>' + escHtml(intentTitle) + '</h4>' +
@@ -660,9 +661,9 @@ function completeAllStages(){
   stageBadgeEl.style.background = "rgba(34,197,94,.1)";
 }
 
-// ── Steps definition ──
+// ── Default steps (software studio) ──
 // Each step: { delay (ms at 1x), actions: [fn, ...] }
-const steps = [
+var steps = [
   // === Step 1: User invokes /haiku:new ===
   { delay: 800, actions: [function(){
     addMsg("user","you","/haiku:new");
@@ -1066,7 +1067,7 @@ const steps = [
 function getTotalSteps(){ return steps.length; }
 
 function updateProgress(){
-  const pct = Math.min(100, (stepIdx / getTotalSteps()) * 100);
+  var pct = Math.min(100, (stepIdx / getTotalSteps()) * 100);
   progressEl.style.width = pct + "%";
 }
 
@@ -1156,7 +1157,6 @@ speedBtns.forEach(function(btn){
 
 // Keyboard shortcuts
 document.addEventListener("keydown", function(e){
-  // Ignore if user is in an input
   if(e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
   switch(e.key){
     case " ":
@@ -1213,12 +1213,41 @@ document.addEventListener("keydown", function(e){
   });
 })();
 
-// ── Init ──
-initBoard();
-updateProgress();
-updateStepCounter();
-start();
+// ── Apply config and initialize ──
+function applyConfigAndStart(){
+  if(window.HAIKU_DEMO_CONFIG){
+    var cfg = window.HAIKU_DEMO_CONFIG;
+    if(cfg.stages) STAGES = cfg.stages;
+    if(cfg.steps) steps = cfg.steps;
+    if(cfg.completionText) completionTextEl.textContent = cfg.completionText;
+    if(cfg.title){
+      // Capitalize studio name for title: "data-pipeline" -> "Data Pipeline Studio"
+      var displayTitle = cfg.title.replace(/-/g, " ").replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+      document.title = "H\u00B7AI\u00B7K\u00B7U in Action \u2014 " + displayTitle + " Studio";
+    }
+  }
+  initBoard();
+  updateProgress();
+  updateStepCounter();
+  start();
+}
 
+// ── Dynamic studio loading ──
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var studio = params.get("studio");
+  if(studio && studio !== "software"){
+    var script = document.createElement("script");
+    script.src = "demos/" + studio + ".js";
+    script.onload = function(){ applyConfigAndStart(); };
+    script.onerror = function(){
+      console.warn("Could not load demo config for studio: " + studio + ". Using default.");
+      applyConfigAndStart();
+    };
+    document.head.appendChild(script);
+  } else {
+    applyConfigAndStart();
+  }
 })();
 </script>
 </body>
