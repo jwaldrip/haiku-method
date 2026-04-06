@@ -306,6 +306,12 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 		}
 		case "haiku_unit_complete": {
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
+			// Verify completion criteria are checked before allowing completion
+			const unitRaw = readFileSync(path, "utf8")
+			const unchecked = (unitRaw.match(/- \[ \]/g) || []).length
+			if (unchecked > 0) {
+				return text(JSON.stringify({ error: "criteria_not_met", unchecked, message: `Cannot complete unit: ${unchecked} completion criteria still unchecked` }))
+			}
 			setFrontmatterField(path, "status", "completed")
 			setFrontmatterField(path, "completed_at", timestamp())
 			emitTelemetry("haiku.unit.completed", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string })
