@@ -241,9 +241,10 @@ export async function runMigrate(args: string[]): Promise<void> {
 			}
 		}
 
-		// Determine active stage from active_pass
+		// Determine active stage: use the first stage that has units (not active_pass —
+		// that would imply prior stages completed, which they haven't in H·AI·K·U)
 		const activePass = (intentFm.active_pass as string) || ""
-		const activeStage = activePass ? (passToStage[activePass] || "") : ""
+		const mappedStage = activePass ? (passToStage[activePass] || "") : ""
 
 		// Preserve epic/ticket reference
 		const epic = (intentFm.epic as string) || ""
@@ -285,27 +286,25 @@ export async function runMigrate(args: string[]): Promise<void> {
 				return false // Don't skip — keep all stages for active intents
 			})
 
-			writeFileSync(join(destDir, "intent.md"),
-				`---\ntitle: "${title}"\nstudio: software\nstages: [inception, design, product, development, operations, security]\nmode: continuous\nactive_stage: ${activeStage || '""'}\nstatus: active\nstarted_at: ${startedAt}\ncompleted_at: null${epic ? `\nepic: ${epic}` : ""}${parentSlug ? `\nfollows: ${parentSlug}` : ""}\n---\n\n${intentBody}\n`)
+			// Set active_stage to the first stage that has units
+			const firstStageWithUnits = allStages.find(s => unitsByStage.has(s)) || ""
 
-			// Write state for stages that have units or are before/at active stage
+			writeFileSync(join(destDir, "intent.md"),
+				`---\ntitle: "${title}"\nstudio: software\nstages: [inception, design, product, development, operations, security]\nmode: continuous\nactive_stage: ${firstStageWithUnits || '""'}\nstatus: active\nstarted_at: ${startedAt}\ncompleted_at: null${epic ? `\nepic: ${epic}` : ""}${parentSlug ? `\nfollows: ${parentSlug}` : ""}\n---\n\n${intentBody}\n`)
+
+			// Write state only for stages that have units — don't imply prior stages completed
 			for (const stage of allStages) {
 				mkdirSync(join(destDir, "stages", stage, "units"), { recursive: true })
-				const stageIdx = allStages.indexOf(stage)
-				const activeIdx = activeStage ? allStages.indexOf(activeStage) : -1
-				const isComplete = activeIdx >= 0 && stageIdx < activeIdx
-				const isActive = stage === activeStage
-
-				if (isComplete || isActive || unitsByStage.has(stage)) {
+				if (unitsByStage.has(stage)) {
 					writeFileSync(join(destDir, "stages", stage, "state.json"),
 						JSON.stringify({
 							stage,
-							status: isComplete ? "completed" : (isActive ? "active" : "pending"),
-							phase: isComplete ? "gate" : (isActive ? "execute" : ""),
-							started_at: `${startedAt}`,
-							completed_at: isComplete ? `${completedAt}` : null,
+							status: stage === firstStageWithUnits ? "active" : "pending",
+							phase: stage === firstStageWithUnits ? "execute" : "",
+							started_at: startedAt,
+							completed_at: null,
 							gate_entered_at: null,
-							gate_outcome: isComplete ? "advanced" : null,
+							gate_outcome: null,
 						}, null, 2) + "\n")
 				}
 			}
