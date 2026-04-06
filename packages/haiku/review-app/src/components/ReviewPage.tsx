@@ -160,6 +160,10 @@ function IntentReview({
     unitsByStage.set(stage, group);
   }
 
+  const hasUnits = units.length > 0;
+  const hasKnowledge = knowledgeFiles.length > 0 || stageArtifacts.length > 0;
+  const hasDomain = !!domainSection;
+
   const tabs: TabDef[] = [
     {
       id: "overview",
@@ -247,7 +251,7 @@ function IntentReview({
     },
     {
       id: "units-dag",
-      label: "Units & DAG",
+      label: `Units (${units.length})`,
       content: (
         <>
           {mermaid && (
@@ -358,7 +362,12 @@ function IntentReview({
         </>
       ),
     },
-  ];
+  ].filter((tab) => {
+    if (tab.id === "units-dag" && !hasUnits) return false;
+    if (tab.id === "knowledge" && !hasKnowledge) return false;
+    if (tab.id === "domain" && !hasDomain) return false;
+    return true;
+  });
 
   return (
     <>
