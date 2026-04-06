@@ -1,49 +1,92 @@
 # Code Review Guidelines
 
+## Validation (REQUIRED)
+
+**Before approving any PR that modifies `plugin/`, `packages/haiku/`, or skill files:**
+
+Read `plugin/VALIDATION.md` and verify the changed code against its criteria. Specifically:
+
+1. **State integrity** — state writes go through MCP tools, lifecycle transitions auto-commit to git
+2. **Orchestration** — `haiku_run_next` produces correct actions for the stage loop (decompose → execute → review → persist → gate)
+3. **Quality enforcement** — `haiku_unit_complete` rejects if criteria checkboxes are unchecked
+4. **Hat isolation** — subagent context injects hat isolation directive; agents only receive their assigned hat's instructions
+5. **Mode handling** — continuous auto-advances on `auto` gates; discrete always stops
+6. **Composite intents** — sync points are checked; blocked stages are not returned as runnable
+
+Trace any changed orchestration logic through the scenarios in VALIDATION.md.
+
 ## Cross-Component Sync
 
-This is a three-component project (plugin, paper, website). The most critical review check is **sync drift**:
+Three-component project: **plugin** (Claude Code plugin), **paper** (methodology spec), **website** (Next.js static site).
 
-- If a PR adds a new skill (`plugin/skills/`), verify the concept is documented in the paper (`website/content/papers/ai-dlc-2026.md`)
-- If a PR adds a new hat or workflow (`plugin/hats/`, `plugin/workflows.yml`), verify the paper's Named Workflows or Construction section covers it
-- If a PR modifies the paper's terminology or definitions, verify the plugin's fundamentals skill (`plugin/skills/fundamentals/SKILL.md`) and affected hats/skills are updated
-- If a PR adds or changes user-facing features, verify `website/content/docs/` has corresponding documentation
+| Change Type | Check Paper | Check Plugin | Check Website |
+|---|---|---|---|
+| New skill | Mentioned in relevant section? | Primary source | CLI reference updated? |
+| New studio/stage | Documented in Profiles section? | Primary source | Studios/stages docs updated? |
+| New hat | Documented in relevant profile? | `stages/{stage}/hats/{hat}.md` exists? | Docs if user-facing? |
+| New review agent | Quality Enforcement section? | `stages/{stage}/review-agents/{agent}.md` exists? | Docs if user-facing? |
+| Terminology change | All references updated? | All references updated? | All references updated? |
+| New provider category | Section 8 updated? | Provider instructions + schema? | providers.md updated? |
 
 ## Terminology Consistency
 
 Flag any usage that confuses these distinct concepts:
 
-- **Intent** = the overall thing being built (like an Epic)
-- **Unit** = a discrete piece of work within an intent (like a Story)
-- **Bolt** = the iteration cycle an agent runs within a unit (like a Sprint). Tracked as `iteration` in state files, NOT the same as Unit
-- **Pass** = a typed disciplinary iteration (design/product/dev), optional
+| Term | Definition | NOT the same as |
+|------|-----------|-----------------|
+| **Studio** | Named lifecycle template (e.g., software, sales) | Stage |
+| **Stage** | Lifecycle phase within a studio, with hats + review gate | Studio |
+| **Unit** | Discrete piece of work with completion criteria | Bolt |
+| **Bolt** | One iteration cycle through the hat sequence for a unit | Unit |
+| **Hat** | Behavioral role scoped to a stage | Agent |
+| **Review Agent** | Adversarial verification specialist per stage | Hat |
+
+**Hierarchy:** Studio > Stage > Unit > Bolt
 
 ## Plugin-Specific
 
-### Skills and Hats
-- Skills must have a `SKILL.md` in their directory
-- Hat instructions must include graceful degradation for provider/MCP calls (never block on provider failures)
-- Hard gates (`PLAN_APPROVED`, `TESTS_PASS`, `CRITERIA_MET`) must use `exit 1` enforcement, not advisory language
+### Binary (`packages/haiku/` → `plugin/bin/haiku`)
+- Source lives in `packages/haiku/` — only the compiled binary ships in `plugin/`
+- The binary handles: MCP server, hooks, and migration
+- Zero external runtime dependencies (no jq, yq, npm install)
+- Build: `cd packages/haiku && npm run build` → `plugin/bin/haiku` (~485KB minified)
 
-### Shell Scripts (hooks, lib)
-- Must handle missing files/state gracefully (check existence before reading)
-- Must suppress errors appropriately (`2>/dev/null`, `|| true`) for non-critical operations
-- Must not block core workflow on optional features (providers, visual comparison, telemetry)
+### Skills
+- Must reference MCP tools (`haiku_run_next`, `haiku_unit_start`, etc.) — not shell functions
+- The run skill follows `haiku_run_next` actions — no prose-based orchestration
+- Skills must NOT reference `iteration.json`, `hku_state_load/save`, or `source parse.sh`
 
-### State Files
-- Changes to `iteration.json` structure must be backward-compatible
-- New frontmatter fields in intent/unit specs must have sensible defaults
+### Hooks
+- All hooks are TypeScript in `packages/haiku/src/hooks/`
+- Registered in `plugin/hooks/hooks.json` pointing to `bin/haiku hook <name>`
+- No shell scripts for hooks
+- Hooks read state from frontmatter + `state.json` — never from `iteration.json`
+
+### State Model
+- Intent state: `intent.md` frontmatter (`studio`, `stages`, `active_stage`, `status`, `started_at`, `completed_at`)
+- Stage state: `stages/{stage}/state.json` (`phase`, `status`, `started_at`, `completed_at`, `gate_entered_at`, `gate_outcome`)
+- Unit state: `unit-*.md` frontmatter (`bolt`, `hat`, `status`, `started_at`, `completed_at`)
+- MCP tools are the primary state interface — hooks may read directly but should not write lifecycle state
+
+### MCP Tools (22 total)
+- 16 state/knowledge tools (`haiku_intent_*`, `haiku_stage_*`, `haiku_unit_*`, `haiku_knowledge_*`)
+- 2 orchestrator tools (`haiku_run_next`, `haiku_gate_approve`)
+- 4 review/visual tools (`open_review`, `get_review_status`, `ask_user_visual_question`, `pick_design_direction`)
 
 ## Paper-Specific
 
-- No time estimates (hours, days, weeks, "Week 1-2" patterns) anywhere in the paper
-- New concepts must include: definition, Agile equivalent (if applicable), and relationship to existing concepts
-- Principles must follow the existing pattern: statement, rationale, concrete example
+- No time estimates anywhere
+- 12 studios documented (engineering, go-to-market, general purpose)
+- 5-step stage loop: decompose, execute, adversarial review, persist, gate
+- 4 gate types: auto, ask, external, await
+- Providers are bidirectional translation layers (6 categories)
 
 ## Website-Specific
 
-- Next.js 15 App Router with static export — no server-side features
-- Content in `website/content/` uses MDX
+- Next.js 15 App Router with static export (`trailingSlash: true`)
+- `NEXT_PUBLIC_*` env vars must be passed to the build step in deploy workflows
+- Studio/stage detail pages render from plugin source (dynamic at build time)
+- Browse feature at `/browse/` — local filesystem + GitHub/GitLab API with OAuth
 
 ## Skip
 
