@@ -2,7 +2,7 @@
 name: training
 description: Training program design and delivery lifecycle
 stages: [needs-analysis, design, develop, deliver, evaluate]
-category: people
+category: back-office
 persistence:
   type: filesystem
   delivery: local

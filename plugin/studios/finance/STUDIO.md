@@ -2,7 +2,7 @@
 name: finance
 description: Financial planning, budgeting, and analysis lifecycle
 stages: [forecast, budget, analysis, reporting, close]
-category: business-ops
+category: back-office
 persistence:
   type: filesystem
   delivery: local

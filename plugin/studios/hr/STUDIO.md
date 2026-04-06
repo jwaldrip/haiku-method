@@ -2,7 +2,7 @@
 name: hr
 description: Human resources lifecycle for hiring, onboarding, and talent management
 stages: [requisition, sourcing, screening, interview, offer]
-category: business-ops
+category: back-office
 persistence:
   type: filesystem
   delivery: local
