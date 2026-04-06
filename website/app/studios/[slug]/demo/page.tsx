@@ -1,3 +1,4 @@
+import { getDemoConfig } from "@/lib/demo"
 import { getAllStudios, getStudioBySlug } from "@/lib/studios"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
@@ -31,11 +32,8 @@ export default async function StudioDemoPage({ params }: Props) {
 	const studio = getStudioBySlug(slug)
 	if (!studio) notFound()
 
-	return (
-		<DemoClient
-			slug={slug}
-			studioName={studio.name}
-			stages={studio.stages}
-		/>
-	)
+	const config = await getDemoConfig(slug)
+	if (!config) notFound()
+
+	return <DemoClient config={config} />
 }
