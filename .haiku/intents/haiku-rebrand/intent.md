@@ -3,7 +3,7 @@ title: "H·AI·K·U Rebrand — From AI-DLC to Domain-Agnostic Lifecycle Orchest
 studio: software
 stages: [inception, design, product, development, operations, security]
 mode: continuous
-active_stage: development
+active_stage: security
 status: completed
 started_at: 2026-04-03T10:48:35Z
 completed_at: 2026-04-05T10:25:11Z

@@ -3,7 +3,7 @@ title: "Visual Review Full Integration & Bug Fixes"
 studio: software
 stages: [inception, design, product, development, operations, security]
 mode: continuous
-active_stage: development
+active_stage: security
 status: completed
 started_at: 2026-03-30T07:06:24Z
 completed_at: 2026-03-30T23:05:08Z
