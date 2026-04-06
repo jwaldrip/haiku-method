@@ -12,8 +12,8 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 - [ ] Unit state lives in `unit-*.md` frontmatter (`bolt`, `hat`, `status`, `started_at`, `completed_at`)
 - [ ] Stage state lives in `stages/{stage}/state.json` (`phase`, `status`, `started_at`, `completed_at`, `gate_entered_at`, `gate_outcome`)
 - [ ] No lifecycle state is stored in `state/iteration.json` (deprecated)
-- [ ] Every state write goes through MCP tools (`haiku_intent_set`, `haiku_stage_set`, `haiku_unit_set`, etc.)
-- [ ] Every state write is committed to git (not left as unstaged changes)
+- [ ] Every state write goes through MCP tools (`haiku_intent_set`, `haiku_stage_set`, `haiku_unit_set`, etc.) — exception: hooks may write directly for auto-reconciliation (post-merge, auto-complete)
+- [ ] Lifecycle transitions (stage start/complete, unit start/complete) are committed to git automatically. Incremental updates (hat advance, bolt increment, phase set) are committed by the agent as part of its workflow.
 
 ### Orchestration
 
