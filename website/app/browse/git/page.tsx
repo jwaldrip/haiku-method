@@ -45,6 +45,13 @@ function GitBrowseInner() {
 		const storedToken = getToken(host)
 
 		async function init() {
+			// Always require authentication — unauthenticated API access hits rate limits too quickly
+			if (!storedToken) {
+				setNeedsAuth(true)
+				setLoading(false)
+				return
+			}
+
 			let prov: (GitHubProvider | GitLabProvider) & BrowseProvider
 
 			if (isGitHub) {
@@ -63,16 +70,8 @@ function GitBrowseInner() {
 				? await (prov as GitHubProvider).getAccessStatus()
 				: { ok: await (prov as GitLabProvider).isAccessible(), reason: "auth_required" as const }
 			if (!status.ok) {
-				if (storedToken) clearToken(host)
+				clearToken(host)
 				setAuthReason(status.reason)
-				setNeedsAuth(true)
-				setLoading(false)
-				return
-			}
-
-			// If no token, prompt auth even for public repos (avoids rate limiting)
-			if (!storedToken && isOAuthAvailable(host)) {
-				setAuthReason("rate_limited")
 				setNeedsAuth(true)
 				setLoading(false)
 				return
@@ -144,12 +143,14 @@ function GitBrowseInner() {
 				</nav>
 
 				<h1 className="mb-2 text-2xl font-bold">
-					{authReason === "not_found" ? "Authentication Required" : "Sign In to Browse"}
+					Sign In to Browse
 				</h1>
 				<p className="mb-6 text-stone-600 dark:text-stone-400">
 					{authReason === "not_found"
 						? "Repository not found. It may be private — sign in to access it."
-						: `Sign in to browse H\u00b7AI\u00b7K\u00b7U intents in this repository. Authentication avoids GitHub\u2019s API rate limits.`}
+						: authReason === "auth_required"
+						? "Sign in to access this repository."
+						: `Sign in to browse H\u00b7AI\u00b7K\u00b7U intents in this repository.`}
 				</p>
 
 				{/* OAuth — primary auth method */}
