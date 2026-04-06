@@ -312,9 +312,11 @@ export class GitLabProvider implements BrowseProvider {
 					if (!blob?.path) continue
 					if (blob.rawTextBlob != null) {
 						blobByPath.set(blob.path, blob.rawTextBlob)
-					} else if (blob.rawPath) {
-						// Binary file — store as asset with raw download URL
-						const rawUrl = blob.rawPath.startsWith("http") ? blob.rawPath : `https://${this.host}${blob.rawPath}`
+					} else {
+						// Binary file — use REST API for CORS-compatible authenticated download
+						const ref = this.branch || "HEAD"
+						const encodedFilePath = encodeURIComponent(blob.path)
+						const rawUrl = `https://${this.host}/api/v4/projects/${this.encodedProject}/repository/files/${encodedFilePath}/raw?ref=${encodeURIComponent(ref)}`
 						assets.push({ path: blob.path, name: blob.name || blob.path.split("/").pop() || "", rawUrl })
 					}
 				}
