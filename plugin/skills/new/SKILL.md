@@ -86,11 +86,11 @@ This creates a sales intent pre-filled with units for Acme Corp, with criteria l
 
 ### Step 1: Gather Intent
 
-If an argument is provided, use it as the intent description. Otherwise ask:
+If an argument is provided, use it as the intent description. Otherwise ask the user directly in the conversation:
 
 > What do you want to accomplish?
 
-Use `AskUserQuestion` to gather the description.
+Wait for the user's text reply. Do NOT use `AskUserQuestion` for this — it's a free-text conversational prompt.
 
 ### Step 2: Extract Slug
 
@@ -151,13 +151,15 @@ If no project-level studio is set (or the field is empty):
 
 Verify the selected studio exists via `haiku_studio_get { studio: "<name>" }`. If it returns empty, fall back to `ideation` with a warning.
 
-### Step 4: Ask Mode
+### Step 4: Set Mode
 
-Ask the user to choose their execution mode using `AskUserQuestion`:
+Default to **continuous** mode. Do not ask the user — this is a per-intent decision the agent makes based on the work:
 
-**Continuous mode:** Agent drives through all stages. User reviews at gates.
+- **Continuous** (default): Agent drives through all stages. User reviews at gates. Best for most intents.
+- **Discrete**: Each stage runs independently. Use for exploratory work where the user wants to pause and think between stages.
+- **Hybrid**: Discrete for early stages (inception, design, product), continuous from a threshold stage onward. Set `continuous_from:` to the stage where continuous begins.
 
-**Discrete mode:** Each stage runs independently. User invokes `/haiku:run` to advance through stages one at a time.
+Only use discrete/hybrid if the intent's nature clearly calls for it. Do not ask.
 
 **Hybrid mode:** Discrete up to a named stage, then continuous from that stage onward. Best when early stages need human pacing (research, strategy) but later stages can be agent-driven (execution, validation).
 
