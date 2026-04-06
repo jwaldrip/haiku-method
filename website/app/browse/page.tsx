@@ -108,23 +108,30 @@ export default function BrowsePage() {
 		if (!items || items.length === 0) return
 
 		for (const item of Array.from(items)) {
-			const handle = await (item as unknown as { getAsFileSystemHandle(): Promise<FileSystemHandle | null> }).getAsFileSystemHandle()
-			if (handle?.kind === "directory") {
-				setLoading(true)
-				setError(null)
-				const local = new LocalProvider(handle as FileSystemDirectoryHandle)
-				const found = await local.init()
-				if (!found) {
-					setError("No .haiku/ directory found in the dropped folder.")
-					setLoading(false)
-					return
+			// File System Access API — Chrome 86+
+			if ("getAsFileSystemHandle" in item) {
+				try {
+					const handle = await (item as unknown as { getAsFileSystemHandle(): Promise<FileSystemHandle | null> }).getAsFileSystemHandle()
+					if (handle?.kind === "directory") {
+						setLoading(true)
+						setError(null)
+						const local = new LocalProvider(handle as FileSystemDirectoryHandle)
+						const found = await local.init()
+						if (!found) {
+							setError("No .haiku/ directory found in the dropped folder.")
+							setLoading(false)
+							return
+						}
+						setProvider(local)
+						setLoading(false)
+						return
+					}
+				} catch (err) {
+					console.error("Drop handle error:", err)
 				}
-				setProvider(local)
-				setLoading(false)
-				return
 			}
 		}
-		setError("Please drop a directory, not a file.")
+		setError("Drop a project folder, or click to use the directory picker. Your browser may not support drag-and-drop for directories.")
 	}, [])
 
 	// Don't render anything until mounted (avoids hydration mismatch)
