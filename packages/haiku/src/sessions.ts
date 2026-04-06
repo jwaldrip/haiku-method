@@ -23,6 +23,9 @@ export interface ReviewSession {
   parsedMermaid?: string;
   intentMockups?: unknown[];
   unitMockups?: Map<string, unknown[]> | Record<string, unknown[]>;
+  stageStates?: Record<string, unknown>;
+  knowledgeFiles?: Array<{ name: string; content: string }>;
+  stageArtifacts?: Array<{ stage: string; name: string; content: string }>;
 }
 
 export interface QuestionDef {

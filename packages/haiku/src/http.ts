@@ -68,6 +68,10 @@ function handleSessionApi(sessionId: string): Response {
 			}
 			data.unit_mockups = obj
 		}
+		// Stage states, knowledge files, and stage artifacts
+		if (session.stageStates) data.stage_states = session.stageStates
+		if (session.knowledgeFiles) data.knowledge_files = session.knowledgeFiles
+		if (session.stageArtifacts) data.stage_artifacts = session.stageArtifacts
 	}
 
 	if (session.session_type === "question") {

@@ -16,6 +16,8 @@ export function markdownToHtml(md: string): string {
 /**
  * Split a markdown body into sections based on ## headings.
  * ### subsections are nested under their parent ## section.
+ * Any text before the first ## heading is captured in a section
+ * with heading "_preamble" so callers can access the intro text.
  */
 export function extractSections(body: string): Section[] {
 	const lines = body.split("\n")
@@ -30,6 +32,14 @@ export function extractSections(body: string): Section[] {
 			currentH3.content = text
 		} else if (currentH2) {
 			currentH2.content = text
+		} else if (text) {
+			// Text before the first ## heading — capture as preamble
+			sections.push({
+				heading: "_preamble",
+				level: 0,
+				content: text,
+				subsections: [],
+			})
 		}
 		buffer = []
 	}

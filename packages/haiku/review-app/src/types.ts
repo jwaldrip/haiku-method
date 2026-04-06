@@ -54,6 +54,7 @@ export interface UnitFrontmatter {
   type?: string;
   depends_on?: string[];
   wireframe?: string;
+  stage?: string;
   [key: string]: unknown;
 }
 
@@ -63,6 +64,7 @@ export interface ParsedUnit {
   number: number;
   frontmatter: UnitFrontmatter;
   sections: Section[];
+  rawContent?: string;
 }
 
 export interface IntentFrontmatter {
@@ -82,6 +84,28 @@ export interface ParsedIntent {
   title: string;
   frontmatter: IntentFrontmatter;
   sections: Section[];
+  rawContent?: string;
+}
+
+export interface StageStateInfo {
+  stage: string;
+  status: string;
+  phase: string;
+  started_at?: string;
+  completed_at?: string | null;
+  gate_entered_at?: string | null;
+  gate_outcome?: string | null;
+}
+
+export interface KnowledgeFile {
+  name: string;
+  content: string;
+}
+
+export interface StageArtifact {
+  stage: string;
+  name: string;
+  content: string;
 }
 
 /** The API response from /api/session/:sessionId */
@@ -101,6 +125,9 @@ export interface SessionData {
   mermaid?: string;
   intent_mockups?: MockupInfo[];
   unit_mockups?: Record<string, MockupInfo[]>;
+  stage_states?: Record<string, StageStateInfo>;
+  knowledge_files?: KnowledgeFile[];
+  stage_artifacts?: StageArtifact[];
 
   // Question sessions
   title?: string;

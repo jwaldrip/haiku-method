@@ -36,6 +36,8 @@ export interface UnitFrontmatter {
   hat: string;
   started_at?: string;
   completed_at?: string | null;
+  // Injected by parseAllUnits when unit is in stages/{stage}/units/
+  stage?: string;
   // Legacy fields
   last_updated?: string;
   branch?: string;

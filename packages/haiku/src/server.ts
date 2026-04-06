@@ -6,6 +6,9 @@ import {
 	parseAllUnits,
 	parseCriteria,
 	parseIntent,
+	parseStageStates,
+	parseKnowledgeFiles,
+	parseStageArtifacts,
 	toMermaidDefinition,
 } from "./index.js"
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
@@ -499,6 +502,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			}
 		}
 
+		// Parse additional data for the SPA
+		const stageStates = await parseStageStates(intentDir)
+		const knowledgeFiles = await parseKnowledgeFiles(intentDir)
+		const stageArtifacts = await parseStageArtifacts(intentDir)
+
 		// Store parsed data on the session for the SPA API endpoint
 		session.parsedIntent = intent
 		session.parsedUnits = units
@@ -506,6 +514,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 		session.parsedMermaid = mermaid
 		session.intentMockups = intentMockups
 		session.unitMockups = unitMockups
+		session.stageStates = stageStates
+		session.knowledgeFiles = knowledgeFiles
+		session.stageArtifacts = stageArtifacts
 
 		// Generate HTML with session ID, mockups, and wireframes (legacy fallback)
 		session.html = renderReviewPage({
