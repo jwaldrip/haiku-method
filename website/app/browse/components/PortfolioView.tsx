@@ -62,6 +62,24 @@ export function PortfolioView({ provider, onBack, repoLabel }: Props) {
 	const [viewMode, setViewMode] = useState<"list" | "board">("list")
 	const initialHashHandled = useRef(false)
 
+	// Restore deeplink state IMMEDIATELY before loading the full list
+	useEffect(() => {
+		if (initialHashHandled.current) return
+		initialHashHandled.current = true
+		const params = parseHash()
+		if (params.view === "board" || params.view === "list") {
+			setViewMode(params.view)
+		}
+		if (params.intent) {
+			// Load the deeplinked intent right away — don't wait for the full list
+			setLoadingDetail(true)
+			provider.getIntent(params.intent).then(detail => {
+				setSelectedIntent(detail)
+				setLoadingDetail(false)
+			})
+		}
+	}, [provider])
+
 	// Progressive loading — show each intent as it loads
 	useEffect(() => {
 		async function load() {
@@ -70,27 +88,11 @@ export function PortfolioView({ provider, onBack, repoLabel }: Props) {
 
 			await provider.listIntents((intent) => {
 				setIntents((prev) => [...prev, intent])
-				// Stop showing initial spinner after first intent arrives
 				setLoading(false)
 			})
 
 			setLoadingMore(false)
 			setLoading(false)
-
-			// Restore state from hash after intents load
-			if (!initialHashHandled.current) {
-				initialHashHandled.current = true
-				const params = parseHash()
-				if (params.view === "board" || params.view === "list") {
-					setViewMode(params.view)
-				}
-				if (params.intent) {
-					setLoadingDetail(true)
-					const detail = await provider.getIntent(params.intent)
-					setSelectedIntent(detail)
-					setLoadingDetail(false)
-				}
-			}
 		}
 		load()
 	}, [provider])
