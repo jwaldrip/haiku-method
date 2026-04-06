@@ -2,7 +2,7 @@
 name: renewal
 description: Prepare renewal strategy, negotiate terms, and secure commitment
 hats: [renewal-manager, executive-sponsor]
-review: external
+review: [external, await]
 unit_types: [renewal, contract]
 inputs:
   - stage: expansion
