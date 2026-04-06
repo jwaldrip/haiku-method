@@ -6,6 +6,7 @@ import type {
   IntentFrontmatter,
   UnitFrontmatter,
   DiscoveryFrontmatter,
+  StageState,
   ParsedIntent,
   ParsedUnit,
   ParsedDiscovery,
@@ -38,9 +39,10 @@ function extractTitle(body: string): string {
 
 /**
  * Strip the title line (first # heading) from the body for section parsing.
+ * Uses the `m` flag so `^` matches at the start of any line, not just string start.
  */
 function stripTitle(body: string): string {
-  return body.replace(/^# .+\n?/, "").trim();
+  return body.replace(/^# .+$/m, "").trim();
 }
 
 /**
@@ -113,28 +115,62 @@ export async function parseUnit(
 
 /**
  * Parse all unit-*.md files from an intent directory, sorted by number.
+ * Looks in both the intent root and stages/{stage}/units/ subdirectories.
  */
 export async function parseAllUnits(
   intentDir: string
 ): Promise<ParsedUnit[]> {
+  const units: ParsedUnit[] = [];
+
+  // 1. Look for unit files directly in the intent root
   try {
     const entries = await readdir(intentDir);
     const unitFiles = entries
       .filter((f) => /^unit-\d+.*\.md$/.test(f))
       .sort();
 
-    const units: ParsedUnit[] = [];
     for (const file of unitFiles) {
       const parsed = await parseUnit(join(intentDir, file));
       if (parsed) {
         units.push(parsed);
       }
     }
-
-    return units.sort((a, b) => a.number - b.number);
   } catch {
-    return [];
+    // Intent dir may not exist or have no direct unit files
   }
+
+  // 2. Look for unit files in stages/{stage}/units/ subdirectories
+  try {
+    const stagesDir = join(intentDir, "stages");
+    const stageEntries = await readdir(stagesDir, { withFileTypes: true });
+    for (const stageEntry of stageEntries) {
+      if (!stageEntry.isDirectory()) continue;
+      try {
+        const unitsDir = join(stagesDir, stageEntry.name, "units");
+        const unitEntries = await readdir(unitsDir);
+        const unitFiles = unitEntries
+          .filter((f) => /^unit-\d+.*\.md$/.test(f))
+          .sort();
+
+        for (const file of unitFiles) {
+          const parsed = await parseUnit(join(unitsDir, file));
+          if (parsed) {
+            // Tag the unit with its stage for context
+            if (!parsed.frontmatter.stage) {
+              parsed.frontmatter.stage = stageEntry.name;
+            }
+            units.push(parsed);
+          }
+        }
+      } catch {
+        // No units/ subdirectory in this stage — skip
+      }
+    }
+  } catch {
+    // No stages/ directory — skip
+  }
+
+  return units.sort((a, b) => a.number - b.number);
 }
 
 /**
@@ -171,4 +207,110 @@ export async function listIntents(haikuDir: string): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+/**
+ * Parse all stage state.json files from an intent's stages/ directory.
+ * Returns a map of stage name to parsed StageState.
+ */
+export async function parseStageStates(
+  intentDir: string
+): Promise<Record<string, StageState>> {
+  const states: Record<string, StageState> = {};
+  try {
+    const stagesDir = join(intentDir, "stages");
+    const entries = await readdir(stagesDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      try {
+        const stateFile = join(stagesDir, entry.name, "state.json");
+        const raw = await readFile(stateFile, "utf-8");
+        const parsed = JSON.parse(raw);
+        states[entry.name] = {
+          stage: parsed.stage ?? entry.name,
+          status: parsed.status ?? "pending",
+          phase: parsed.phase ?? "",
+          started_at: parsed.started_at,
+          completed_at: parsed.completed_at,
+          gate_entered_at: parsed.gate_entered_at,
+          gate_outcome: parsed.gate_outcome,
+        };
+      } catch {
+        // No state.json or parse error — skip
+      }
+    }
+  } catch {
+    // No stages/ directory
+  }
+  return states;
+}
+
+/**
+ * Read all knowledge files from an intent's knowledge/ directory.
+ * Returns an array of { name, content } objects.
+ */
+export async function parseKnowledgeFiles(
+  intentDir: string
+): Promise<Array<{ name: string; content: string }>> {
+  const files: Array<{ name: string; content: string }> = [];
+  try {
+    const knowledgeDir = join(intentDir, "knowledge");
+    const entries = await readdir(knowledgeDir);
+    for (const entry of entries.sort()) {
+      if (!entry.endsWith(".md")) continue;
+      try {
+        const content = await readFile(join(knowledgeDir, entry), "utf-8");
+        files.push({
+          name: entry.replace(/\.md$/, ""),
+          content,
+        });
+      } catch {
+        // Skip unreadable files
+      }
+    }
+  } catch {
+    // No knowledge/ directory
+  }
+  return files;
+}
+
+/**
+ * Read stage-specific artifact files (like DESIGN-BRIEF.md).
+ * Returns an array of { stage, name, content } objects.
+ */
+export async function parseStageArtifacts(
+  intentDir: string
+): Promise<Array<{ stage: string; name: string; content: string }>> {
+  const artifacts: Array<{ stage: string; name: string; content: string }> = [];
+  try {
+    const stagesDir = join(intentDir, "stages");
+    const stageEntries = await readdir(stagesDir, { withFileTypes: true });
+    for (const stageEntry of stageEntries) {
+      if (!stageEntry.isDirectory()) continue;
+      try {
+        const stageDir = join(stagesDir, stageEntry.name);
+        const files = await readdir(stageDir);
+        for (const file of files.sort()) {
+          // Capture markdown files that aren't state.json
+          if (file.endsWith(".md")) {
+            try {
+              const content = await readFile(join(stageDir, file), "utf-8");
+              artifacts.push({
+                stage: stageEntry.name,
+                name: file.replace(/\.md$/, ""),
+                content,
+              });
+            } catch {
+              // Skip unreadable files
+            }
+          }
+        }
+      } catch {
+        // Skip
+      }
+    }
+  } catch {
+    // No stages/ directory
+  }
+  return artifacts;
 }

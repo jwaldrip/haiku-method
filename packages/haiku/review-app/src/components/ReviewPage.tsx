@@ -1,11 +1,13 @@
 import { useCallback, useRef, useState } from "react";
-import type { SessionData, ReviewAnnotations, ParsedUnit, MockupInfo, Section } from "../types";
+import type { SessionData, ReviewAnnotations, ParsedUnit, MockupInfo, Section, KnowledgeFile, StageArtifact, StageStateInfo } from "../types";
 import { StatusBadge, MarkdownViewer, CriteriaChecklist } from "@haiku/shared";
 import { Tabs, type TabDef } from "./Tabs";
 import { Card, SectionHeading } from "./Card";
 import { DecisionForm } from "./DecisionForm";
 import { AnnotationCanvas, type AnnotationPin } from "./AnnotationCanvas";
 import { InlineComments, type InlineComment } from "./InlineComments";
+import { MermaidDiagram } from "./MermaidDiagram";
+import { marked } from "marked";
 
 interface Props {
   session: SessionData;
@@ -18,17 +20,30 @@ function isImageUrl(url: string): boolean {
   return IMAGE_EXTS.includes(ext);
 }
 
-function findSection(sections: Section[], name: string): string {
-  const section = sections.find(
-    (s) => s.heading.toLowerCase() === name.toLowerCase(),
-  );
-  return section?.content ?? "";
+function findSection(sections: Section[], ...names: string[]): string {
+  for (const name of names) {
+    const section = sections.find(
+      (s) => s.heading.toLowerCase() === name.toLowerCase(),
+    );
+    if (section?.content) return section.content;
+  }
+  return "";
 }
 
-function findSectionWithSubs(sections: Section[], name: string): Section | undefined {
-  return sections.find(
-    (s) => s.heading.toLowerCase() === name.toLowerCase(),
-  );
+function findSectionWithSubs(sections: Section[], ...names: string[]): Section | undefined {
+  for (const name of names) {
+    const section = sections.find(
+      (s) => s.heading.toLowerCase() === name.toLowerCase(),
+    );
+    if (section) return section;
+  }
+  return undefined;
+}
+
+/** Get the preamble (intro text before first ## heading) from sections */
+function getPreamble(sections: Section[]): string {
+  const preamble = sections.find((s) => s.heading === "_preamble");
+  return preamble?.content ?? "";
 }
 
 export function ReviewPage({ session, sessionId }: Props) {
@@ -99,20 +114,34 @@ function IntentReview({
   const mermaid = session.mermaid ?? "";
   const intentMockups = session.intent_mockups ?? [];
   const unitMockupsMap = session.unit_mockups ?? {};
+  const stageStates = session.stage_states ?? {};
+  const knowledgeFiles = session.knowledge_files ?? [];
+  const stageArtifacts = session.stage_artifacts ?? [];
 
   if (!intent) {
     return <p className="text-stone-500">No intent data available.</p>;
   }
 
+  const preamble = getPreamble(intent.sections);
   const problem = findSection(intent.sections, "Problem");
   const solution = findSection(intent.sections, "Solution");
+  const goals = findSection(intent.sections, "Goals", "Objectives");
   const contextSection = findSection(intent.sections, "Context");
   const domainSection = findSectionWithSubs(intent.sections, "Domain Model");
 
-  // Build overview markdown
+  // Build overview markdown from whatever sections are available
   let overviewMarkdown = "";
+  if (preamble) overviewMarkdown += `${preamble}\n\n`;
   if (problem) overviewMarkdown += `## Problem\n\n${problem}\n\n`;
   if (solution) overviewMarkdown += `## Solution\n\n${solution}\n\n`;
+  if (goals) overviewMarkdown += `## Goals\n\n${goals}\n\n`;
+  // If no structured sections, show all remaining sections
+  if (!overviewMarkdown.trim()) {
+    for (const section of intent.sections) {
+      if (section.heading === "_preamble") continue;
+      overviewMarkdown += `## ${section.heading}\n\n${section.content}\n\n`;
+    }
+  }
 
   const firstImageMockup = intentMockups.find((m) => isImageUrl(m.url));
   const remainingMockups = intentMockups.filter((m) => m !== firstImageMockup);
@@ -120,6 +149,16 @@ function IntentReview({
   const gitConfig = intent.frontmatter.git ?? { change_strategy: "", auto_merge: false, auto_squash: false };
   const workflow = intent.frontmatter.workflow ?? "";
   const announcements = intent.frontmatter.announcements ?? [];
+
+  // Group units by stage for display
+  const stageNames = Object.keys(stageStates);
+  const unitsByStage = new Map<string, ParsedUnit[]>();
+  for (const unit of units) {
+    const stage = unit.frontmatter.stage ?? "_root";
+    const group = unitsByStage.get(stage) ?? [];
+    group.push(unit);
+    unitsByStage.set(stage, group);
+  }
 
   const tabs: TabDef[] = [
     {
@@ -171,6 +210,38 @@ function IntentReview({
               <MockupEmbeds mockups={remainingMockups} />
             </Card>
           )}
+
+          {stageNames.length > 0 && (
+            <Card>
+              <SectionHeading>Stage Progress</SectionHeading>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b-2 border-stone-200 dark:border-stone-700">
+                      <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Stage</th>
+                      <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Status</th>
+                      <th className="py-2 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Units</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stageNames.map((name) => {
+                      const state = stageStates[name];
+                      const stageUnits = unitsByStage.get(name) ?? [];
+                      return (
+                        <tr key={name} className="border-b border-stone-100 dark:border-stone-800">
+                          <td className="py-3 pr-3 font-medium capitalize">{name}</td>
+                          <td className="py-3 pr-3">
+                            <StatusBadge label="Status" status={state?.status ?? "pending"} />
+                          </td>
+                          <td className="py-3 text-sm text-stone-500 dark:text-stone-400">{stageUnits.length}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
         </>
       ),
     },
@@ -182,15 +253,39 @@ function IntentReview({
           {mermaid && (
             <Card>
               <SectionHeading>Dependency Graph</SectionHeading>
-              <div className="overflow-x-auto p-4 bg-stone-50 dark:bg-stone-800/50 rounded-lg border border-stone-200 dark:border-stone-700">
-                <pre className="text-xs text-stone-600 dark:text-stone-400 whitespace-pre-wrap">{mermaid}</pre>
-              </div>
+              <MermaidDiagram definition={mermaid} />
             </Card>
           )}
           <Card>
             <SectionHeading>Units</SectionHeading>
             <UnitsTable units={units} unitMockups={unitMockupsMap} />
           </Card>
+        </>
+      ),
+    },
+    {
+      id: "knowledge",
+      label: "Knowledge",
+      disabled: knowledgeFiles.length === 0 && stageArtifacts.length === 0,
+      content: (
+        <>
+          {knowledgeFiles.map((kf, i) => (
+            <Card key={`kf-${i}`}>
+              <SectionHeading>{kf.name}</SectionHeading>
+              <InlineComments htmlContent={markdownToSimpleHtml(kf.content)} />
+            </Card>
+          ))}
+          {stageArtifacts.map((sa, i) => (
+            <Card key={`sa-${i}`}>
+              <SectionHeading>{sa.stage}: {sa.name}</SectionHeading>
+              <InlineComments htmlContent={markdownToSimpleHtml(sa.content)} />
+            </Card>
+          ))}
+          {knowledgeFiles.length === 0 && stageArtifacts.length === 0 && (
+            <Card>
+              <p className="text-stone-500 dark:text-stone-400 italic">No knowledge files or stage artifacts available.</p>
+            </Card>
+          )}
         </>
       ),
     },
@@ -307,17 +402,23 @@ function UnitReview({
 
   const wireframeMockups = unitMockupsMap[targetUnit.slug] ?? [];
 
-  const description = findSection(targetUnit.sections, "Description") || findSection(targetUnit.sections, "Overview");
-  const techSpec = findSection(targetUnit.sections, "Technical Spec") || findSection(targetUnit.sections, "Technical Specification") || findSection(targetUnit.sections, "Implementation");
-  const domainEntities = findSection(targetUnit.sections, "Domain Entities") || findSection(targetUnit.sections, "Entities");
-  const risks = findSection(targetUnit.sections, "Risks") || findSection(targetUnit.sections, "Risk");
-  const boundaries = findSection(targetUnit.sections, "Boundaries") || findSection(targetUnit.sections, "Out of Scope") || findSection(targetUnit.sections, "NOT in scope");
-  const notes = findSection(targetUnit.sections, "Notes") || findSection(targetUnit.sections, "Additional Notes");
+  const unitPreamble = getPreamble(targetUnit.sections);
+  const description = findSection(targetUnit.sections, "Description", "Overview");
+  const techSpec = findSection(targetUnit.sections, "Technical Spec", "Technical Specification", "Implementation");
+  const domainEntities = findSection(targetUnit.sections, "Domain Entities", "Entities");
+  const completionCriteria = findSection(targetUnit.sections, "Completion Criteria", "Success Criteria", "Criteria");
+  const risks = findSection(targetUnit.sections, "Risks", "Risk", "Known Risks (Accepted)");
+  const boundaries = findSection(targetUnit.sections, "Boundaries", "Out of Scope", "NOT in scope");
+  const notes = findSection(targetUnit.sections, "Notes", "Additional Notes");
+  const findings = findSection(targetUnit.sections, "Findings Addressed", "Findings");
 
   let combinedSpec = "";
+  if (unitPreamble) combinedSpec += `${unitPreamble}\n\n`;
   if (description) combinedSpec += `## Description\n\n${description}\n\n`;
   if (techSpec) combinedSpec += `## Technical Spec\n\n${techSpec}\n\n`;
   if (domainEntities) combinedSpec += `## Domain Entities\n\n${domainEntities}\n\n`;
+  if (completionCriteria) combinedSpec += `## Completion Criteria\n\n${completionCriteria}\n\n`;
+  if (findings) combinedSpec += `## Findings Addressed\n\n${findings}\n\n`;
 
   const hasWireframe = wireframeMockups.length > 0;
   const firstImageMockup = wireframeMockups.find((m) => isImageUrl(m.url));
@@ -453,6 +554,12 @@ function UnitReview({
 // --- Helper components ---
 
 function UnitsTable({ units, unitMockups }: { units: ParsedUnit[]; unitMockups: Record<string, MockupInfo[]> }) {
+  const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
+
+  if (units.length === 0) {
+    return <p className="text-stone-500 dark:text-stone-400 italic">No units found.</p>;
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left">
@@ -460,7 +567,8 @@ function UnitsTable({ units, unitMockups }: { units: ParsedUnit[]; unitMockups: 
           <tr className="border-b-2 border-stone-200 dark:border-stone-700">
             <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">#</th>
             <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Name</th>
-            <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Discipline</th>
+            <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Stage</th>
+            <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Type</th>
             <th className="py-2 pr-3 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Status</th>
             <th className="py-2 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Dependencies</th>
           </tr>
@@ -468,18 +576,63 @@ function UnitsTable({ units, unitMockups }: { units: ParsedUnit[]; unitMockups: 
         <tbody>
           {units.map((u) => {
             const deps = u.frontmatter.depends_on?.length ? u.frontmatter.depends_on.join(", ") : "\u2014";
-            const um = unitMockups[u.slug] ?? [];
+            const isExpanded = expandedUnit === u.slug;
+            // Build unit content from sections for inline commenting
+            let unitContent = "";
+            for (const section of u.sections) {
+              if (section.heading === "_preamble") {
+                unitContent += `${section.content}\n\n`;
+              } else {
+                unitContent += `## ${section.heading}\n\n${section.content}\n\n`;
+              }
+            }
             return (
               <tr key={u.slug} className="border-b border-stone-100 dark:border-stone-800">
-                <td className="py-3 pr-3 font-mono text-sm text-stone-500 dark:text-stone-400">
-                  {String(u.number).padStart(2, "0")}
+                <td className="py-3 pr-3 font-mono text-sm text-stone-500 dark:text-stone-400" colSpan={isExpanded ? 6 : undefined}>
+                  {isExpanded ? (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedUnit(null)}
+                        className="text-xs text-teal-600 dark:text-teal-400 hover:underline mb-3"
+                      >
+                        Collapse
+                      </button>
+                      <div className="font-sans">
+                        <h4 className="text-base font-semibold text-stone-800 dark:text-stone-200 mb-2">{u.title}</h4>
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <StatusBadge label="Status" status={u.frontmatter.status} />
+                          {u.frontmatter.stage && <StatusBadge label="Stage" status={u.frontmatter.stage} />}
+                          {(u.frontmatter.discipline ?? u.frontmatter.type) && <StatusBadge label="Type" status={u.frontmatter.discipline ?? u.frontmatter.type ?? ""} />}
+                        </div>
+                        {unitContent.trim() && (
+                          <InlineComments htmlContent={markdownToSimpleHtml(unitContent)} />
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    String(u.number).padStart(2, "0")
+                  )}
                 </td>
-                <td className="py-3 pr-3 font-medium">{u.title}</td>
-                <td className="py-3 pr-3 text-sm">{u.frontmatter.discipline ?? u.frontmatter.type ?? ""}</td>
-                <td className="py-3 pr-3">
-                  <StatusBadge label="Status" status={u.frontmatter.status} />
-                </td>
-                <td className="py-3 text-sm text-stone-500 dark:text-stone-400">{deps}</td>
+                {!isExpanded && (
+                  <>
+                    <td className="py-3 pr-3 font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedUnit(u.slug)}
+                        className="text-left hover:text-teal-600 dark:hover:text-teal-400 hover:underline"
+                      >
+                        {u.title}
+                      </button>
+                    </td>
+                    <td className="py-3 pr-3 text-sm capitalize">{u.frontmatter.stage ?? ""}</td>
+                    <td className="py-3 pr-3 text-sm">{u.frontmatter.discipline ?? u.frontmatter.type ?? ""}</td>
+                    <td className="py-3 pr-3">
+                      <StatusBadge label="Status" status={u.frontmatter.status} />
+                    </td>
+                    <td className="py-3 text-sm text-stone-500 dark:text-stone-400">{deps}</td>
+                  </>
+                )}
               </tr>
             );
           })}
@@ -528,40 +681,7 @@ function MockupEmbeds({ mockups }: { mockups: MockupInfo[] }) {
 /** Simple client-side markdown to HTML using react-markdown isn't suitable here
  *  because InlineComments needs raw HTML. Use a minimal conversion. */
 function markdownToSimpleHtml(md: string): string {
-  // This is a minimal markdown->html for inline commenting.
-  // We rely on react-markdown for proper rendering elsewhere.
-  let html = md;
-
-  // Headers
-  html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
-  html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
-  html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
-
-  // Bold
-  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  // Italic
-  html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
-  // Inline code
-  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-
-  // Code blocks
-  html = html.replace(/```[\s\S]*?```/g, (match) => {
-    const content = match.replace(/^```\w*\n?/, "").replace(/\n?```$/, "");
-    return `<pre><code>${content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`;
-  });
-
-  // Lists
-  html = html.replace(/^[-*] (.+)$/gm, "<li>$1</li>");
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
-
-  // Paragraphs
-  html = html.replace(/\n\n+/g, "\n\n");
-  html = html.split("\n\n").map((block) => {
-    const trimmed = block.trim();
-    if (!trimmed) return "";
-    if (trimmed.startsWith("<h") || trimmed.startsWith("<ul") || trimmed.startsWith("<pre") || trimmed.startsWith("<ol")) return trimmed;
-    return `<p>${trimmed}</p>`;
-  }).join("\n");
-
-  return html;
+  const result = marked.parse(md, { async: false });
+  return typeof result === "string" ? result : String(result);
 }
+

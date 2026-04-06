@@ -48,6 +48,18 @@ export function DecisionForm({ sessionId, collectAnnotations = false, getAnnotat
   }
 
   function handleApprove() {
+    // Warn if there are unsent annotations/comments
+    if (collectAnnotations && getAnnotations) {
+      const annotations = getAnnotations();
+      const hasComments = (annotations?.comments?.length ?? 0) > 0;
+      const hasPins = (annotations?.pins?.length ?? 0) > 0;
+      if (hasComments || hasPins) {
+        const count = (annotations?.comments?.length ?? 0) + (annotations?.pins?.length ?? 0);
+        if (!window.confirm(`You have ${count} annotation(s). Approving will include them as feedback. Continue?`)) {
+          return;
+        }
+      }
+    }
     handleSubmit("approved", "");
   }
 

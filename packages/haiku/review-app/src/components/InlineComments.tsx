@@ -4,13 +4,17 @@ export interface InlineComment {
   selectedText: string;
   comment: string;
   paragraph: number;
+  /** File or section this comment is in — set by parent component */
+  location?: string;
 }
 
 interface Props {
   htmlContent: string;
+  /** Location context passed to each comment (e.g., "knowledge/DISCOVERY.md" or "Unit 01: Login Screen") */
+  location?: string;
 }
 
-export function InlineComments({ htmlContent }: Props) {
+export function InlineComments({ htmlContent, location }: Props) {
   const contentRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,13 +105,14 @@ export function InlineComments({ htmlContent }: Props) {
       selectedText: selData.text,
       comment: "",
       paragraph: selData.paragraph,
+      location,
       highlightEl,
     };
 
     setComments((prev) => [...prev, entry]);
     setPopoverPos(null);
     pendingSelectionRef.current = null;
-    window.getSelection()?.removeAllRanges();
+    // Don't clear selection — keep the text highlighted via the span
   }
 
   function updateCommentText(index: number, text: string) {
