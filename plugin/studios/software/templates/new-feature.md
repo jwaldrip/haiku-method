@@ -18,7 +18,7 @@ units:
     criteria:
       - "Domain model maps all entities for {{ feature }}"
       - "Technical constraints documented (APIs, dependencies, performance)"
-      - "Unit decomposition covers the full feature with no gaps"
+      - "Unit elaboration covers the full feature with no gaps"
   - name: "visual-design"
     stage: design
     criteria:

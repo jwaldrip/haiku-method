@@ -15,4 +15,4 @@ studio: software
 - Creating units with circular dependencies
 - Writing vague criteria ("it works", "tests pass")
 - Not defining clear boundaries between units
-- Decomposing by layer (all backend, then all frontend) instead of by feature slice
+- Elaborating by layer (all backend, then all frontend) instead of by feature slice

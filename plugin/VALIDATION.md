@@ -18,7 +18,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 ### Orchestration
 
 - [ ] `haiku_run_next` is the sole authority on what happens next — the agent follows its action, not prose instructions
-- [ ] The stage loop always follows the sequence: decompose → execute → review → gate (no separate persist step)
+- [ ] The stage loop always follows the sequence: elaborate → execute → review → gate (no separate persist step)
 - [ ] Continuous mode auto-advances through stages when gates pass; discrete mode always stops
 - [ ] Neither mode skips or collapses stages — every stage runs the full four-step loop
 - [ ] An agent never autonomously resets `active_stage` to a prior stage (full stage-backs are human-initiated)
@@ -54,7 +54,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
    - [ ] Agent calls `haiku_stage_start { intent, stage: inception }`
    - [ ] `state.json` created with phase: decompose
 
-3. **Decomposition:**
+3. **Elaboration:**
    - [ ] `haiku_run_next` returns `decompose`
    - [ ] Agent reads STAGE.md for inception: inputs, unit_types, criteria guidance
    - [ ] Agent writes unit files to `stages/inception/units/`
@@ -148,13 +148,13 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 
 ## Scenario 6: Stage-Scoped Refinement
 
-**Trigger:** During development decomposition, agent discovers design stage output is missing a screen.
+**Trigger:** During development elaboration, agent discovers design stage output is missing a screen.
 
 - [ ] Agent invokes `/haiku:refine stage:design`
 - [ ] A new unit is created in `stages/design/units/`
 - [ ] That unit runs through design stage's hats (designer, design-reviewer)
 - [ ] Updated design output is persisted
-- [ ] Agent returns to development decomposition with the gap filled
+- [ ] Agent returns to development elaboration with the gap filled
 - [ ] Development stage's active phase is unchanged — no reset
 
 ---
@@ -166,7 +166,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 - [ ] Template resolved from `studios/software/templates/new-feature.md`
 - [ ] Parameters substituted: `{{ feature }}` → "OAuth login" in all criteria
 - [ ] Pre-filled units created in appropriate stages
-- [ ] First `/haiku:run` skips decomposition (units already exist)
+- [ ] First `/haiku:run` skips elaboration (units already exist)
 - [ ] `haiku_run_next` returns `advance_phase` from decompose to execute
 
 ---
@@ -215,7 +215,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 
 **Trigger:** Ticketing provider configured (e.g., Jira).
 
-- [ ] During decomposition: epic created (or existing epic linked) via ticketing provider
+- [ ] During elaboration: epic created (or existing epic linked) via ticketing provider
 - [ ] Each unit gets a ticket linked to the epic
 - [ ] During execution: ticket status synced (pending → active → completed)
 - [ ] Blocker documentation pushed to ticket comments
@@ -290,7 +290,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 
 ### Artifact Definition Structure
 
-- [ ] Discovery artifacts are defined in `studios/{studio}/stages/{stage}/discovery/{ARTIFACT}.md` — knowledge produced during decompose
+- [ ] Discovery artifacts are defined in `studios/{studio}/stages/{stage}/discovery/{ARTIFACT}.md` — knowledge produced during elaboration
 - [ ] Output artifacts are defined in `studios/{studio}/stages/{stage}/outputs/{ARTIFACT}.md` — work products produced during execute
 - [ ] Each artifact definition has frontmatter with: `name`, `location`, `scope`, `format`, `required`
 - [ ] The `location:` field specifies where the artifact is written (e.g., `knowledge/DISCOVERY.md`, or project source tree)
@@ -307,9 +307,9 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 
 ### Execution Flow
 
-- [ ] During decompose, the agent reads the stage's STAGE.md `inputs:` to discover required upstream artifacts
+- [ ] During elaboration, the agent reads the stage's STAGE.md `inputs:` to discover required upstream artifacts
 - [ ] The agent reads each referenced artifact definition (from `discovery/` or `outputs/` in the upstream stage) to find the `location:` where the artifact lives
-- [ ] The agent loads the artifact from that location and uses it to inform decomposition
+- [ ] The agent loads the artifact from that location and uses it to inform elaboration
 - [ ] If an input artifact is missing or stale, the agent invokes `/haiku:refine stage:{upstream}` for a scoped side-trip
 - [ ] During execution, the agent writes output artifacts to the locations specified in the stage's output definitions
 - [ ] Artifact persistence promotes discovery/output files to their scoped knowledge directories (auto-commit on unit/stage complete)

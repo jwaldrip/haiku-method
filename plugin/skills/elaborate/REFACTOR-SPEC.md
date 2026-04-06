@@ -43,7 +43,7 @@ Each is a self-contained sub-skill that either mode can invoke:
 | `adversarial-review` | Yes | Probe for spec gaps |
 | `design-direction` | **New** | Extract from Phase 2.75 — archetype picker, blueprint generation |
 | `criteria` | **New** | Extract from Phase 4 — success criteria definition with NFRs |
-| `decompose` | **New** | Extract from Phase 5 — unit decomposition with DAG |
+| `decompose` | **New** | Extract from Phase 5 — unit elaboration with DAG |
 | `workflow-select` | **New** | Extract from Phase 3 — hat/workflow discovery and selection |
 | `git-strategy` | **New** | Extract from Phase 5.8 — delivery strategy, branching |
 | `load-prior-artifacts` | **New** | Read completed pass artifacts as context for subsequent passes |
@@ -76,7 +76,7 @@ All disciplines contribute. The elaboration is longer and more thorough.
 3. design-direction          ← full design contribution
 4. workflow-select
 5. criteria                  ← all discipline types (design + product + dev)
-6. decompose                 ← all unit types
+6. elaborate                 ← all unit types
 7. git-strategy
 8. wireframes (HIGH fidelity) ← this is the only design work, go deep
 9. ticket-sync
@@ -96,7 +96,7 @@ Wireframe fidelity: **High** — styled, interaction states, responsive breakpoi
 3. design-direction          ← full
 4. workflow-select           ← constrained to design pass workflows
 5. criteria                  ← design criteria only
-6. decompose                 ← design units only
+6. elaborate                 ← design units only
 7. wireframes (LOW fidelity) ← structural, gray-box; bolt cycles will refine
 8. adversarial-review
 9. handoff
@@ -108,7 +108,7 @@ Wireframe fidelity: **High** — styled, interaction states, responsive breakpoi
 1. load-prior-artifacts      ← read design pass outputs as context
 2. workflow-select           ← constrained to product pass workflows
 3. criteria                  ← product/behavioral criteria only
-4. decompose                 ← acceptance units only
+4. elaborate                 ← acceptance units only
 5. adversarial-review
 6. handoff
 ```
@@ -119,7 +119,7 @@ Wireframe fidelity: **High** — styled, interaction states, responsive breakpoi
 1. load-prior-artifacts      ← read design + product pass outputs as context
 2. workflow-select           ← constrained to dev pass workflows
 3. criteria                  ← dev criteria only (may reference prior criteria)
-4. decompose                 ← dev units only
+4. elaborate                 ← dev units only
 5. git-strategy
 6. ticket-sync
 7. adversarial-review
@@ -178,7 +178,7 @@ This lets the pass definition file influence elaboration behavior without hard-c
 
 ## Migration Path
 
-1. Extract shared phases into new sub-skills (criteria, decompose, design-direction, workflow-select, git-strategy, load-prior-artifacts)
+1. Extract shared phases into new sub-skills (criteria, elaborate, design-direction, workflow-select, git-strategy, load-prior-artifacts)
 2. Create single-pass sub-skill that composes them
 3. Create pass-elaborate sub-skill that composes them per-pass
 4. Refactor main SKILL.md into dispatcher (Phases 0-1 + routing)

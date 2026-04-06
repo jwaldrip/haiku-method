@@ -15,7 +15,7 @@ Composable sub-skill for selecting the delivery strategy, source branch, and mer
 
 - `INTENT_SLUG` — the intent slug
 - `AUTONOMOUS_MODE` — `true` or `false`
-- `UNITS` — the list of units defined during decomposition (needed for hybrid strategy heuristics)
+- `UNITS` — the list of units defined during elaboration (needed for hybrid strategy heuristics)
 
 ---
 

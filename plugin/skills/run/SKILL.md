@@ -97,11 +97,11 @@ A new stage is beginning. The orchestrator provides the stage name and hat list.
 **Do:**
 1. `haiku_stage_start { intent, stage }` — marks the stage as active
 2. If `follows` is present (this intent iterates on a previous one), load the parent intent's knowledge artifacts via `haiku_knowledge_read { intent: follows, name: ... }` for each file in `parent_knowledge`. Copy relevant knowledge to this intent's knowledge directory as a starting point.
-3. Call `haiku_run_next` again — it will return `decompose`
+3. Call `haiku_run_next` again — it will return the elaboration action (`decompose`)
 
 #### `decompose`
 
-Research the problem space, produce knowledge artifacts, then break the stage's work into units.
+Elaborate on the stage: research the problem space, produce knowledge artifacts, then break the stage's work into units.
 
 ```json
 { "action": "decompose", "intent": "...", "studio": "...", "stage": "..." }
@@ -112,17 +112,17 @@ Research the problem space, produce knowledge artifacts, then break the stage's 
 2. Read the stage's `discovery/` definitions (in the studio directory: `stages/{stage}/discovery/*.md`) to understand what knowledge artifacts this stage must produce
 3. Load resolved input artifacts from upstream stages — each discovery definition specifies a `location:` field indicating where the artifact lives (`.haiku/knowledge/` for project-wide, `.haiku/intents/{slug}/knowledge/` for intent-specific). Check freshness metadata — if inputs are stale or code has drifted, use `/haiku:refine stage:{upstream}` for a scoped side-trip
 4. **Research and write discovery artifacts** to their specified locations. These are knowledge artifacts — analysis, inventories, specs, threat models — that capture what you learned about the problem space. Write each artifact to the `location:` specified in its discovery definition
-5. Decompose the work into units with completion criteria and a dependency DAG
+5. Elaborate the work into units with completion criteria and a dependency DAG
 7. For each unit, populate `refs:` in frontmatter — an array of paths to upstream artifacts relevant to that unit.
 8. Write unit files to `.haiku/intents/{slug}/stages/{stage}/units/`
-9. **ENGAGE THE USER.** Present the decomposition plan: the units, their dependencies, the discovery artifacts you produced, and (for design) the wireframes. Ask the user to review and confirm before proceeding. This is a collaborative checkpoint — do NOT silently advance to execute. Wait for the user's explicit approval or feedback.
+9. **ENGAGE THE USER.** Present the elaboration plan: the units, their dependencies, the discovery artifacts you produced, and (for design) the wireframes. Ask the user to review and confirm before proceeding. This is a collaborative checkpoint — do NOT silently advance to execute. Wait for the user's explicit approval or feedback.
 10. After user approval: `haiku_stage_set { intent, stage, field: "phase", value: "execute" }`
 11. Call `haiku_run_next` again
 
-**CRITICAL: Decompose is collaborative.** Every stage's decompose phase must engage the user before advancing to execute. The only exception is if the intent is running in full autopilot mode. In interactive and one-human-on-the-loop modes, always present the plan and wait for confirmation.
+**CRITICAL: Elaboration is collaborative.** Every stage's elaboration phase must engage the user before advancing to execute. The only exception is if the intent is running in full autopilot mode. In interactive and one-human-on-the-loop modes, always present the plan and wait for confirmation.
 
 **Discovery vs. Output artifacts:** Stages define two artifact directories:
-- `stages/{stage}/discovery/` — knowledge artifacts produced during decompose (research, analysis, specs)
+- `stages/{stage}/discovery/` — knowledge artifacts produced during elaboration (research, analysis, specs)
 - `stages/{stage}/outputs/` — work products produced during execute (code, configs, deliverables)
 
 #### `start_units` (parallel)

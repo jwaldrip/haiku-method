@@ -101,7 +101,7 @@ fi
 
 Set inputs: `INTENT_SLUG`, `ACTIVE_STAGE`, `STAGES`.
 
-This loads all artifacts from completed stages as context for this stage's elaboration. The prior stage context informs discovery, criteria, and decomposition.
+This loads all artifacts from completed stages as context for this stage's elaboration. The prior stage context informs discovery, criteria, and elaboration.
 
 ---
 
@@ -149,7 +149,7 @@ Set inputs: `INTENT_SLUG`, `AUTONOMOUS_MODE`, `CRITERIA_FOCUS="{STAGE_CRITERIA_F
 
 ---
 
-## Phase 5: Decompose
+## Phase 5: Elaborate
 
 **Read and follow** `subskills/decompose/SKILL.md`.
 
@@ -226,7 +226,7 @@ Same as single-stage — run spec review and adversarial review.
 If `STAGE_ADD` is non-empty, it lists custom sub-skill names to run during this stage. For each name in `STAGE_ADD`:
 
 1. Check for a custom sub-skill definition at `.haiku/subskills/{name}/SKILL.md`
-2. If found, read and follow it at the appropriate point in the flow (after decompose, before wireframes)
+2. If found, read and follow it at the appropriate point in the flow (after elaboration, before wireframes)
 3. If not found, log a warning and continue
 
 Custom sub-skills allow stage definitions to inject project-specific elaboration phases without modifying the core plugin.

@@ -20,7 +20,7 @@ This is the primary mechanism for cross-studio data flow when studios live in di
 
 ### During Elaboration
 - Search for prior art: has similar work been done before?
-- Pull relevant patterns that should inform decomposition
+- Pull relevant patterns that should inform elaboration
 - Load cross-studio outputs that serve as inputs for this intent
 
 ### During Reflection

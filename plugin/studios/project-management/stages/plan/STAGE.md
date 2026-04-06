@@ -14,7 +14,7 @@ inputs:
 ## Criteria Guidance
 
 Good criteria examples:
-- "Work breakdown structure decomposes every in-scope deliverable to work packages of 40 hours or less"
+- "Work breakdown structure elaborates every in-scope deliverable to work packages of 40 hours or less"
 - "Resource allocation maps each work package to a named owner with confirmed availability"
 - "Critical path is identified with float calculations and contingency buffers at high-risk junctions"
 

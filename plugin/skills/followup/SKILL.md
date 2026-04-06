@@ -257,7 +257,7 @@ This intent iterates on **{previous title}** (`{previous-slug}`).
 {Any additional context from the user's description or the review feedback}
 ```
 
-**Do NOT create units yet.** The elaboration phase handles unit decomposition.
+**Do NOT create units yet.** The elaboration phase handles unit elaboration.
 
 ```bash
 # Telemetry is tracked automatically by the MCP server
@@ -288,7 +288,7 @@ Then invoke the elaborate skill:
 The elaborate skill will:
 1. Detect `iterates_on: {previous-slug}` in the intent frontmatter
 2. Load the previous intent's context (units, specs, domain model)
-3. Use that context to inform clarifying questions, discovery, and unit decomposition
+3. Use that context to inform clarifying questions, discovery, and unit elaboration
 4. Skip or shorten phases where prior context is sufficient
 
 ## Examples

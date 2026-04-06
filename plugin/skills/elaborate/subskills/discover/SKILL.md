@@ -314,7 +314,7 @@ Output as a structured block in the discovery results:
 **Concerns:** {tech debt, known issues relevant to this intent}
 ```
 
-This context feeds into unit decomposition — units should respect existing module boundaries and follow established conventions.
+This context feeds into unit elaboration — units should respect existing module boundaries and follow established conventions.
 
 **Skip this step for greenfield projects** (no existing source files in the target directories).
 

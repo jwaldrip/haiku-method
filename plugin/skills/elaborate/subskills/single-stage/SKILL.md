@@ -165,7 +165,7 @@ Set inputs: `INTENT_SLUG`, `AUTONOMOUS_MODE`, `CRITERIA_FOCUS=""` (all types in 
 
 ---
 
-## Phase 5: Decompose
+## Phase 5: Elaborate
 
 **Read and follow** `subskills/decompose/SKILL.md`.
 

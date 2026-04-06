@@ -4,7 +4,7 @@ stage: inception
 studio: software
 ---
 
-**Mandate:** Verify the discovery document fully maps the problem space and that unit decomposition covers the intent with no gaps or overlaps.
+**Mandate:** Verify the discovery document fully maps the problem space and that unit elaboration covers the intent with no gaps or overlaps.
 
 **Check:**
 - Every entity, relationship, and technical constraint from the intent is addressed in the discovery document

@@ -430,7 +430,7 @@ Ask the user about their preferred workflow intensity:
 
 **Granularity:**
 - **Coarse** — Fewer, larger units. Less process overhead. Good for experienced teams or small features.
-- **Standard (default)** — Balanced decomposition. Recommended for most work.
+- **Standard (default)** — Balanced elaboration. Recommended for most work.
 - **Fine** — Many small units with detailed specs. Good for complex features or onboarding.
 
 ---

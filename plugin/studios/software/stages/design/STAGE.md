@@ -11,9 +11,9 @@ inputs:
 
 # Design
 
-## Decompose Phase
+## Elaboration Phase
 
-During decompose, create **low-fidelity wireframes** to establish layout, flow, and interaction patterns. Use HTML wireframes or a design provider MCP (Pencil, OpenPencil, Figma). NEVER produce ASCII art. Save wireframes to `stages/design/artifacts/`. Use `pick_design_direction` or `ask_user_visual_question` to present options and get user feedback before finalizing the decomposition.
+During elaboration, create **low-fidelity wireframes** to establish layout, flow, and interaction patterns. Use HTML wireframes or a design provider MCP (Pencil, OpenPencil, Figma). NEVER produce ASCII art. Save wireframes to `stages/design/artifacts/`. Use `pick_design_direction` or `ask_user_visual_question` to present options and get user feedback before finalizing the elaboration.
 
 ## Execute Phase
 
