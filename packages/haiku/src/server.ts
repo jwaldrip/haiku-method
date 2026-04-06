@@ -527,11 +527,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			console.error("Failed to open browser:", err)
 		}
 
+		// Block until the user submits their decision
+		const POLL_INTERVAL = 500
+		const MAX_WAIT = 30 * 60 * 1000
+		const start = Date.now()
+
+		while (Date.now() - start < MAX_WAIT) {
+			if (session.status === "decided") {
+				const result: Record<string, unknown> = {
+					status: "decided",
+					url: reviewUrl,
+					decision: session.decision,
+					feedback: session.feedback,
+					review_type: session.review_type,
+					target: session.target,
+				}
+				if (session.annotations) {
+					const annot: Record<string, unknown> = {}
+					if (session.annotations.pins?.length) annot.pins = session.annotations.pins
+					if (session.annotations.comments?.length) annot.comments = session.annotations.comments
+					if (session.annotations.screenshot) annot.has_screenshot = true
+					result.annotations = annot
+				}
+				return {
+					content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+				}
+			}
+			await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL))
+		}
+
 		return {
 			content: [
 				{
 					type: "text" as const,
-					text: `Review opened: ${reviewUrl}\nSession ID: ${session.session_id}\nReview type: ${input.review_type}${input.target ? `\nTarget: ${input.target}` : ""}`,
+					text: JSON.stringify({
+						status: "timeout",
+						url: reviewUrl,
+						session_id: session.session_id,
+						message: "User did not respond within 30 minutes",
+					}, null, 2),
 				},
 			],
 		}
@@ -679,11 +713,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			console.error("Failed to open browser:", err)
 		}
 
+		// Block until the user submits their answers
+		const POLL_INTERVAL = 500 // ms
+		const MAX_WAIT = 30 * 60 * 1000 // 30 minutes
+		const start = Date.now()
+
+		while (Date.now() - start < MAX_WAIT) {
+			if (session.status === "answered" && session.answers) {
+				return {
+					content: [
+						{
+							type: "text" as const,
+							text: JSON.stringify({
+								status: "answered",
+								url: questionUrl,
+								answers: session.answers,
+							}, null, 2),
+						},
+					],
+				}
+			}
+			await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL))
+		}
+
+		// Timed out
 		return {
 			content: [
 				{
 					type: "text" as const,
-					text: `Question page opened: ${questionUrl}\nSession ID: ${session.session_id}\nQuestions: ${questions.length}${imagePaths.length > 0 ? `\nImages: ${imagePaths.length}` : ""}`,
+					text: JSON.stringify({
+						status: "timeout",
+						url: questionUrl,
+						session_id: session.session_id,
+						message: "User did not respond within 30 minutes",
+					}, null, 2),
 				},
 			],
 		}
