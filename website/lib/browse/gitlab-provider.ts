@@ -21,7 +21,7 @@ export class GitLabProvider implements BrowseProvider {
 
 	private headers(): HeadersInit {
 		const h: HeadersInit = {}
-		if (this.token) h["PRIVATE-TOKEN"] = this.token
+		if (this.token) h["Authorization"] = `Bearer ${this.token}`
 		return h
 	}
 
