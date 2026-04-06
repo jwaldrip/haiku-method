@@ -1,6 +1,9 @@
 import type { BrowseProvider, HaikuIntent, HaikuIntentDetail, HaikuStageState, HaikuUnit } from "./types"
 import { parseCriteria, parseFrontmatter } from "./types"
 
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+const apiCache = new Map<string, { data: unknown; ts: number }>()
+
 export class GitHubProvider implements BrowseProvider {
 	readonly name = "GitHub"
 	private owner: string
@@ -26,13 +29,22 @@ export class GitHubProvider implements BrowseProvider {
 		return fetch(url, { ...init, headers: { ...this.headers(), ...init?.headers } })
 	}
 
+	private async cachedGet<T>(path: string): Promise<T | null> {
+		const key = `${this.owner}/${this.repo}:${path}`
+		const cached = apiCache.get(key)
+		if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data as T
+		const res = await this.api(path)
+		if (!res.ok) return null
+		const data = await res.json()
+		apiCache.set(key, { data, ts: Date.now() })
+		return data as T
+	}
+
 	async readFile(path: string): Promise<string | null> {
 		const ref = this.branch ? `?ref=${encodeURIComponent(this.branch)}` : ""
-		const res = await this.api(`/contents/${path}${ref}`)
-		if (!res.ok) return null
-		const json = await res.json()
+		const json = await this.cachedGet<{ encoding?: string; content?: string }>(`/contents/${path}${ref}`)
+		if (!json) return null
 		if (json.encoding === "base64" && json.content) {
-			// Decode base64 → Uint8Array → UTF-8 string (atob mangles multi-byte chars)
 			const binary = atob(json.content.replace(/\n/g, ""))
 			const bytes = new Uint8Array(binary.length)
 			for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
@@ -43,20 +55,16 @@ export class GitHubProvider implements BrowseProvider {
 
 	async listFiles(dir: string): Promise<string[]> {
 		const ref = this.branch ? `?ref=${encodeURIComponent(this.branch)}` : ""
-		const res = await this.api(`/contents/${dir}${ref}`)
-		if (!res.ok) return []
-		const json = await res.json()
-		if (!Array.isArray(json)) return []
-		return json.filter((e: { type: string }) => e.type === "file").map((e: { name: string }) => e.name).sort()
+		const json = await this.cachedGet<Array<{ type: string; name: string }>>(`/contents/${dir}${ref}`)
+		if (!json || !Array.isArray(json)) return []
+		return json.filter((e) => e.type === "file").map((e) => e.name).sort()
 	}
 
 	private async listDirs(dir: string): Promise<string[]> {
 		const ref = this.branch ? `?ref=${encodeURIComponent(this.branch)}` : ""
-		const res = await this.api(`/contents/${dir}${ref}`)
-		if (!res.ok) return []
-		const json = await res.json()
-		if (!Array.isArray(json)) return []
-		return json.filter((e: { type: string }) => e.type === "dir").map((e: { name: string }) => e.name).sort()
+		const json = await this.cachedGet<Array<{ type: string; name: string }>>(`/contents/${dir}${ref}`)
+		if (!json || !Array.isArray(json)) return []
+		return json.filter((e) => e.type === "dir").map((e) => e.name).sort()
 	}
 
 	async listIntents(): Promise<HaikuIntent[]> {

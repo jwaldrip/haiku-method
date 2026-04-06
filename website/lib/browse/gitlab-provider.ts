@@ -1,6 +1,9 @@
 import type { BrowseProvider, HaikuIntent, HaikuIntentDetail, HaikuStageState, HaikuUnit } from "./types"
 import { parseCriteria, parseFrontmatter } from "./types"
 
+const glCache = new Map<string, { data: unknown; ts: number }>()
+const GL_CACHE_TTL = 5 * 60 * 1000
+
 export class GitLabProvider implements BrowseProvider {
 	readonly name = "GitLab"
 	private host: string
@@ -21,7 +24,7 @@ export class GitLabProvider implements BrowseProvider {
 
 	private headers(): HeadersInit {
 		const h: HeadersInit = {}
-		if (this.token) h["Authorization"] = `Bearer ${this.token}`
+		if (this.token) h.Authorization = `Bearer ${this.token}`
 		return h
 	}
 
@@ -30,30 +33,35 @@ export class GitLabProvider implements BrowseProvider {
 		return fetch(url, { ...init, headers: { ...this.headers(), ...init?.headers } })
 	}
 
+	private async cachedGet<T>(path: string, isText?: boolean): Promise<T | null> {
+		const key = `${this.host}:${this.projectPath}:${path}`
+		const cached = glCache.get(key)
+		if (cached && Date.now() - cached.ts < GL_CACHE_TTL) return cached.data as T
+		const res = await this.api(path)
+		if (!res.ok) return null
+		const data = isText ? await res.text() : await res.json()
+		glCache.set(key, { data, ts: Date.now() })
+		return data as T
+	}
+
 	async readFile(path: string): Promise<string | null> {
 		const ref = this.branch ? `&ref=${encodeURIComponent(this.branch)}` : ""
 		const encodedPath = encodeURIComponent(path)
-		const res = await this.api(`/repository/files/${encodedPath}/raw?${ref}`)
-		if (!res.ok) return null
-		return res.text()
+		return this.cachedGet<string>(`/repository/files/${encodedPath}/raw?${ref}`, true)
 	}
 
 	async listFiles(dir: string): Promise<string[]> {
 		const ref = this.branch ? `&ref=${encodeURIComponent(this.branch)}` : ""
-		const res = await this.api(`/repository/tree?path=${encodeURIComponent(dir)}&per_page=100${ref}`)
-		if (!res.ok) return []
-		const json = await res.json()
-		if (!Array.isArray(json)) return []
-		return json.filter((e: { type: string }) => e.type === "blob").map((e: { name: string }) => e.name).sort()
+		const json = await this.cachedGet<Array<{ type: string; name: string }>>(`/repository/tree?path=${encodeURIComponent(dir)}&per_page=100${ref}`)
+		if (!json || !Array.isArray(json)) return []
+		return json.filter((e) => e.type === "blob").map((e) => e.name).sort()
 	}
 
 	private async listDirs(dir: string): Promise<string[]> {
 		const ref = this.branch ? `&ref=${encodeURIComponent(this.branch)}` : ""
-		const res = await this.api(`/repository/tree?path=${encodeURIComponent(dir)}&per_page=100${ref}`)
-		if (!res.ok) return []
-		const json = await res.json()
-		if (!Array.isArray(json)) return []
-		return json.filter((e: { type: string }) => e.type === "tree").map((e: { name: string }) => e.name).sort()
+		const json = await this.cachedGet<Array<{ type: string; name: string }>>(`/repository/tree?path=${encodeURIComponent(dir)}&per_page=100${ref}`)
+		if (!json || !Array.isArray(json)) return []
+		return json.filter((e) => e.type === "tree").map((e) => e.name).sort()
 	}
 
 	async listIntents(): Promise<HaikuIntent[]> {
