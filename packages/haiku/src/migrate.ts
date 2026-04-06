@@ -54,12 +54,42 @@ export async function runMigrate(args: string[]): Promise<void> {
 		return
 	}
 
-	console.log(`Found ${entries.length} intent(s) to migrate.\n`)
+	// Group multi-pass intents: detect slugs ending in -dev, -product, -design, -tests
+	// and merge them into the base intent
+	const passSuffixes = ["-dev", "-product", "-design", "-tests"]
+	const mergeMap = new Map<string, string[]>() // base → [related slugs]
+	const mergedSlugs = new Set<string>()
+
+	for (const slug of entries) {
+		for (const suffix of passSuffixes) {
+			if (slug.endsWith(suffix)) {
+				const base = slug.slice(0, -suffix.length)
+				if (entries.includes(base)) {
+					if (!mergeMap.has(base)) mergeMap.set(base, [])
+					mergeMap.get(base)!.push(slug)
+					mergedSlugs.add(slug)
+				}
+			}
+		}
+	}
+
+	if (mergeMap.size > 0) {
+		console.log(`Detected ${mergeMap.size} multi-pass intent group(s):`)
+		for (const [base, related] of mergeMap) {
+			console.log(`  ${base} ← [${related.join(", ")}]`)
+		}
+		console.log()
+	}
+
+	// Filter out merged slugs — they'll be processed as part of their base intent
+	const primarySlugs = entries.filter(s => !mergedSlugs.has(s))
+
+	console.log(`Found ${entries.length} intent(s) to migrate (${primarySlugs.length} primary, ${mergedSlugs.size} merged).\n`)
 
 	let migrated = 0
 	let skipped = 0
 
-	for (const slug of entries) {
+	for (const slug of primarySlugs) {
 		const srcDir = join(oldDir, slug)
 		const destDir = join(newDir, slug)
 
@@ -103,16 +133,54 @@ export async function runMigrate(args: string[]): Promise<void> {
 			security: "security",
 		}
 
-		// Read all unit files and sort by pass
-		const unitFiles = readdirSync(srcDir).filter(f => f.startsWith("unit-") && f.endsWith(".md"))
-		const unitsByStage = new Map<string, Array<{ file: string; fm: Record<string, unknown>; body: string }>>()
+		// Collect all source directories: primary + any merged pass intents
+		const sourceDirs: Array<{ dir: string; defaultStage: string }> = [
+			{ dir: srcDir, defaultStage: "" }, // primary — uses pass: field
+		]
+		const relatedSlugs = mergeMap.get(slug) || []
+		const suffixToStage: Record<string, string> = {
+			"-dev": "development",
+			"-product": "product",
+			"-design": "design",
+			"-tests": "development",
+		}
+		for (const related of relatedSlugs) {
+			const relatedDir = join(oldDir, related)
+			// Determine default stage from suffix
+			const suffix = passSuffixes.find(s => related.endsWith(s)) || ""
+			sourceDirs.push({ dir: relatedDir, defaultStage: suffixToStage[suffix] || "development" })
+		}
 
-		for (const unitFile of unitFiles) {
-			const { data: unitFm, body: unitBody } = readFrontmatter(join(srcDir, unitFile))
-			const pass = (unitFm.pass as string) || "dev"
-			const stage = passToStage[pass] || "development"
-			if (!unitsByStage.has(stage)) unitsByStage.set(stage, [])
-			unitsByStage.get(stage)!.push({ file: unitFile, fm: unitFm, body: unitBody })
+		// Read all unit files from all sources and sort by pass/stage
+		const unitsByStage = new Map<string, Array<{ file: string; fm: Record<string, unknown>; body: string }>>()
+		let totalUnitCount = 0
+
+		for (const { dir: sourceDir, defaultStage } of sourceDirs) {
+			const unitFiles = readdirSync(sourceDir).filter(f => f.startsWith("unit-") && f.endsWith(".md"))
+			for (const unitFile of unitFiles) {
+				const { data: unitFm, body: unitBody } = readFrontmatter(join(sourceDir, unitFile))
+				const pass = (unitFm.pass as string) || ""
+				const stage = pass ? (passToStage[pass] || "development") : (defaultStage || "development")
+				if (!unitsByStage.has(stage)) unitsByStage.set(stage, [])
+				unitsByStage.get(stage)!.push({ file: unitFile, fm: unitFm, body: unitBody })
+				totalUnitCount++
+			}
+
+			// Also copy knowledge/discovery from merged intents
+			if (sourceDir !== srcDir) {
+				if (existsSync(join(sourceDir, "discovery.md"))) {
+					const relSlug = basename(sourceDir)
+					if (!dryRun) {
+						cpSync(join(sourceDir, "discovery.md"), join(destDir, "knowledge", `${relSlug}-discovery.md`))
+					}
+				}
+				// Copy mockups from merged intents too
+				if (existsSync(join(sourceDir, "mockups")) && !dryRun) {
+					const artifactsDir = join(destDir, "stages", "design", "artifacts")
+					mkdirSync(artifactsDir, { recursive: true })
+					try { cpSync(join(sourceDir, "mockups"), artifactsDir, { recursive: true }) } catch { /* */ }
+				}
+			}
 		}
 
 		// Determine active stage from active_pass
@@ -149,7 +217,8 @@ export async function runMigrate(args: string[]): Promise<void> {
 				}
 			}
 
-			console.log(`  MIGRATED: ${slug} (completed, ${unitFiles.length} units across ${unitsByStage.size} stage(s))`)
+			const mergeNote = relatedSlugs.length > 0 ? ` [merged: ${relatedSlugs.join(", ")}]` : ""
+			console.log(`  MIGRATED: ${slug} (completed, ${totalUnitCount} units across ${unitsByStage.size} stage(s))${mergeNote}`)
 		} else {
 			// Active: migrate intent + units in their stages, preserve active_stage
 			const skipStages = allStages.filter(s => {
@@ -198,7 +267,8 @@ export async function runMigrate(args: string[]): Promise<void> {
 				}
 			}
 
-			console.log(`  MIGRATED: ${slug} (active, stage: ${activeStage || "inception"}, ${unitFiles.length} units across ${unitsByStage.size} stage(s))`)
+			const mergeNoteActive = relatedSlugs.length > 0 ? ` [merged: ${relatedSlugs.join(", ")}]` : ""
+			console.log(`  MIGRATED: ${slug} (active, stage: ${activeStage || "inception"}, ${totalUnitCount} units across ${unitsByStage.size} stage(s))${mergeNoteActive}`)
 		}
 
 		// Copy knowledge/discovery files
