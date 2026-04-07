@@ -379,16 +379,19 @@ export function runNext(slug: string): OrchestratorAction {
 		const typeViolation = validateUnitTypes(iDir, currentStage, studio)
 		if (typeViolation) return typeViolation
 
-		// All units valid — advance to execute
-		fsmAdvancePhase(slug, currentStage, "execute")
-
+		// All units valid — open review gate before advancing to execute.
+		// The review UI blocks until the user approves the specs.
+		// This is handled by the handleOrchestratorTool wrapper which
+		// detects gate_review and calls _openReviewAndWait.
 		return {
-			action: "advance_phase",
+			action: "gate_review",
 			intent: slug,
+			studio,
 			stage: currentStage,
-			from_phase: "decompose",
-			to_phase: "execute",
-			message: `Units ready — begin execution of stage '${currentStage}'`,
+			next_phase: "execute",
+			gate_type: "ask",
+			gate_context: "decompose_to_execute",
+			message: `Specs validated — opening review before execution`,
 		}
 	}
 
@@ -921,11 +924,19 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 		if (result.action === "gate_review" && _openReviewAndWait) {
 			const stage = result.stage as string
 			const nextStage = result.next_stage as string | null
+			const nextPhase = result.next_phase as string | null
+			const gateContext = (result.gate_context as string) || "stage_gate"
 			const gateType = result.gate_type as string
 			const intentDirPath = `.haiku/intents/${slug}`
 			try {
 				const reviewResult = await _openReviewAndWait(intentDirPath, "intent", gateType)
 				if (reviewResult.decision === "approved") {
+					if (gateContext === "decompose_to_execute" && nextPhase) {
+						// Phase advancement (specs approved → start execution)
+						fsmAdvancePhase(slug, stage, nextPhase)
+						syncSessionMetadata(slug, args.state_file as string | undefined)
+						return text(JSON.stringify({ action: "advance_phase", intent: slug, stage, from_phase: "decompose", to_phase: nextPhase, message: `Specs approved — advancing to ${nextPhase}` }, null, 2))
+					}
 					if (nextStage) {
 						fsmAdvanceStage(slug, stage, nextStage)
 						syncSessionMetadata(slug, args.state_file as string | undefined)
@@ -937,7 +948,6 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 					return text(JSON.stringify({ action: "intent_complete", intent: slug, message: "Approved — intent complete" }, null, 2))
 				}
 				if (reviewResult.decision === "external_review") {
-					// User chose external review — stage blocks until external approval
 					fsmCompleteStage(slug, stage, "blocked")
 					syncSessionMetadata(slug, args.state_file as string | undefined)
 					return text(JSON.stringify({
@@ -948,7 +958,12 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 						message: "External review requested. Submit the work for review through your project's review process (PR, MR, review board, etc.). Run /haiku:run again after approval.",
 					}, null, 2))
 				}
-				// changes_requested
+				// changes_requested — go back to decompose to fix specs
+				if (gateContext === "decompose_to_execute") {
+					// Don't advance phase — stay in decompose so agent can fix
+					syncSessionMetadata(slug, args.state_file as string | undefined)
+					return text(JSON.stringify({ action: "changes_requested", intent: slug, stage, feedback: reviewResult.feedback, annotations: reviewResult.annotations, message: `Changes requested on specs: ${reviewResult.feedback || "(see annotations)"}. Fix the specs, then call haiku_run_next { intent: "${slug}" } again.` }, null, 2))
+				}
 				syncSessionMetadata(slug, args.state_file as string | undefined)
 				return text(JSON.stringify({ action: "changes_requested", intent: slug, stage, feedback: reviewResult.feedback, annotations: reviewResult.annotations, message: `Changes requested: ${reviewResult.feedback || "(see annotations)"}. Address the feedback, then call haiku_run_next { intent: "${slug}" } again.` }, null, 2))
 			} catch {
