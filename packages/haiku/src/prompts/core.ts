@@ -601,7 +601,7 @@ registerPrompt({
 			`5. Write \`.haiku/intents/{slug}/intent.md\` with frontmatter (studio, mode, status: active, created date)\n` +
 			`6. Create directories: knowledge/, stages/, state/\n` +
 			`7. \`git add .haiku/intents/{slug}/\` && \`git commit -m "haiku: new intent -- {slug}"\`\n` +
-			`8. Present intent for review via \`ask_user_visual_question\` (show title, studio, stages, mode)\n` +
+			`8. Present intent for review via \`open_review { intent_dir: ".haiku/intents/{slug}", review_type: "intent" }\` — this blocks until the user approves\n` +
 			`9. On approval, invoke /haiku:run (continuous) or report ready (discrete)`,
 		)
 

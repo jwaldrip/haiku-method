@@ -1980,7 +1980,7 @@ ${o}
 5. Write \`.haiku/intents/{slug}/intent.md\` with frontmatter (studio, mode, status: active, created date)
 6. Create directories: knowledge/, stages/, state/
 7. \`git add .haiku/intents/{slug}/\` && \`git commit -m "haiku: new intent -- {slug}"\`
-8. Present intent for review via \`ask_user_visual_question\` (show title, studio, stages, mode)
+8. Present intent for review via \`open_review { intent_dir: ".haiku/intents/{slug}", review_type: "intent" }\` \u2014 this blocks until the user approves
 9. On approval, invoke /haiku:run (continuous) or report ready (discrete)`);let s=i.join(`
 
 `);return e.description?{messages:[M("user",`Create a new H\xB7AI\xB7K\xB7U intent: ${e.description}`),M("assistant","I'll set up this intent. Let me configure the workspace."),M("user",s)]}:{messages:[M("user","Start a new H\xB7AI\xB7K\xB7U intent."),M("assistant","I'll help you create a new intent. Let me gather the details."),M("user",s)]}}});Ue({name:"haiku:refine",title:"Refine",description:"Refine intent, unit, or upstream stage outputs mid-execution",arguments:[{name:"stage",description:"Target stage for upstream refinement (e.g., 'design')",required:!1,completer:Rc}],handler:async e=>{let t=Vh({});if("error"in t)return t.error;let n=t.slug,r=Nt(n),o=yt(Te(r,"intent.md"),"utf8"),{data:i,body:s}=pe(o),a=i.studio||"ideation",l=i.active_stage||"",c="";l&&(c=$i(Te(r,"stages",l,"state.json")).phase||"");let u=[`Intent: ${n}`,`Studio: ${a}`,`Active Stage: ${l}`,`Phase: ${c}`];if(e.stage){let p=e.stage,f=Hh(a,p),h=Te(r,"stages",p,"units"),m=[];ot(h)&&(m=Sr(h).filter(y=>y.endsWith(".md")).map(y=>y.replace(/\.md$/,"")));let g=`## Stage-Scoped Refinement: ${p}
