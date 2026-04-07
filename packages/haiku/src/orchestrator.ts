@@ -96,6 +96,34 @@ function resolveStageMetadata(studio: string, stage: string): { description: str
 	return null
 }
 
+// ── External review detection ─────────────────────────────────────────────
+
+import { execSync } from "node:child_process"
+
+/**
+ * Best-effort check if an external review URL has been approved.
+ * Supports GitHub PRs (gh), GitLab MRs (glab), and generic URLs.
+ * Returns true if approved/merged, false otherwise. Never throws.
+ */
+function checkExternalApproval(url: string): boolean {
+	try {
+		if (url.includes("github.com") && url.includes("/pull/")) {
+			// GitHub PR — check via gh CLI
+			const state = execSync(`gh pr view "${url}" --json state -q .state`, { encoding: "utf8", stdio: "pipe" }).trim()
+			return state === "MERGED" || state === "CLOSED" // CLOSED could mean approved+merged
+		}
+		if (url.includes("gitlab") && url.includes("/merge_requests/")) {
+			// GitLab MR — check via glab CLI
+			const state = execSync(`glab mr view "${url}" --output json 2>/dev/null | grep -o '"state":"[^"]*"' | head -1`, { encoding: "utf8", stdio: "pipe" }).trim()
+			return state.includes("merged")
+		}
+		// Unknown URL type — can't check automatically
+		return false
+	} catch {
+		return false
+	}
+}
+
 // ── Action types ───────────────────────────────────────────────────────────
 
 export interface OrchestratorAction {
@@ -498,8 +526,44 @@ export function runNext(slug: string): OrchestratorAction {
 		return { action: "advance_stage", intent: slug, stage: currentStage, next_stage: nextStage, gate_outcome: "advanced", message: `Advancing to '${nextStage}'` }
 	}
 
-	// Stage completed — find next
+	// Stage completed — find next (or wait for external approval)
 	if (stageStatus === "completed") {
+		const gateOutcome = (stageState.gate_outcome as string) || "advanced"
+
+		// Blocked on external review — check if it's been approved
+		if (gateOutcome === "blocked") {
+			const externalUrl = (stageState.external_review_url as string) || ""
+			if (externalUrl) {
+				// Best-effort: check if the external review was approved
+				const approved = checkExternalApproval(externalUrl)
+				if (approved) {
+					// External approval detected — advance
+					const path = stageStatePath(slug, currentStage)
+					const data = readJson(path)
+					data.gate_outcome = "advanced"
+					writeJson(path, data)
+					emitTelemetry("haiku.gate.resolved", { intent: slug, stage: currentStage, gate_type: "external", outcome: "approved" })
+					// Fall through to advance logic below
+				} else {
+					return {
+						action: "awaiting_external_review",
+						intent: slug,
+						stage: currentStage,
+						external_review_url: externalUrl,
+						message: `Stage '${currentStage}' is awaiting external review at: ${externalUrl}. Run /haiku:run again after approval.`,
+					}
+				}
+			} else {
+				// No URL recorded — ask the agent to provide it or manually advance
+				return {
+					action: "awaiting_external_review",
+					intent: slug,
+					stage: currentStage,
+					message: `Stage '${currentStage}' is awaiting external review. Provide the review URL via haiku_stage_set or run /haiku:go_back to re-enter the gate.`,
+				}
+			}
+		}
+
 		const stageIdx = studioStages.indexOf(currentStage)
 		const nextStage = stageIdx < studioStages.length - 1 ? studioStages[stageIdx + 1] : null
 		if (!nextStage) {
