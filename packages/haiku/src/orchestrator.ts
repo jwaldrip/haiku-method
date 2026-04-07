@@ -1097,6 +1097,14 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 		emitTelemetry("haiku.orchestrator.action", { intent: slug, action: result.action })
 		if (stFile) logSessionEvent(stFile, { event: "run_next", intent: slug, action: result.action, stage: result.stage, unit: result.unit, hat: result.hat, wave: result.wave })
 
+		// Log validation failures
+		if (stFile && result.action === "spec_validation_failed") {
+			logSessionEvent(stFile, { event: "spec_validation_failed", intent: slug, stage: result.stage, violations: result.violations, allowed_types: result.allowed_types })
+		}
+		if (stFile && result.action === "outputs_missing") {
+			logSessionEvent(stFile, { event: "outputs_missing", intent: slug, stage: result.stage, missing: result.missing })
+		}
+
 		// Gate review: open review UI, block until user decides, process decision
 		if (result.action === "gate_review" && _openReviewAndWait) {
 			const stage = result.stage as string
@@ -1105,8 +1113,10 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 			const gateContext = (result.gate_context as string) || "stage_gate"
 			const gateType = result.gate_type as string
 			const intentDirPath = `.haiku/intents/${slug}`
+			if (stFile) logSessionEvent(stFile, { event: "gate_review_opened", intent: slug, stage, gate_type: gateType })
 			try {
 				const reviewResult = await _openReviewAndWait(intentDirPath, "intent", gateType)
+				if (stFile) logSessionEvent(stFile, { event: "gate_decision", intent: slug, stage, decision: reviewResult.decision, feedback: reviewResult.feedback })
 				if (reviewResult.decision === "approved") {
 					if (gateContext === "elaborate_to_execute" && nextPhase) {
 						// Phase advancement (specs approved → start execution)
@@ -1161,6 +1171,7 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 				} catch { /* logging failure is non-fatal */ }
 
 				// Fall back to elicitation — ask the user directly via MCP client UI
+				if (stFile) logSessionEvent(stFile, { event: "gate_elicitation_fallback", intent: slug, stage, error: errorMsg })
 				if (_elicitInput) {
 					try {
 						const elicitResult = await _elicitInput({
@@ -1416,6 +1427,7 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 		gitCommitState(`haiku: create intent ${slug}`)
 
 		emitTelemetry("haiku.intent.created", { intent: slug, studio: selectedStudio, mode: selectedMode })
+		if (stateFile) logSessionEvent(stateFile, { event: "intent_created", intent: slug, studio: selectedStudio, mode: selectedMode, stages: studioStages })
 
 		return text(JSON.stringify({
 			action: "intent_created",

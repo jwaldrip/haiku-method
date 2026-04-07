@@ -27078,6 +27078,8 @@ function handleStateTool(name, args2) {
       setFrontmatterField(uPath, "hat", args2.hat);
       setFrontmatterField(uPath, "started_at", timestamp());
       emitTelemetry("haiku.unit.started", { intent: args2.intent, stage: args2.stage, unit: args2.unit, hat: args2.hat });
+      const sf = args2.state_file;
+      if (sf) logSessionEvent(sf, { event: "unit_started", intent: args2.intent, stage: args2.stage, unit: args2.unit, hat: args2.hat });
       gitCommitState(`haiku: start unit ${args2.unit}`);
       syncSessionMetadata(args2.intent, args2.state_file);
       const scope = resolveStageScope(args2.intent, args2.stage);
@@ -27090,11 +27092,17 @@ ${scope}` : "ok");
       const unitRaw = readFileSync2(path, "utf8");
       const unchecked = (unitRaw.match(/- \[ \]/g) || []).length;
       if (unchecked > 0) {
+        const sf = args2.state_file;
+        if (sf) logSessionEvent(sf, { event: "criteria_not_met", intent: args2.intent, stage: args2.stage, unit: args2.unit, unchecked });
         return text(JSON.stringify({ error: "criteria_not_met", unchecked, message: `Cannot complete unit: ${unchecked} completion criteria still unchecked. Address them, then call haiku_unit_complete again.` }));
       }
       setFrontmatterField(path, "status", "completed");
       setFrontmatterField(path, "completed_at", timestamp());
       emitTelemetry("haiku.unit.completed", { intent: args2.intent, stage: args2.stage, unit: args2.unit });
+      {
+        const sf = args2.state_file;
+        if (sf) logSessionEvent(sf, { event: "unit_completed", intent: args2.intent, stage: args2.stage, unit: args2.unit });
+      }
       gitCommitState(`haiku: complete unit ${args2.unit}`);
       const mergeResult = mergeUnitWorktree(args2.intent, args2.unit);
       if (!mergeResult.success) {
@@ -27107,6 +27115,10 @@ ${scope}` : "ok");
       const advPath = unitPath(args2.intent, args2.stage, args2.unit);
       const nextHat = args2.hat;
       setFrontmatterField(advPath, "hat", nextHat);
+      {
+        const sf = args2.state_file;
+        if (sf) logSessionEvent(sf, { event: "hat_advanced", intent: args2.intent, stage: args2.stage, unit: args2.unit, hat: nextHat });
+      }
       emitTelemetry("haiku.hat.transition", { intent: args2.intent, stage: args2.stage, unit: args2.unit, hat: nextHat });
       gitCommitState(`haiku: advance hat to ${nextHat} on ${args2.unit}`);
       syncSessionMetadata(args2.intent, args2.state_file);
@@ -27125,6 +27137,10 @@ ${hatScope}` : `advanced to ${nextHat}`);
       const prevHat = hatIdx > 0 ? stageHats[hatIdx - 1] : stageHats[0];
       setFrontmatterField(failPath, "hat", prevHat);
       setFrontmatterField(failPath, "bolt", currentBolt + 1);
+      {
+        const sf = args2.state_file;
+        if (sf) logSessionEvent(sf, { event: "unit_failed", intent: args2.intent, stage: args2.stage, unit: args2.unit, from_hat: currentHat, to_hat: prevHat, bolt: currentBolt + 1 });
+      }
       emitTelemetry("haiku.unit.failed", { intent: args2.intent, stage: args2.stage, unit: args2.unit, hat: currentHat, prev_hat: prevHat, bolt: String(currentBolt + 1) });
       gitCommitState(`haiku: fail ${args2.unit} \u2014 back to ${prevHat}, bolt ${currentBolt + 1}`);
       syncSessionMetadata(args2.intent, args2.state_file);
@@ -28156,6 +28172,12 @@ async function handleOrchestratorTool(name, args2) {
     const result = runNext(slug);
     emitTelemetry("haiku.orchestrator.action", { intent: slug, action: result.action });
     if (stFile) logSessionEvent(stFile, { event: "run_next", intent: slug, action: result.action, stage: result.stage, unit: result.unit, hat: result.hat, wave: result.wave });
+    if (stFile && result.action === "spec_validation_failed") {
+      logSessionEvent(stFile, { event: "spec_validation_failed", intent: slug, stage: result.stage, violations: result.violations, allowed_types: result.allowed_types });
+    }
+    if (stFile && result.action === "outputs_missing") {
+      logSessionEvent(stFile, { event: "outputs_missing", intent: slug, stage: result.stage, missing: result.missing });
+    }
     if (result.action === "gate_review" && _openReviewAndWait) {
       const stage = result.stage;
       const nextStage = result.next_stage;
@@ -28163,8 +28185,10 @@ async function handleOrchestratorTool(name, args2) {
       const gateContext = result.gate_context || "stage_gate";
       const gateType = result.gate_type;
       const intentDirPath = `.haiku/intents/${slug}`;
+      if (stFile) logSessionEvent(stFile, { event: "gate_review_opened", intent: slug, stage, gate_type: gateType });
       try {
         const reviewResult = await _openReviewAndWait(intentDirPath, "intent", gateType);
+        if (stFile) logSessionEvent(stFile, { event: "gate_decision", intent: slug, stage, decision: reviewResult.decision, feedback: reviewResult.feedback });
         if (reviewResult.decision === "approved") {
           if (gateContext === "elaborate_to_execute" && nextPhase) {
             fsmAdvancePhase(slug, stage, nextPhase);
@@ -28221,6 +28245,7 @@ ${errorStack}
           );
         } catch {
         }
+        if (stFile) logSessionEvent(stFile, { event: "gate_elicitation_fallback", intent: slug, stage, error: errorMsg });
         if (_elicitInput) {
           try {
             const elicitResult = await _elicitInput({
@@ -28433,6 +28458,7 @@ ${studioDescriptions}`,
     writeFileSync3(join6(iDir, "intent.md"), frontmatter);
     gitCommitState(`haiku: create intent ${slug}`);
     emitTelemetry("haiku.intent.created", { intent: slug, studio: selectedStudio, mode: selectedMode });
+    if (stateFile) logSessionEvent(stateFile, { event: "intent_created", intent: slug, studio: selectedStudio, mode: selectedMode, stages: studioStages });
     return text(JSON.stringify({
       action: "intent_created",
       slug,

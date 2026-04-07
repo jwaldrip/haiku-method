@@ -9,7 +9,7 @@ import { join } from "node:path"
 import { z } from "zod"
 import matter from "gray-matter"
 import { emitTelemetry } from "./telemetry.js"
-import { writeHaikuMetadata, type HaikuSessionMetadata } from "./session-metadata.js"
+import { writeHaikuMetadata, logSessionEvent, type HaikuSessionMetadata } from "./session-metadata.js"
 import { mergeUnitWorktree } from "./git-worktree.js"
 
 // ── Path resolution ────────────────────────────────────────────────────────
@@ -422,6 +422,8 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			setFrontmatterField(uPath, "hat", args.hat)
 			setFrontmatterField(uPath, "started_at", timestamp())
 			emitTelemetry("haiku.unit.started", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, hat: args.hat as string })
+			const sf = args.state_file as string | undefined
+			if (sf) logSessionEvent(sf, { event: "unit_started", intent: args.intent, stage: args.stage, unit: args.unit, hat: args.hat })
 			gitCommitState(`haiku: start unit ${args.unit as string}`)
 			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
 			const scope = resolveStageScope(args.intent as string, args.stage as string)
@@ -433,11 +435,17 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const unitRaw = readFileSync(path, "utf8")
 			const unchecked = (unitRaw.match(/- \[ \]/g) || []).length
 			if (unchecked > 0) {
+				const sf = args.state_file as string | undefined
+				if (sf) logSessionEvent(sf, { event: "criteria_not_met", intent: args.intent, stage: args.stage, unit: args.unit, unchecked })
 				return text(JSON.stringify({ error: "criteria_not_met", unchecked, message: `Cannot complete unit: ${unchecked} completion criteria still unchecked. Address them, then call haiku_unit_complete again.` }))
 			}
 			setFrontmatterField(path, "status", "completed")
 			setFrontmatterField(path, "completed_at", timestamp())
 			emitTelemetry("haiku.unit.completed", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string })
+			{
+				const sf = args.state_file as string | undefined
+				if (sf) logSessionEvent(sf, { event: "unit_completed", intent: args.intent, stage: args.stage, unit: args.unit })
+			}
 			gitCommitState(`haiku: complete unit ${args.unit as string}`)
 
 			// Merge unit worktree back to intent branch (if running in a worktree)
@@ -454,6 +462,10 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const advPath = unitPath(args.intent as string, args.stage as string, args.unit as string)
 			const nextHat = args.hat as string
 			setFrontmatterField(advPath, "hat", nextHat)
+			{
+				const sf = args.state_file as string | undefined
+				if (sf) logSessionEvent(sf, { event: "hat_advanced", intent: args.intent, stage: args.stage, unit: args.unit, hat: nextHat })
+			}
 			emitTelemetry("haiku.hat.transition", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, hat: nextHat })
 			gitCommitState(`haiku: advance hat to ${nextHat} on ${args.unit as string}`)
 			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
@@ -474,6 +486,10 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 
 			setFrontmatterField(failPath, "hat", prevHat)
 			setFrontmatterField(failPath, "bolt", currentBolt + 1)
+			{
+				const sf = args.state_file as string | undefined
+				if (sf) logSessionEvent(sf, { event: "unit_failed", intent: args.intent, stage: args.stage, unit: args.unit, from_hat: currentHat, to_hat: prevHat, bolt: currentBolt + 1 })
+			}
 			emitTelemetry("haiku.unit.failed", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, hat: currentHat, prev_hat: prevHat, bolt: String(currentBolt + 1) })
 			gitCommitState(`haiku: fail ${args.unit as string} — back to ${prevHat}, bolt ${currentBolt + 1}`)
 			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
