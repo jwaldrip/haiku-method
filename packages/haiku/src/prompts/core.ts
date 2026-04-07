@@ -198,68 +198,39 @@ function buildRunInstructions(
 			const stage = action.stage as string
 			const elaboration = (action.elaboration as string) || "collaborative"
 			const stageDef = readStageDef(studio, stage)
+			const unitTypes = (stageDef?.data?.unit_types as string[]) || []
 
-			sections.push(`## Elaborate Stage: ${stage}`)
-			sections.push(`Elaboration mode: **${elaboration}**`)
-
+			sections.push(`## Elaborate: ${stage}`)
 			if (stageDef) {
-				const unitTypes = (stageDef.data.unit_types as string[]) || []
-				sections.push(`### Stage Definition\n\n${stageDef.body}`)
-				if (stageDef.data.inputs) {
-					sections.push(`### Inputs\n\n${JSON.stringify(stageDef.data.inputs)}`)
-				}
-				sections.push(
-					`### Stage Scope Constraint\n\n` +
-					`**${stageDef.data.description || stage}**\n` +
-					(unitTypes.length > 0 ? `Allowed unit types: ${unitTypes.join(", ")}\n\n` : "\n") +
-					`CRITICAL: Units created during this elaboration MUST be scoped to this stage's purpose as defined above. ` +
-					`Do NOT create units that belong to a different stage. Each unit's work and completion criteria must be achievable within this stage's domain. ` +
-					`If you identify work that belongs to a downstream stage, note it in the discovery document — do NOT create a unit for it here.`,
-				)
+				sections.push(`${stageDef.body}`)
+				if (unitTypes.length > 0) sections.push(`**Allowed unit types:** ${unitTypes.join(", ")}`)
+				if (stageDef.data.inputs) sections.push(`**Inputs:** ${JSON.stringify(stageDef.data.inputs)}`)
 			}
 
-			// Load discovery definitions
-			const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || ""
-			for (const base of [join(process.cwd(), ".haiku", "studios"), join(pluginRoot, "studios")]) {
+			// Discovery artifact definitions
+			for (const base of studioSearchPaths()) {
 				const discoveryDir = join(base, studio, "stages", stage, "discovery")
 				if (!existsSync(discoveryDir)) continue
-				const files = readdirSync(discoveryDir).filter(f => f.endsWith(".md"))
-				if (files.length > 0) {
-					sections.push(`### Discovery Definitions\n`)
-					for (const f of files) {
-						const content = readFileSync(join(discoveryDir, f), "utf8")
-						sections.push(`#### ${f}\n\n${content}`)
-					}
+				for (const f of readdirSync(discoveryDir).filter(f => f.endsWith(".md"))) {
+					sections.push(`### ${f}\n\n${readFileSync(join(discoveryDir, f), "utf8")}`)
 				}
 				break
 			}
 
-			if (elaboration === "collaborative") {
-				sections.push(
-					`### Collaborative Elaboration Instructions\n\n` +
-					`This is a **multi-turn conversation**. You MUST:\n` +
-					`- Engage the user iteratively -- ask questions, get answers, refine\n` +
-					`- Ask about architecture preferences, constraints, priorities, unknowns\n` +
-					`- Probe for edge cases and non-obvious requirements\n` +
-					`- Validate assumptions before writing them into units\n` +
-					`- Present options and tradeoffs when decisions are needed\n` +
-					`- Use \`ask_user_visual_question\` for rich content (specs, wireframes, comparisons)\n` +
-					`- Continue until both you and the user are confident the plan is solid\n\n` +
-					`After units are written, call \`open_review { intent_dir: "${dir}", review_type: "intent" }\` to present the plan. ` +
-					`This blocks until the user responds.\n\n` +
-					`After approval: \`haiku_stage_set { intent: "${slug}", stage: "${stage}", field: "phase", value: "execute" }\`\n` +
-					`Then call \`haiku_run_next { intent: "${slug}" }\``,
-				)
-			} else {
-				sections.push(
-					`### Autonomous Elaboration Instructions\n\n` +
-					`Elaborate the work into units with completion criteria and a dependency DAG.\n` +
-					`Write unit files to \`.haiku/intents/${slug}/stages/${stage}/units/\`.\n` +
-					`Call \`open_review { intent_dir: "${dir}", review_type: "intent" }\` to present the final plan. This blocks until the user responds.\n\n` +
-					`After approval: \`haiku_stage_set { intent: "${slug}", stage: "${stage}", field: "phase", value: "execute" }\`\n` +
-					`Then call \`haiku_run_next { intent: "${slug}" }\``,
-				)
-			}
+			sections.push(
+				`## Scope\n\n` +
+				`All units MUST be within this stage's domain${unitTypes.length > 0 ? ` (${unitTypes.join(", ")})` : ""}. ` +
+				`Work belonging to other stages goes in the discovery document, not in units.\n\n` +
+				`## Mechanics\n\n` +
+				(elaboration === "collaborative"
+					? `Mode: **collaborative** — engage the user iteratively before finalizing.\n`
+					: `Mode: **autonomous** — elaborate independently.\n`) +
+				`1. Research and write discovery artifacts\n` +
+				`2. Break work into units at \`.haiku/intents/${slug}/stages/${stage}/units/\`\n` +
+				`3. \`open_review { intent_dir: "${dir}", review_type: "intent" }\`\n` +
+				`4. After approval: \`haiku_stage_set { intent: "${slug}", stage: "${stage}", field: "phase", value: "execute" }\`\n` +
+				`5. \`haiku_run_next { intent: "${slug}" }\``,
+			)
 			break
 		}
 
@@ -270,81 +241,67 @@ function buildRunInstructions(
 			const hat = (action.hat as string) || (action.first_hat as string) || ""
 			const hats = (action.hats as string[]) || []
 			const bolt = (action.bolt as number) || 1
-
-			// Load stage definition for scope constraints
 			const stageDef = readStageDef(studio, stage)
-			const stageDesc = stageDef?.data?.description as string || stage
-			const stageOutputTypes = (stageDef?.data?.unit_types as string[]) || []
+			const unitTypes = (stageDef?.data?.unit_types as string[]) || []
 
-			// Load unit content
-			const unitsDir = join(dir, "stages", stage, "units")
-			const unitFile = join(unitsDir, unit.endsWith(".md") ? unit : `${unit}.md`)
+			// Unit content
+			const unitFile = join(dir, "stages", stage, "units", unit.endsWith(".md") ? unit : `${unit}.md`)
 			let unitContent = ""
 			let unitRefs: string[] = []
 			if (existsSync(unitFile)) {
-				const raw = readFileSync(unitFile, "utf8")
-				const { data, body } = parseFrontmatter(raw)
+				const { data, body } = parseFrontmatter(readFileSync(unitFile, "utf8"))
 				unitContent = body
 				unitRefs = (data.refs as string[]) || []
 			}
 
-			// Load hat definition
+			// Hat definition
 			const hatDefs = readHatDefs(studio, stage)
 			const hatContent = hatDefs[hat] || `No hat definition found for "${hat}"`
 
-			sections.push(`## Unit: ${unit}`)
-			sections.push(`Hat: ${hat} (${hats.join(" -> ")})`)
-			sections.push(`Bolt: ${bolt}`)
+			sections.push(`## ${unit} — hat: ${hat} (${hats.join(" → ")}) — bolt ${bolt}`)
+
+			// Stage scope (once, concise)
+			if (stageDef) {
+				sections.push(
+					`### Stage: ${stage}\n\n${stageDef.body}\n\n` +
+					`**Unit types:** ${unitTypes.length > 0 ? unitTypes.join(", ") : "per stage definition"}. ` +
+					`Stay within this stage's scope — do not produce outputs belonging to other stages.`,
+				)
+			}
 
 			sections.push(`### Unit Spec\n\n${unitContent}`)
-			sections.push(`### Hat Definition: ${hat}\n\n${hatContent}`)
+			sections.push(`### Hat: ${hat}\n\n${hatContent}`)
 
-			// Include ref content
+			// Refs
 			if (unitRefs.length > 0) {
-				sections.push(`### Referenced Artifacts\n`)
+				sections.push(`### Refs`)
 				const dirResolved = resolve(dir)
 				for (const ref of unitRefs) {
-					const refPath = join(dir, ref)
 					const refResolved = resolve(dir, ref)
 					if (!refResolved.startsWith(dirResolved)) continue
-					if (existsSync(refPath)) {
-						const content = readFileSync(refPath, "utf8")
+					if (existsSync(join(dir, ref))) {
+						const content = readFileSync(join(dir, ref), "utf8")
 						sections.push(`#### ${ref}\n\n${content.slice(0, 2000)}${content.length > 2000 ? "\n...(truncated)" : ""}`)
-					} else {
-						sections.push(`#### ${ref}\n\n(not found)`)
 					}
 				}
 			}
 
-			// Stage scope constraint — read from the stage's own definition
-			const stageBody = stageDef?.body || ""
-			const unitTypes = stageOutputTypes.length > 0 ? stageOutputTypes.join(", ") : "as defined by the stage"
-			const scopeConstraint =
-				`### Stage Scope: ${stage}\n\n` +
-				`**${stageDesc}**\n\n` +
-				`Unit types for this stage: ${unitTypes}\n\n` +
-				`CRITICAL: You are in the **${stage}** stage. Your work MUST be limited to this stage's purpose as described above and in the stage definition below. Do NOT produce outputs that belong to other stages in the studio.\n\n` +
-				`### Stage Definition\n\n${stageBody}`
-
-			sections.push(scopeConstraint)
-
+			// Mechanics
 			if (action.action === "start_unit") {
 				sections.push(
-					`### Instructions\n\n` +
+					`### Mechanics\n\n` +
 					`1. \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "${hat}" }\`\n` +
-					`2. Execute the hat's work — stay within the ${stage} stage's scope (see above)\n` +
-					`3. When done, advance to next hat or complete the unit\n` +
-					`4. Call \`haiku_run_next { intent: "${slug}" }\``,
+					`2. Do the hat's work\n` +
+					`3. Advance hat or complete unit\n` +
+					`4. \`haiku_run_next { intent: "${slug}" }\``,
 				)
 			} else {
 				sections.push(
-					`### Instructions\n\n` +
-					`1. Continue the "${hat}" hat's work — stay within the ${stage} stage's scope (see above)\n` +
-					`2. When hat work is done: \`haiku_unit_advance_hat { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "<next_hat>" }\`\n` +
-					`3. After all hats, check completion criteria\n` +
-					`4. If met: \`haiku_unit_complete { intent: "${slug}", stage: "${stage}", unit: "${unit}" }\`\n` +
-					`5. If not: \`haiku_unit_increment_bolt { intent: "${slug}", stage: "${stage}", unit: "${unit}" }\`\n` +
-					`6. Call \`haiku_run_next { intent: "${slug}" }\``,
+					`### Mechanics\n\n` +
+					`1. Continue the "${hat}" hat's work\n` +
+					`2. \`haiku_unit_advance_hat { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "<next>" }\`\n` +
+					`3. After all hats — if criteria met: \`haiku_unit_complete { ... }\`, else: \`haiku_unit_increment_bolt { ... }\`\n` +
+					`4. \`haiku_run_next { intent: "${slug}" }\``,
 				)
 			}
 			break
@@ -355,31 +312,19 @@ function buildRunInstructions(
 			const units = (action.units as string[]) || []
 			const hats = (action.hats as string[]) || []
 			const firstHat = (action.first_hat as string) || hats[0] || ""
+			const stageDef = readStageDef(studio, stage)
 
-			// Load stage definition for scope constraints
-			const parStageDef = readStageDef(studio, stage)
-			const parStageDesc = parStageDef?.data?.description as string || stage
-			const parStageBody = parStageDef?.body || ""
-			const parUnitTypes = (parStageDef?.data?.unit_types as string[]) || []
-
-			sections.push(`## Parallel Execution: ${units.length} units`)
-			sections.push(`Stage: ${stage} — ${parStageDesc}`)
-			sections.push(`Unit types: ${parUnitTypes.length > 0 ? parUnitTypes.join(", ") : "as defined by the stage"}`)
-			sections.push(`Hat sequence: ${hats.join(" -> ")}`)
-			sections.push(`Units: ${units.join(", ")}`)
+			sections.push(`## Parallel: ${units.length} units in ${stage}`)
+			if (stageDef) {
+				sections.push(`${stageDef.body}\n\nStay within this stage's scope — do not produce outputs belonging to other stages.`)
+			}
+			sections.push(`Hats: ${hats.join(" → ")}\nUnits: ${units.join(", ")}`)
 
 			sections.push(
-				`### Stage Scope\n\n` +
-				`CRITICAL: All agents are in the **${stage}** stage. They MUST stay within this stage's scope as defined below. Do NOT produce outputs that belong to other stages.\n\n` +
-				`### Stage Definition\n\n${parStageBody}\n\n` +
-				`### Instructions\n\n` +
-				`Spawn an Agent per unit using the Agent tool with \`isolation: "worktree"\`.\n` +
-				`Each agent runs the full hat sequence for its unit autonomously.\n` +
-				`Include the stage definition and scope constraint in each agent's prompt.\n\n` +
-				units.map(u =>
-					`- **${u}**: \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${u}", hat: "${firstHat}" }\``,
-				).join("\n") +
-				`\n\nWait for all agents to complete, then call \`haiku_run_next { intent: "${slug}" }\``,
+				`### Mechanics\n\n` +
+				`Spawn an Agent per unit (\`isolation: "worktree"\`). Include the stage definition in each agent's prompt.\n\n` +
+				units.map(u => `- **${u}**: \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${u}", hat: "${firstHat}" }\``).join("\n") +
+				`\n\nAfter all complete: \`haiku_run_next { intent: "${slug}" }\``,
 			)
 			break
 		}
