@@ -2,8 +2,7 @@
 studio: software
 mode: continuous
 status: active
-created: '2026-04-07'
-active_stage: inception
+created: 2026-04-07
 ---
 
 # Hosted Review UI
