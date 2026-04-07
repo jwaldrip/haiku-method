@@ -147,7 +147,7 @@ async function handleDecidePost(
 	const annotations = body.annotations
 
 	updateSession(sessionId, {
-		status: decision,
+		status: "decided",
 		decision,
 		feedback,
 		annotations,
