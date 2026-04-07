@@ -88,9 +88,10 @@ Each prompt handler:
 
 ## MCP Capabilities Used
 
-| Capability | Purpose |
-|-----------|---------|
-| `prompts` | Slash commands — /haiku:new, /haiku:run, etc. |
-| `completions` | Auto-complete for intent slugs, studios, stages |
-| `elicitation.form` | Structured questions to user (studio picker, mode, gate approval) |
-| `tools` | State management, orchestration, visual review |
+| Capability | Purpose | Status |
+|-----------|---------|--------|
+| `prompts` | Slash commands — /haiku:new, /haiku:run, etc. | Implement now |
+| `completions` | Auto-complete for intent slugs, studios, stages | Implement now |
+| `elicitation.form` | Structured questions to user (studio picker, mode, gate approval) | Implement now |
+| `tools` | State management, orchestration, visual review | Already done |
+| `sampling` | Server-driven LLM calls for review agents, wireframe generation, auto-elaboration | **Future** — Claude Code doesn't support sampling yet. When it does, review agents and design generation can run server-side via sampling instead of agent-spawned subagents. |
