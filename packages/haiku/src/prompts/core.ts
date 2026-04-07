@@ -520,8 +520,8 @@ function buildRunInstructions(
 			sections.push(`Run adversarial review agents on the elaboration specs before the pre-execution gate opens.\n\n`)
 			if (Object.keys(agents).length > 0) {
 				sections.push(`### Review Agents\n`)
-				for (const [name, def] of Object.entries(agents)) {
-					sections.push(`#### ${name}\n\n${def.content}`)
+				for (const [name, content] of Object.entries(agents)) {
+					sections.push(`#### ${name}\n\n${content}`)
 				}
 			}
 			sections.push(
