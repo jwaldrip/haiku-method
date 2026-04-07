@@ -1,7 +1,11 @@
 ---
-status: pending
+status: active
 type: backend
-depends_on: [unit-02-https-upgrade]
+depends_on:
+  - unit-02-https-upgrade
+bolt: 1
+hat: architect
+started_at: '2026-04-07T14:39:12Z'
 ---
 
 # Session Bridge
