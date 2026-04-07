@@ -1,10 +1,11 @@
 ---
-status: active
+status: completed
 type: backend
 depends_on: []
 bolt: 1
-hat: architect
+hat: decomposer
 started_at: '2026-04-07T14:37:22Z'
+completed_at: '2026-04-07T14:37:49Z'
 ---
 
 # Cert Infrastructure
