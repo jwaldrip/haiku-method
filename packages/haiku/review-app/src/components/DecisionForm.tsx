@@ -8,9 +8,13 @@ interface Props {
   collectAnnotations?: boolean;
   getAnnotations?: () => ReviewAnnotations | undefined;
   wsRef?: React.RefObject<WebSocket | null>;
+  /** Number of pending comments (inline + pin) */
+  commentCount?: number;
+  /** Called when user clicks "Clear All Comments" from the decision form */
+  onClearAllComments?: () => void;
 }
 
-export function DecisionForm({ sessionId, collectAnnotations = false, getAnnotations, wsRef }: Props) {
+export function DecisionForm({ sessionId, collectAnnotations = false, getAnnotations, wsRef, commentCount = 0, onClearAllComments }: Props) {
   const [mode, setMode] = useState<"buttons" | "feedback">("buttons");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -55,19 +59,9 @@ export function DecisionForm({ sessionId, collectAnnotations = false, getAnnotat
     }
   }
 
+  const hasComments = commentCount > 0;
+
   function handleApprove() {
-    // Warn if there are unsent annotations/comments
-    if (collectAnnotations && getAnnotations) {
-      const annotations = getAnnotations();
-      const hasComments = (annotations?.comments?.length ?? 0) > 0;
-      const hasPins = (annotations?.pins?.length ?? 0) > 0;
-      if (hasComments || hasPins) {
-        const count = (annotations?.comments?.length ?? 0) + (annotations?.pins?.length ?? 0);
-        if (!window.confirm(`You have ${count} annotation(s). Approving will include them as feedback. Continue?`)) {
-          return;
-        }
-      }
-    }
     handleSubmit("approved", generalComments.trim());
   }
 
@@ -109,22 +103,42 @@ export function DecisionForm({ sessionId, collectAnnotations = false, getAnnotat
       </div>
 
       {mode === "buttons" && (
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={handleApprove}
-            disabled={submitting}
-            className="flex-1 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg transition-colors focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Approve
-          </button>
-          <button
-            onClick={() => setMode("feedback")}
-            disabled={submitting}
-            className="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Request Changes
-          </button>
-        </div>
+        <>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleApprove}
+              disabled={submitting}
+              className={`flex-1 px-6 py-3 font-semibold rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-stone-900 disabled:opacity-50 disabled:cursor-not-allowed ${
+                hasComments
+                  ? "bg-amber-500 hover:bg-amber-600 text-white focus:ring-amber-400"
+                  : "bg-teal-600 hover:bg-teal-700 text-white focus:ring-teal-500"
+              }`}
+            >
+              {hasComments ? "Approve with Comments" : "Approve"}
+            </button>
+            <button
+              onClick={() => setMode("feedback")}
+              disabled={submitting}
+              className="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Request Changes
+            </button>
+            {hasComments && onClearAllComments && (
+              <button
+                onClick={onClearAllComments}
+                disabled={submitting}
+                className="px-6 py-3 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 font-medium rounded-lg transition-colors focus:ring-2 focus:ring-stone-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Clear All Comments
+              </button>
+            )}
+          </div>
+          {hasComments && (
+            <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
+              {commentCount} comment{commentCount !== 1 ? "s" : ""} will be included with your approval.
+            </p>
+          )}
+        </>
       )}
 
       {mode === "feedback" && (

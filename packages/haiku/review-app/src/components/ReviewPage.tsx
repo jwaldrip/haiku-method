@@ -5,7 +5,8 @@ import { Tabs, type TabDef } from "./Tabs";
 import { Card, SectionHeading } from "./Card";
 import { DecisionForm } from "./DecisionForm";
 import { AnnotationCanvas, type AnnotationPin } from "./AnnotationCanvas";
-import { InlineComments, type InlineComment } from "./InlineComments";
+import { InlineComments, type InlineComment, type InlineCommentEntry, scrollToInlineComment } from "./InlineComments";
+import { CommentTray, type TrayComment } from "./CommentTray";
 import { MermaidDiagram } from "./MermaidDiagram";
 import { marked } from "marked";
 
@@ -48,18 +49,22 @@ function getPreamble(sections: Section[]): string {
 }
 
 export function ReviewPage({ session, sessionId, wsRef }: Props) {
-  // State for collecting annotations across tabs
-  const annotationPinsRef = useRef<AnnotationPin[]>([]);
-  const inlineCommentsRef = useRef<InlineComment[]>([]);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // Lifted comment state: all inline comments and pins across tabs
+  const [allInlineComments, setAllInlineComments] = useState<InlineCommentEntry[]>([]);
+  const [allPins, setAllPins] = useState<AnnotationPin[]>([]);
+
+  // Refs for getAnnotations (keep in sync)
+  const inlineCommentsRef = useRef<InlineCommentEntry[]>([]);
+  inlineCommentsRef.current = allInlineComments;
+  const pinsRef = useRef<AnnotationPin[]>([]);
+  pinsRef.current = allPins;
 
   const getAnnotations = useCallback((): ReviewAnnotations | undefined => {
     const annotations: ReviewAnnotations = {};
     let hasAny = false;
 
-    if (annotationPinsRef.current.length > 0) {
-      annotations.pins = annotationPinsRef.current.map((p) => ({
+    if (pinsRef.current.length > 0) {
+      annotations.pins = pinsRef.current.map((p) => ({
         x: Math.round(p.x * 100) / 100,
         y: Math.round(p.y * 100) / 100,
         text: p.text,
@@ -79,40 +84,135 @@ export function ReviewPage({ session, sessionId, wsRef }: Props) {
     return hasAny ? annotations : undefined;
   }, []);
 
-  if (session.review_type === "unit" && session.target) {
-    return (
-      <UnitReview
-        session={session}
-        sessionId={sessionId}
-        getAnnotations={getAnnotations}
-        wsRef={wsRef}
-      />
-    );
-  }
+  // Build tray comments from both sources
+  const trayComments: TrayComment[] = [
+    ...allInlineComments.map((c) => ({
+      type: "inline" as const,
+      text: c.selectedText,
+      comment: c.comment,
+      id: c.id,
+    })),
+    ...allPins.map((p) => ({
+      type: "pin" as const,
+      text: `Pin at (${Math.round(p.x)}%, ${Math.round(p.y)}%)`,
+      comment: p.text,
+      id: p.id,
+    })),
+  ];
+
+  const handleDeleteComment = useCallback((id: string) => {
+    // Try inline comments first
+    const inlineMatch = inlineCommentsRef.current.find((c) => c.id === id);
+    if (inlineMatch) {
+      // Unwrap highlight
+      if (inlineMatch.highlightEl?.parentNode) {
+        const parent = inlineMatch.highlightEl.parentNode;
+        while (inlineMatch.highlightEl.firstChild) {
+          parent.insertBefore(inlineMatch.highlightEl.firstChild, inlineMatch.highlightEl);
+        }
+        parent.removeChild(inlineMatch.highlightEl);
+        (parent as Element).normalize?.();
+      }
+      setAllInlineComments((prev) => prev.filter((c) => c.id !== id));
+      return;
+    }
+    // Try pins
+    setAllPins((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const handleClearAll = useCallback(() => {
+    // Unwrap all inline highlights
+    for (const c of inlineCommentsRef.current) {
+      if (c.highlightEl?.parentNode) {
+        const parent = c.highlightEl.parentNode;
+        while (c.highlightEl.firstChild) {
+          parent.insertBefore(c.highlightEl.firstChild, c.highlightEl);
+        }
+        parent.removeChild(c.highlightEl);
+        (parent as Element).normalize?.();
+      }
+    }
+    setAllInlineComments([]);
+    setAllPins([]);
+  }, []);
+
+  const handleScrollTo = useCallback((id: string) => {
+    // Inline comment: scroll to highlight
+    const inlineMatch = inlineCommentsRef.current.find((c) => c.id === id);
+    if (inlineMatch) {
+      scrollToInlineComment(id);
+      return;
+    }
+    // Pin: scroll to pin element
+    const pinEl = document.querySelector(`[data-pin-id="${id}"]`);
+    if (pinEl) {
+      pinEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
+  const handleInlineCommentsChange = useCallback((comments: InlineCommentEntry[]) => {
+    setAllInlineComments(comments);
+  }, []);
+
+  const handlePinsChange = useCallback((pins: AnnotationPin[]) => {
+    setAllPins(pins);
+  }, []);
+
+  const commentCount = allInlineComments.length + allPins.length;
+
+  const commonProps = {
+    session,
+    sessionId,
+    getAnnotations,
+    wsRef,
+    commentCount,
+    onClearAllComments: handleClearAll,
+    onInlineCommentsChange: handleInlineCommentsChange,
+    onPinsChange: handlePinsChange,
+  };
 
   return (
-    <IntentReview
-      session={session}
-      sessionId={sessionId}
-      getAnnotations={getAnnotations}
-      wsRef={wsRef}
-    />
+    <>
+      {session.review_type === "unit" && session.target ? (
+        <UnitReview {...commonProps} />
+      ) : (
+        <IntentReview {...commonProps} />
+      )}
+      <CommentTray
+        comments={trayComments}
+        onDelete={handleDeleteComment}
+        onClearAll={handleClearAll}
+        onScrollTo={handleScrollTo}
+      />
+      {/* Bottom padding to prevent tray overlap */}
+      {trayComments.length > 0 && <div className="h-16" />}
+    </>
   );
 }
 
 // --- Intent Review ---
+
+interface SubReviewProps {
+  session: SessionData;
+  sessionId: string;
+  getAnnotations: () => ReviewAnnotations | undefined;
+  wsRef?: React.RefObject<WebSocket | null>;
+  commentCount: number;
+  onClearAllComments: () => void;
+  onInlineCommentsChange: (comments: InlineCommentEntry[]) => void;
+  onPinsChange: (pins: AnnotationPin[]) => void;
+}
 
 function IntentReview({
   session,
   sessionId,
   getAnnotations,
   wsRef,
-}: {
-  session: SessionData;
-  sessionId: string;
-  getAnnotations: () => ReviewAnnotations | undefined;
-  wsRef?: React.RefObject<WebSocket | null>;
-}) {
+  commentCount,
+  onClearAllComments,
+  onInlineCommentsChange,
+  onPinsChange,
+}: SubReviewProps) {
   const intent = session.intent;
   const units = session.units ?? [];
   const criteria = session.criteria ?? [];
@@ -180,7 +280,7 @@ function IntentReview({
             <Card>
               <SectionHeading>Overview -- Comment on text</SectionHeading>
               <p className="text-xs text-stone-500 dark:text-stone-400 mb-3">Select text to add inline comments.</p>
-              <InlineComments htmlContent={markdownToSimpleHtml(overviewMarkdown)} />
+              <InlineComments htmlContent={markdownToSimpleHtml(overviewMarkdown)} onCommentsChange={onInlineCommentsChange} />
             </Card>
           )}
 
@@ -205,7 +305,7 @@ function IntentReview({
                   Open in new tab &#8599;
                 </a>
               </div>
-              <AnnotationCanvas imageUrl={firstImageMockup.url} />
+              <AnnotationCanvas imageUrl={firstImageMockup.url} onPinsChange={onPinsChange} />
             </Card>
           )}
 
@@ -263,7 +363,7 @@ function IntentReview({
           )}
           <Card>
             <SectionHeading>Units</SectionHeading>
-            <UnitsTable units={units} unitMockups={unitMockupsMap} />
+            <UnitsTable units={units} unitMockups={unitMockupsMap} onInlineCommentsChange={onInlineCommentsChange} />
           </Card>
         </>
       ),
@@ -277,13 +377,13 @@ function IntentReview({
           {knowledgeFiles.map((kf, i) => (
             <Card key={`kf-${i}`}>
               <SectionHeading>{kf.name}</SectionHeading>
-              <InlineComments htmlContent={markdownToSimpleHtml(kf.content)} />
+              <InlineComments htmlContent={markdownToSimpleHtml(kf.content)} onCommentsChange={onInlineCommentsChange} />
             </Card>
           ))}
           {stageArtifacts.map((sa, i) => (
             <Card key={`sa-${i}`}>
               <SectionHeading>{sa.stage}: {sa.name}</SectionHeading>
-              <InlineComments htmlContent={markdownToSimpleHtml(sa.content)} />
+              <InlineComments htmlContent={markdownToSimpleHtml(sa.content)} onCommentsChange={onInlineCommentsChange} />
             </Card>
           ))}
           {knowledgeFiles.length === 0 && stageArtifacts.length === 0 && (
@@ -325,7 +425,7 @@ function IntentReview({
   return (
     <>
       <Tabs groupId="intent" tabs={tabs} />
-      <DecisionForm sessionId={sessionId} collectAnnotations getAnnotations={getAnnotations} wsRef={wsRef} />
+      <DecisionForm sessionId={sessionId} collectAnnotations getAnnotations={getAnnotations} wsRef={wsRef} commentCount={commentCount} onClearAllComments={onClearAllComments} />
     </>
   );
 }
@@ -337,12 +437,11 @@ function UnitReview({
   sessionId,
   getAnnotations,
   wsRef,
-}: {
-  session: SessionData;
-  sessionId: string;
-  getAnnotations: () => ReviewAnnotations | undefined;
-  wsRef?: React.RefObject<WebSocket | null>;
-}) {
+  commentCount,
+  onClearAllComments,
+  onInlineCommentsChange,
+  onPinsChange,
+}: SubReviewProps) {
   const intent = session.intent;
   const units = session.units ?? [];
   const criteria = session.criteria ?? [];
@@ -417,7 +516,7 @@ function UnitReview({
             <Card>
               <SectionHeading>Spec -- Comment on text</SectionHeading>
               <p className="text-xs text-stone-500 dark:text-stone-400 mb-3">Select text to add inline comments.</p>
-              <InlineComments htmlContent={markdownToSimpleHtml(combinedSpec)} />
+              <InlineComments htmlContent={markdownToSimpleHtml(combinedSpec)} onCommentsChange={onInlineCommentsChange} />
             </Card>
           ) : (
             <Card>
@@ -447,7 +546,7 @@ function UnitReview({
                   Open in new tab &#8599;
                 </a>
               </div>
-              <AnnotationCanvas imageUrl={firstImageMockup.url} />
+              <AnnotationCanvas imageUrl={firstImageMockup.url} onPinsChange={onPinsChange} />
             </Card>
           )}
           {remainingMockups.length > 0 && (
@@ -510,14 +609,14 @@ function UnitReview({
   return (
     <>
       <Tabs groupId="unit" tabs={tabs} />
-      <DecisionForm sessionId={sessionId} collectAnnotations getAnnotations={getAnnotations} wsRef={wsRef} />
+      <DecisionForm sessionId={sessionId} collectAnnotations getAnnotations={getAnnotations} wsRef={wsRef} commentCount={commentCount} onClearAllComments={onClearAllComments} />
     </>
   );
 }
 
 // --- Helper components ---
 
-function UnitsTable({ units, unitMockups }: { units: ParsedUnit[]; unitMockups: Record<string, MockupInfo[]> }) {
+function UnitsTable({ units, unitMockups, onInlineCommentsChange }: { units: ParsedUnit[]; unitMockups: Record<string, MockupInfo[]>; onInlineCommentsChange?: (comments: InlineCommentEntry[]) => void }) {
   const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
 
   if (units.length === 0) {
@@ -595,7 +694,7 @@ function UnitsTable({ units, unitMockups }: { units: ParsedUnit[]; unitMockups: 
                           {(u.frontmatter.discipline ?? u.frontmatter.type) && <StatusBadge label="Type" status={u.frontmatter.discipline ?? u.frontmatter.type ?? ""} />}
                         </div>
                         {unitContent.trim() && (
-                          <InlineComments htmlContent={markdownToSimpleHtml(unitContent)} />
+                          <InlineComments htmlContent={markdownToSimpleHtml(unitContent)} onCommentsChange={onInlineCommentsChange} />
                         )}
                       </div>
                     </div>
