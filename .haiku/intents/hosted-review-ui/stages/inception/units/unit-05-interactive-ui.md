@@ -4,7 +4,7 @@ type: frontend
 depends_on:
   - unit-03-session-bridge
 bolt: 1
-hat: architect
+hat: decomposer
 started_at: '2026-04-07T14:39:28Z'
 ---
 
