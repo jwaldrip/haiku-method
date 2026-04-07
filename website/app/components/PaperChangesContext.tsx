@@ -1,5 +1,6 @@
 "use client"
 
+import { GITHUB_REPO } from "@/lib/constants"
 import {
 	createContext,
 	type ReactNode,
@@ -76,7 +77,7 @@ export function PaperChangesProvider({
 
 			try {
 				// Fetch content from GitHub raw
-				const url = `https://raw.githubusercontent.com/thebushidocollective/ai-dlc/${fullCommitHash}/website/content/papers/${paperSlug}.md`
+				const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${fullCommitHash}/website/content/papers/${paperSlug}.md`
 				const response = await fetch(url)
 
 				if (response.ok) {

@@ -2077,11 +2077,11 @@ export default function HomeContent({
 					<motion.div {...fadeIn} className="mt-10 text-center">
 						<div className="inline-block rounded-lg bg-gray-900 p-4 text-left font-mono text-sm text-white dark:bg-gray-800">
 							<div>
-								<code>/plugin marketplace add thebushidocollective/ai-dlc</code>
+								<code>/plugin marketplace add TheBushidoCollective/haiku-method</code>
 							</div>
 							<div>
 								<code>
-									/plugin install haiku@thebushidocollective-ai-dlc --scope
+									/plugin install haiku@TheBushidoCollective-haiku-method --scope
 									project
 								</code>
 							</div>

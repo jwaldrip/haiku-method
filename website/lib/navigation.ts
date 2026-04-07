@@ -1,3 +1,5 @@
+import { GITHUB_URL } from "./constants"
+
 /**
  * Navigation data structure for H·AI·K·U website
  */
@@ -224,7 +226,7 @@ export const navigation: NavCategory[] = [
 					},
 					{
 						title: "GitHub",
-						href: "https://github.com/thebushidocollective/ai-dlc",
+						href: GITHUB_URL,
 						description: "Source code and discussions",
 					},
 					{
@@ -281,7 +283,7 @@ export const footerNavigation = {
 			{ title: "Glossary", href: "/glossary/" },
 			{
 				title: "GitHub",
-				href: "https://github.com/thebushidocollective/ai-dlc",
+				href: GITHUB_URL,
 			},
 			{ title: "H·AI·K·U Method", href: "https://haikumethod.ai" },
 		],
