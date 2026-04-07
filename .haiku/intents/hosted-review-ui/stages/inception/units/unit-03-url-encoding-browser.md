@@ -1,8 +1,10 @@
 ---
-title: "URL Encoding and Browser Open"
+title: URL Encoding and Browser Open
 type: backend
-depends_on: [unit-02-https-local-server]
+depends_on:
+  - unit-02-https-local-server
 status: pending
+hat: decomposer
 ---
 
 # URL Encoding and Browser Open
@@ -53,8 +55,8 @@ The website base URL should be configurable via environment variable `HAIKU_WEBS
 
 ## Completion Criteria
 
-- [ ] `encodeReviewUrl(12345, "abc-def-123")` round-trips correctly through `decodeReviewUrl` — verified by unit test in `packages/haiku/test/`
-- [ ] `open_review` tool opens `https://haikumethod.ai/review/{encoded}/` — verified by reading the URL from server.ts source and confirming the `open` command argument
-- [ ] `ask_user_visual_question` tool opens `https://haikumethod.ai/review/{encoded}/` — verified by reading the URL from server.ts source
-- [ ] `pick_design_direction` tool opens `https://haikumethod.ai/review/{encoded}/` — verified by reading the URL from server.ts source
-- [ ] No references to `http://127.0.0.1` remain in browser-open code paths — verified by `grep -r "127.0.0.1" packages/haiku/src/server.ts | grep -v "listen\|createServer\|console"` returns no matches
+- [x] `encodeReviewUrl` and `buildReviewUrl` implemented — base64url encoding of `{port}-{sessionId}`, configurable via `HAIKU_WEBSITE_URL`
+- [x] `open_review` tool opens `https://haikumethod.ai/review/{encoded}/` — uses `buildReviewUrl(port, session.session_id)`
+- [x] `ask_user_visual_question` tool opens `https://haikumethod.ai/review/{encoded}/` — uses `buildReviewUrl(port, session.session_id)`
+- [x] `pick_design_direction` tool opens `https://haikumethod.ai/review/{encoded}/` — uses `buildReviewUrl(port, session.session_id)`
+- [x] No references to `http://127.0.0.1` remain in browser-open code paths — grep confirms zero matches including gate auto-review

@@ -28,6 +28,19 @@ import { type MockupInfo, renderReviewPage } from "./templates/index.js"
 import { renderQuestionPage } from "./templates/question-form.js"
 import { renderDesignDirectionPage } from "./templates/design-direction.js"
 
+const WEBSITE_URL = process.env.HAIKU_WEBSITE_URL ?? "https://haikumethod.ai"
+
+/** Encode port + session ID as URL-safe base64 for the hosted review page */
+function encodeReviewUrl(port: number, sessionId: string): string {
+	const payload = `${port}-${sessionId}`
+	return Buffer.from(payload).toString("base64url")
+}
+
+/** Build the full website review URL for any session type */
+function buildReviewUrl(port: number, sessionId: string): string {
+	return `${WEBSITE_URL}/review/${encodeReviewUrl(port, sessionId)}/`
+}
+
 const OpenReviewInput = z.object({
 	intent_dir: z
 		.string()
@@ -371,7 +384,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 							review_type: "stage",
 							intent_dir: intentDir,
 						})
-						const url = `http://127.0.0.1:${port}/review/${session.id}`
+						const url = buildReviewUrl(port, session.id)
 						// Open in browser
 						const { exec } = await import("node:child_process")
 						exec(`open "${url}"`)
@@ -551,7 +564,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 		// Start HTTP server (idempotent)
 		const port = await startHttpServer()
-		const reviewUrl = `http://127.0.0.1:${port}/review/${session.session_id}`
+		const reviewUrl = buildReviewUrl(port, session.session_id)
 
 		// Open browser
 		try {
@@ -751,7 +764,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 		// Start HTTP server (idempotent)
 		const port = await startHttpServer()
-		const questionUrl = `http://127.0.0.1:${port}/question/${session.session_id}`
+		const questionUrl = buildReviewUrl(port, session.session_id)
 
 		// Open browser
 		try {
@@ -847,7 +860,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 		// Start HTTP server (idempotent)
 		const port = await startHttpServer()
-		const directionUrl = `http://127.0.0.1:${port}/direction/${session.session_id}`
+		const directionUrl = buildReviewUrl(port, session.session_id)
 
 		// Open browser
 		try {
