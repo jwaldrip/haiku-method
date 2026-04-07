@@ -110,6 +110,33 @@ function gitCommitState(message: string): void {
 	}
 }
 
+/** Resolve stage metadata for scope context in tool responses */
+function resolveStageScope(intent: string, stage: string): string {
+	try {
+		const root = findHaikuRoot()
+		const intentFile = join(root, "intents", intent, "intent.md")
+		if (!existsSync(intentFile)) return ""
+		const { data } = parseFrontmatter(readFileSync(intentFile, "utf8"))
+		const studio = (data.studio as string) || ""
+		if (!studio) return ""
+
+		const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || ""
+		for (const base of [join(process.cwd(), ".haiku", "studios"), join(pluginRoot, "studios")]) {
+			const stageFile = join(base, studio, "stages", stage, "STAGE.md")
+			if (!existsSync(stageFile)) continue
+			const raw = readFileSync(stageFile, "utf8")
+			const fm = parseFrontmatter(raw)
+			const { content } = matter(raw)
+			const desc = (fm.data.description as string) || stage
+			const unitTypes = (fm.data.unit_types as string[]) || []
+			return `[stage_scope] ${stage}: ${desc}` +
+				(unitTypes.length > 0 ? ` | unit_types: ${unitTypes.join(", ")}` : "") +
+				` | ${content.trim().slice(0, 500)}`
+		}
+	} catch { /* */ }
+	return ""
+}
+
 // ── Tool definitions ───────────────────────────────────────────────────────
 
 export const stateToolDefs = [
@@ -330,7 +357,8 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			setFrontmatterField(path, "started_at", timestamp())
 			emitTelemetry("haiku.unit.started", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, hat: args.hat as string })
 			gitCommitState(`haiku: start unit ${args.unit as string}`)
-			return text("ok")
+			const scope = resolveStageScope(args.intent as string, args.stage as string)
+			return text(scope ? `ok\n\n${scope}` : "ok")
 		}
 		case "haiku_unit_complete": {
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
@@ -350,7 +378,8 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
 			setFrontmatterField(path, "hat", args.hat)
 			emitTelemetry("haiku.hat.transition", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string, hat: args.hat as string })
-			return text("ok")
+			const hatScope = resolveStageScope(args.intent as string, args.stage as string)
+			return text(hatScope ? `ok\n\n${hatScope}` : "ok")
 		}
 		case "haiku_unit_increment_bolt": {
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
