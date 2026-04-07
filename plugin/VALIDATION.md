@@ -69,12 +69,12 @@ These must ALWAYS be true regardless of studio, stage, or user action.
    - [ ] Intent fields set during creation (mode, studio, etc.)
 
 2. **First `/haiku:run`:**
-   - [ ] `haiku_run_next` returns `start_stage` with stage: inception, hats: [architect, decomposer]
-   - [ ] Orchestrator performs FSM side effect: writes `state.json` (status: active, phase: decompose), sets `active_stage`
+   - [ ] `haiku_run_next` returns `start_stage` with stage: inception, hats: [architect, elaborator]
+   - [ ] Orchestrator performs FSM side effect: writes `state.json` (status: active, phase: elaborate), sets `active_stage`
    - [ ] Agent follows the returned action
 
 3. **Elaboration:**
-   - [ ] `haiku_run_next` returns `decompose`
+   - [ ] `haiku_run_next` returns `elaborate`
    - [ ] Agent reads STAGE.md for inception: inputs, unit_types, criteria guidance
    - [ ] Agent writes unit files to `stages/inception/units/`
    - [ ] Agent calls `haiku_run_next` — orchestrator detects units exist, advances phase to execute
@@ -184,7 +184,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 - [ ] Parameters substituted: `{{ feature }}` → "OAuth login" in all criteria
 - [ ] Pre-filled units created in appropriate stages
 - [ ] First `/haiku:run` skips elaboration (units already exist)
-- [ ] `haiku_run_next` returns `advance_phase` from decompose to execute
+- [ ] `haiku_run_next` returns `advance_phase` from elaborate to execute
 
 ---
 

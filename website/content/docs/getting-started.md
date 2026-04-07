@@ -55,7 +55,7 @@ AI: Intent created! Run /haiku:run to start.
 
 The AI now works through the stages defined by your studio. For the **software studio**, stages progress through:
 
-1. **Inception** — Understand the problem, decompose into units
+1. **Inception** — Understand the problem, elaborate into units
 2. **Development** — Plan, build, and review each unit
 3. **Security** — Threat modeling and vulnerability assessment (if applicable)
 4. **Operations** — Deployment and monitoring (if applicable)

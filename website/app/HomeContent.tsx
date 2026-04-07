@@ -1000,7 +1000,7 @@ export default function HomeContent({
 								down&rdquo;
 							</ExchangeLabel>
 							<ChatBubble speaker="ai">
-								I&rsquo;ve decomposed this into four units of work:
+								I&rsquo;ve elaborated this into four units of work:
 								<div className="mt-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-950">
 									<DagUnit
 										id="Unit 1"

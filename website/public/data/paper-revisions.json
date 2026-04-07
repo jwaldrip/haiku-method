@@ -305,10 +305,10 @@
     "revisions": [
       {
         "version": "2",
-        "date": "2026-04-04",
-        "commitHash": "6237a37",
-        "fullCommitHash": "6237a374e2973c4b5427292d9a6bd492cb8072ac",
-        "commitMessage": "feat: comprehensive docs update + binary rename to 'haiku'",
+        "date": "2026-04-05",
+        "commitHash": "8144f59",
+        "fullCommitHash": "8144f590b4da9c80391d7a820c355cb9a8e34ff8",
+        "commitMessage": "refactor: 4-step stage loop — persist removed, artifacts auto-commit during execution",
         "stats": {
           "linesAdded": 264,
           "linesRemoved": 992
@@ -430,7 +430,7 @@
             "section": "The Stage Loop",
             "originalSection": "The Stage Loop",
             "isNew": true,
-            "linesAdded": 9,
+            "linesAdded": 10,
             "linesRemoved": 0
           },
           {

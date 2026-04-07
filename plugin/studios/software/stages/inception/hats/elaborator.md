@@ -1,5 +1,5 @@
 ---
-name: decomposer
+name: elaborator
 stage: inception
 studio: software
 ---

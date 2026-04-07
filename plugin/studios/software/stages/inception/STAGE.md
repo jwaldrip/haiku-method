@@ -1,7 +1,7 @@
 ---
 name: inception
 description: Understand the problem, define success, and elaborate into units
-hats: [architect, decomposer]
+hats: [architect, elaborator]
 review: ask
 elaboration: collaborative
 unit_types: [research]
