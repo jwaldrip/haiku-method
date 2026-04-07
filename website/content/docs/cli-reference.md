@@ -144,20 +144,3 @@ Create intents from studio templates.
 
 Configure H·AI·K·U providers and workspace settings.
 
-## Deprecated Commands
-
-| Command | Replacement |
-|---------|-------------|
-| `/haiku:elaborate` | `/haiku:run` (plan phase) |
-| `/haiku:execute` | `/haiku:run` |
-| `/haiku:construct` | `/haiku:run` |
-| `/haiku:resume` | `/haiku:run` |
-| `/haiku:cleanup` | Removed |
-| `/haiku:compound` | Removed |
-| `/haiku:fundamentals` | Embedded in prompt context |
-| `/haiku:completion-criteria` | Enforced by orchestrator |
-| `/haiku:backpressure` | Enforced by hooks |
-| `/haiku:blockers` | Handled by orchestrator |
-| `/haiku:followup` | `/haiku:new` (with iterates_on) |
-| `/haiku:reset` | MCP tool (not a prompt) |
-| `/haiku:gate` | Enforced by orchestrator |
