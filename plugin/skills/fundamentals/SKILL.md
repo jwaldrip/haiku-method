@@ -33,7 +33,6 @@ Every `haiku_run_next` response includes `stage_metadata` — the stage's descri
 |------|---------|
 | `haiku_run_next` | FSM driver — reads state, performs mutation, returns next action |
 | `haiku_go_back` | Go back to a previous stage or phase (human-initiated) |
-| `haiku_gate_approve` | Approve an ask gate |
 | `haiku_intent_list` | List all intents |
 | `haiku_intent_get` | Read an intent field |
 | `haiku_stage_get` | Read a stage field |

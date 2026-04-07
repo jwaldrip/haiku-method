@@ -889,18 +889,7 @@ export const orchestratorToolDefs = [
 			required: ["intent"],
 		},
 	},
-	{
-		name: "haiku_gate_approve",
-		description: "Approve an 'ask' gate, advancing the intent to the next stage",
-		inputSchema: {
-			type: "object" as const,
-			properties: {
-				intent: { type: "string" },
-				stage: { type: "string" },
-			},
-			required: ["intent", "stage"],
-		},
-	},
+	// haiku_gate_approve removed — gates are handled by the FSM (review UI + elicitation fallback)
 	{
 		name: "haiku_go_back",
 		description:
@@ -928,8 +917,18 @@ export const orchestratorToolDefs = [
  */
 let _openReviewAndWait: ((intentDir: string, reviewType: string, gateType?: string) => Promise<{ decision: string; feedback: string; annotations?: unknown }>) | null = null
 
+/**
+ * Callback for elicitation — asks the user a question via the MCP client's native UI.
+ * Used as fallback when the review UI fails to open.
+ */
+let _elicitInput: ((params: { message: string; requestedSchema: unknown }) => Promise<{ action: string; content?: unknown }>) | null = null
+
 export function setOpenReviewHandler(handler: typeof _openReviewAndWait): void {
 	_openReviewAndWait = handler
+}
+
+export function setElicitInputHandler(handler: typeof _elicitInput): void {
+	_elicitInput = handler
 }
 
 export async function handleOrchestratorTool(name: string, args: Record<string, unknown>): Promise<{ content: Array<{ type: "text"; text: string }> }> {
@@ -988,14 +987,80 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 				return text(JSON.stringify({ action: "changes_requested", intent: slug, stage, feedback: reviewResult.feedback, annotations: reviewResult.annotations, message: `Changes requested: ${reviewResult.feedback || "(see annotations)"}. Address the feedback, then call haiku_run_next { intent: "${slug}" } again.` }, null, 2))
 			} catch (err) {
 				const errorMsg = err instanceof Error ? err.message : String(err)
+				const errorStack = err instanceof Error ? err.stack : ""
 				console.error(`[haiku] gate_review failed: ${errorMsg}`)
+
+				// Log full error to .haiku/ for debugging
+				try {
+					const { writeFileSync, mkdirSync } = await import("node:fs")
+					const { join } = await import("node:path")
+					const logDir = join(process.cwd(), ".haiku", "logs")
+					mkdirSync(logDir, { recursive: true })
+					writeFileSync(join(logDir, "gate-review-error.log"),
+						`${new Date().toISOString()}\nintent: ${slug}\nstage: ${stage}\nerror: ${errorMsg}\n${errorStack}\n---\n`,
+						{ flag: "a" })
+				} catch { /* logging failure is non-fatal */ }
+
+				// Fall back to elicitation — ask the user directly via MCP client UI
+				if (_elicitInput) {
+					try {
+						const elicitResult = await _elicitInput({
+							message: `Review UI failed (${errorMsg}). Approve stage '${stage}' specs to proceed to execution?`,
+							requestedSchema: {
+								type: "object" as const,
+								properties: {
+									decision: {
+										type: "string",
+										title: "Decision",
+										description: "Approve specs or request changes",
+										enum: ["approve", "request_changes"],
+									},
+									feedback: {
+										type: "string",
+										title: "Feedback (optional)",
+										description: "Any notes or requested changes",
+									},
+								},
+								required: ["decision"],
+							},
+						})
+						if (elicitResult.action === "accept" && elicitResult.content) {
+							const decision = (elicitResult.content as Record<string, string>).decision
+							const feedback = (elicitResult.content as Record<string, string>).feedback || ""
+							if (decision === "approve") {
+								if (gateContext === "elaborate_to_execute" && nextPhase) {
+									fsmAdvancePhase(slug, stage, nextPhase)
+									syncSessionMetadata(slug, args.state_file as string | undefined)
+									return text(JSON.stringify({ action: "advance_phase", intent: slug, stage, from_phase: "elaborate", to_phase: nextPhase, message: "Specs approved via elicitation — advancing to execute" }, null, 2))
+								}
+								if (nextStage) {
+									fsmAdvanceStage(slug, stage, nextStage)
+									syncSessionMetadata(slug, args.state_file as string | undefined)
+									return text(JSON.stringify({ action: "advance_stage", intent: slug, stage, next_stage: nextStage, gate_outcome: "advanced", message: "Approved via elicitation" }, null, 2))
+								}
+								fsmCompleteStage(slug, stage, "advanced")
+								fsmIntentComplete(slug)
+								syncSessionMetadata(slug, args.state_file as string | undefined)
+								return text(JSON.stringify({ action: "intent_complete", intent: slug, message: "Approved via elicitation — intent complete" }, null, 2))
+							}
+							// request_changes
+							syncSessionMetadata(slug, args.state_file as string | undefined)
+							return text(JSON.stringify({ action: "changes_requested", intent: slug, stage, feedback, message: `Changes requested: ${feedback}. Call haiku_run_next { intent: "${slug}" } again after fixing.` }, null, 2))
+						}
+						// User declined/cancelled elicitation — stay blocked
+						syncSessionMetadata(slug, args.state_file as string | undefined)
+						return text(JSON.stringify({ action: "gate_blocked", intent: slug, stage, message: "Gate review cancelled. Call haiku_run_next again to retry." }, null, 2))
+					} catch {
+						// Elicitation also failed — return error
+					}
+				}
+
 				syncSessionMetadata(slug, args.state_file as string | undefined)
-				// Return the error to the agent — don't silently return the raw action
 				return text(JSON.stringify({
 					...result,
 					error: "review_ui_failed",
 					error_detail: errorMsg,
-					message: `Review UI failed to open: ${errorMsg}. The gate cannot be bypassed — fix the error and call haiku_run_next again.`,
+					message: `Review UI failed: ${errorMsg}. Error logged to .haiku/logs/gate-review-error.log. The gate cannot be bypassed — call haiku_run_next again to retry.`,
 				}, null, 2))
 			}
 		}

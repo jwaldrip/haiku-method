@@ -130,7 +130,7 @@ const server = new Server(
 )
 
 import { stateToolDefs, handleStateTool } from "./state-tools.js"
-import { orchestratorToolDefs, handleOrchestratorTool, setOpenReviewHandler } from "./orchestrator.js"
+import { orchestratorToolDefs, handleOrchestratorTool, setOpenReviewHandler, setElicitInputHandler } from "./orchestrator.js"
 import { listPrompts, getPrompt, completeArgument } from "./prompts/index.js"
 // Side-effect imports: each file calls registerPrompt() at module load time. Add a new import here for each new prompt file.
 import "./prompts/core.js"
@@ -318,7 +318,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 	const { name, arguments: args } = request.params
 
 	// Orchestration tools (async — gate_ask blocks until user reviews)
-	if (name === "haiku_run_next" || name === "haiku_gate_approve" || name === "haiku_go_back") {
+	if (name === "haiku_run_next" || name === "haiku_go_back") {
 		return handleOrchestratorTool(name, (args ?? {}) as Record<string, unknown>)
 	}
 
@@ -864,6 +864,11 @@ setOpenReviewHandler(async (intentDirRel: string, reviewType: string) => {
 		}
 	}
 	throw new Error("Review timeout")
+})
+
+// Wire up elicitation fallback for when the review UI fails
+setElicitInputHandler(async (params) => {
+	return server.elicitInput(params as Parameters<typeof server.elicitInput>[0])
 })
 
 // Start server
