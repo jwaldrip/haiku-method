@@ -20,7 +20,7 @@ function truncate(text: string, max: number): string {
 }
 
 export function CommentTray({ comments, onDelete, onClearAll, onScrollTo }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   if (comments.length === 0) return null;
 
