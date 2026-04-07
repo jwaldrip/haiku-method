@@ -27092,11 +27092,22 @@ ${scope}` : "ok");
     case "haiku_unit_complete": {
       const path = unitPath(args2.intent, args2.stage, args2.unit);
       const unitRaw = readFileSync2(path, "utf8");
+      const { data: unitFm } = parseFrontmatter(unitRaw);
       const unchecked = (unitRaw.match(/- \[ \]/g) || []).length;
       if (unchecked > 0) {
         const sf = args2.state_file;
         if (sf) logSessionEvent(sf, { event: "criteria_not_met", intent: args2.intent, stage: args2.stage, unit: args2.unit, unchecked });
         return text(JSON.stringify({ error: "criteria_not_met", unchecked, message: `Cannot complete unit: ${unchecked} completion criteria still unchecked. Address them, then call haiku_unit_complete again.` }));
+      }
+      const unitOutputs = unitFm.outputs || [];
+      if (unitOutputs.length > 0) {
+        const iDir = intentDir(args2.intent);
+        const missing = unitOutputs.filter((o) => !existsSync3(join5(iDir, o)));
+        if (missing.length > 0) {
+          const sf = args2.state_file;
+          if (sf) logSessionEvent(sf, { event: "outputs_missing", intent: args2.intent, stage: args2.stage, unit: args2.unit, missing });
+          return text(JSON.stringify({ error: "unit_outputs_missing", missing, message: `Cannot complete unit: ${missing.length} declared output(s) not found: ${missing.join(", ")}. Create them, then call haiku_unit_complete again.` }));
+        }
       }
       setFrontmatterField(path, "status", "completed");
       setFrontmatterField(path, "completed_at", timestamp());
@@ -29435,10 +29446,10 @@ ${action.message}`);
       if (Object.keys(agents).length > 0) {
         sections.push(`### Review Agents
 `);
-        for (const [name, def] of Object.entries(agents)) {
+        for (const [name, content] of Object.entries(agents)) {
           sections.push(`#### ${name}
 
-${def.content}`);
+${content}`);
         }
       }
       sections.push(

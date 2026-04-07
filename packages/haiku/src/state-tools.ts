@@ -431,14 +431,29 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 		}
 		case "haiku_unit_complete": {
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
-			// Verify completion criteria are checked before allowing completion
 			const unitRaw = readFileSync(path, "utf8")
+			const { data: unitFm } = parseFrontmatter(unitRaw)
+
+			// Verify completion criteria are checked
 			const unchecked = (unitRaw.match(/- \[ \]/g) || []).length
 			if (unchecked > 0) {
 				const sf = args.state_file as string | undefined
 				if (sf) logSessionEvent(sf, { event: "criteria_not_met", intent: args.intent, stage: args.stage, unit: args.unit, unchecked })
 				return text(JSON.stringify({ error: "criteria_not_met", unchecked, message: `Cannot complete unit: ${unchecked} completion criteria still unchecked. Address them, then call haiku_unit_complete again.` }))
 			}
+
+			// Verify declared outputs exist (paths relative to intent directory)
+			const unitOutputs = (unitFm.outputs as string[]) || []
+			if (unitOutputs.length > 0) {
+				const iDir = intentDir(args.intent as string)
+				const missing = unitOutputs.filter(o => !existsSync(join(iDir, o)))
+				if (missing.length > 0) {
+					const sf = args.state_file as string | undefined
+					if (sf) logSessionEvent(sf, { event: "outputs_missing", intent: args.intent, stage: args.stage, unit: args.unit, missing })
+					return text(JSON.stringify({ error: "unit_outputs_missing", missing, message: `Cannot complete unit: ${missing.length} declared output(s) not found: ${missing.join(", ")}. Create them, then call haiku_unit_complete again.` }))
+				}
+			}
+
 			setFrontmatterField(path, "status", "completed")
 			setFrontmatterField(path, "completed_at", timestamp())
 			emitTelemetry("haiku.unit.completed", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string })
