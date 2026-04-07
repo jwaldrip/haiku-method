@@ -224,7 +224,7 @@ export const navigation: NavCategory[] = [
 					},
 					{
 						title: "GitHub",
-						href: "https://github.com/thebushidocollective/ai-dlc",
+						href: "https://github.com/TheBushidoCollective/haiku-method",
 						description: "Source code and discussions",
 					},
 					{
@@ -281,7 +281,7 @@ export const footerNavigation = {
 			{ title: "Glossary", href: "/glossary/" },
 			{
 				title: "GitHub",
-				href: "https://github.com/thebushidocollective/ai-dlc",
+				href: "https://github.com/TheBushidoCollective/haiku-method",
 			},
 			{ title: "H·AI·K·U Method", href: "https://haikumethod.ai" },
 		],

@@ -58,8 +58,19 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 ### Session Integrity
 
 - [ ] One intent per session — `haiku_intent_create` rejects if the session already has an active intent
-- [ ] Session events are logged to `haiku.jsonl` for auditability
-- [ ] Worktree isolation — intent branch and unit worktrees keep work separate from the main tree
+- [ ] Session events are logged to `haiku.jsonl` for replay and demos
+- [ ] Conversation context captured in intent knowledge when provided
+
+### Worktree Isolation
+
+- [ ] Intent gets its own branch (`haiku/{intent-slug}/main`) on first stage start
+- [ ] Every unit gets its own worktree off the intent branch via `createUnitWorktree`
+- [ ] `haiku_unit_complete` merges unit worktree back to intent branch
+- [ ] Main agent stays on intent branch — only subagents work in unit worktrees
+- [ ] Worktree cleanup happens on unit completion (`mergeUnitWorktree`)
+- [ ] Intent branch is NOT merged to main automatically — user creates PR/MR
+- [ ] Multiple sessions cannot pollute each other's intent work (branch isolation)
+- [ ] If git is not available, worktree operations are non-fatal (graceful degradation)
 
 ---
 

@@ -13,7 +13,7 @@ H·AI·K·U is an open methodology built by practitioners for practitioners. Joi
 The primary hub for H·AI·K·U development:
 
 **H·AI·K·U Plugin Repository**
-- [github.com/thebushidocollective/ai-dlc](https://github.com/thebushidocollective/ai-dlc)
+- [github.com/TheBushidoCollective/haiku-method](https://github.com/TheBushidoCollective/haiku-method)
 - Report bugs and request features
 - Contribute code and documentation
 - Review and discuss pull requests
@@ -26,13 +26,13 @@ Use GitHub Discussions for:
 - Proposing new features
 - Workflow customization ideas
 
-[Start a Discussion](https://github.com/thebushidocollective/ai-dlc/discussions)
+[Start a Discussion](https://github.com/TheBushidoCollective/haiku-method/discussions)
 
 ### Issues
 
 Found a bug or have a specific improvement in mind?
 
-[Open an Issue](https://github.com/thebushidocollective/ai-dlc/issues/new)
+[Open an Issue](https://github.com/TheBushidoCollective/haiku-method/issues/new)
 
 ## Contributing
 
@@ -133,7 +133,7 @@ H·AI·K·U is open source under the Apache 2.0 license:
 - Patent protection
 - Maintain attribution
 
-[View License](https://github.com/thebushidocollective/ai-dlc/blob/main/LICENSE)
+[View License](https://github.com/TheBushidoCollective/haiku-method/blob/main/LICENSE)
 
 ## Acknowledgments
 
@@ -160,4 +160,4 @@ We follow the [Contributor Covenant](https://www.contributor-covenant.org/):
 
 - **[Installation](/docs/installation/)** - Get started with H·AI·K·U
 - **[Quick Start](/docs/quick-start/)** - Build your first feature
-- **[GitHub](https://github.com/thebushidocollective/ai-dlc)** - Contribute to the project
+- **[GitHub](https://github.com/TheBushidoCollective/haiku-method)** - Contribute to the project
