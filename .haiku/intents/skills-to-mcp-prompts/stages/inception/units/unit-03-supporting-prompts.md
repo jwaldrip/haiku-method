@@ -1,13 +1,15 @@
 ---
 name: unit-03-supporting-prompts
 type: backend
-status: pending
-depends_on: [unit-01-prompts-server]
-bolt: 0
-hat: ""
+status: active
+depends_on:
+  - unit-01-prompts-server
+bolt: 1
+hat: architect
 refs:
   - knowledge/DISCOVERY.md
   - knowledge/PROMPTS-SERVER-DISCOVERY.md
+started_at: '2026-04-07T02:33:48Z'
 ---
 
 # Supporting + Reporting + Niche Prompts
