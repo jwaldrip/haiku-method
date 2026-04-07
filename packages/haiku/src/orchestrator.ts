@@ -182,7 +182,7 @@ function fsmStartStage(slug: string, stage: string): void {
 	const data = readJson(path)
 	data.stage = stage
 	data.status = "active"
-	data.phase = "decompose"
+	data.phase = "elaborate"
 	data.started_at = timestamp()
 	data.completed_at = null
 	data.gate_entered_at = null
@@ -340,7 +340,7 @@ export function runNext(slug: string): OrchestratorAction {
 			studio,
 			stage: currentStage,
 			hats,
-			phase: "decompose",
+			phase: "elaborate",
 			stage_metadata: resolveStageMetadata(studio, currentStage),
 			...(follows ? { follows, parent_knowledge: parentKnowledge } : {}),
 			message: follows
@@ -350,7 +350,7 @@ export function runNext(slug: string): OrchestratorAction {
 	}
 
 	// Stage in elaboration phase
-	if (phase === "decompose") {
+	if (phase === "elaborate" || phase === "decompose") {
 		const unitsDir = join(iDir, "stages", currentStage, "units")
 		const hasUnits = existsSync(unitsDir) && readdirSync(unitsDir).filter(f => f.endsWith(".md")).length > 0
 		if (!hasUnits) {
@@ -366,7 +366,7 @@ export function runNext(slug: string): OrchestratorAction {
 				}
 			}
 			return {
-				action: "decompose",
+				action: "elaborate",
 				intent: slug,
 				studio,
 				stage: currentStage,
@@ -390,7 +390,7 @@ export function runNext(slug: string): OrchestratorAction {
 			stage: currentStage,
 			next_phase: "execute",
 			gate_type: "ask",
-			gate_context: "decompose_to_execute",
+			gate_context: "elaborate_to_execute",
 			message: `Specs validated — opening review before execution`,
 		}
 	}
@@ -629,7 +629,7 @@ export function runNext(slug: string): OrchestratorAction {
 		// FSM side effect: start next stage
 		fsmStartStage(slug, nextStage)
 
-		return { action: "start_stage", intent: slug, studio, stage: nextStage, hats, phase: "decompose", stage_metadata: resolveStageMetadata(studio, nextStage), message: `Start stage '${nextStage}'` }
+		return { action: "start_stage", intent: slug, studio, stage: nextStage, hats, phase: "elaborate", stage_metadata: resolveStageMetadata(studio, nextStage), message: `Start stage '${nextStage}'` }
 	}
 
 	return { action: "error", message: `Unknown state for stage '${currentStage}' — phase: ${phase}, status: ${stageStatus}` }
@@ -756,7 +756,7 @@ function goBack(slug: string, targetStage?: string, targetPhase?: string): Orche
 		const data: Record<string, unknown> = {
 			stage: targetStage,
 			status: "active",
-			phase: "decompose",
+			phase: "elaborate",
 			started_at: timestamp(),
 			completed_at: null,
 			gate_entered_at: null,
@@ -788,8 +788,8 @@ function goBack(slug: string, targetStage?: string, targetPhase?: string): Orche
 			action: "went_back",
 			intent: slug,
 			target_stage: targetStage,
-			reset_phase: "decompose",
-			message: `Went back to stage '${targetStage}' — stage reset to decompose, all units re-queued`,
+			reset_phase: "elaborate",
+			message: `Went back to stage '${targetStage}' — stage reset to elaborate, all units re-queued`,
 		}
 	}
 
@@ -799,7 +799,7 @@ function goBack(slug: string, targetStage?: string, targetPhase?: string): Orche
 		}
 
 		// Valid phases in order
-		const phaseOrder = ["decompose", "execute", "review", "gate"]
+		const phaseOrder = ["elaborate", "execute", "review", "gate"]
 		const targetIdx = phaseOrder.indexOf(targetPhase)
 		if (targetIdx < 0) {
 			return { action: "error", message: `Invalid phase '${targetPhase}'. Valid phases: ${phaseOrder.join(", ")}` }
@@ -820,8 +820,8 @@ function goBack(slug: string, targetStage?: string, targetPhase?: string): Orche
 		stageState.gate_outcome = null
 		writeJson(path, stageState)
 
-		// If going back to decompose or execute, re-queue affected units
-		if (targetPhase === "decompose" || targetPhase === "execute") {
+		// If going back to elaborate or execute, re-queue affected units
+		if (targetPhase === "elaborate" || targetPhase === "execute") {
 			const unitsDir = join(iDir, "stages", currentActiveStage, "units")
 			if (existsSync(unitsDir)) {
 				const files = readdirSync(unitsDir).filter(f => f.endsWith(".md"))
@@ -885,7 +885,7 @@ export const orchestratorToolDefs = [
 		name: "haiku_go_back",
 		description:
 			"Go back to a previous stage or phase within the current stage. " +
-			"If target_stage is provided: resets that stage (status: active, phase: decompose), re-queues all its units. " +
+			"If target_stage is provided: resets that stage (status: active, phase: elaborate), re-queues all its units. " +
 			"If target_phase is provided: sets phase back within the current active stage, re-queues affected units. " +
 			"This is a human-initiated action — the agent should only call this when explicitly requested.",
 		inputSchema: {
@@ -893,7 +893,7 @@ export const orchestratorToolDefs = [
 			properties: {
 				intent: { type: "string", description: "Intent slug" },
 				target_stage: { type: "string", description: "Stage to go back to (resets the stage entirely)" },
-				target_phase: { type: "string", description: "Phase to go back to within the current active stage (decompose, execute, review)" },
+				target_phase: { type: "string", description: "Phase to go back to within the current active stage (elaborate, execute, review)" },
 			},
 			required: ["intent"],
 		},
@@ -931,11 +931,11 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 			try {
 				const reviewResult = await _openReviewAndWait(intentDirPath, "intent", gateType)
 				if (reviewResult.decision === "approved") {
-					if (gateContext === "decompose_to_execute" && nextPhase) {
+					if (gateContext === "elaborate_to_execute" && nextPhase) {
 						// Phase advancement (specs approved → start execution)
 						fsmAdvancePhase(slug, stage, nextPhase)
 						syncSessionMetadata(slug, args.state_file as string | undefined)
-						return text(JSON.stringify({ action: "advance_phase", intent: slug, stage, from_phase: "decompose", to_phase: nextPhase, message: `Specs approved — advancing to ${nextPhase}` }, null, 2))
+						return text(JSON.stringify({ action: "advance_phase", intent: slug, stage, from_phase: "elaborate", to_phase: nextPhase, message: `Specs approved — advancing to ${nextPhase}` }, null, 2))
 					}
 					if (nextStage) {
 						fsmAdvanceStage(slug, stage, nextStage)
@@ -958,9 +958,9 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 						message: "External review requested. Submit the work for review through your project's review process (PR, MR, review board, etc.). Run /haiku:run again after approval.",
 					}, null, 2))
 				}
-				// changes_requested — go back to decompose to fix specs
-				if (gateContext === "decompose_to_execute") {
-					// Don't advance phase — stay in decompose so agent can fix
+				// changes_requested — go back to elaborate to fix specs
+				if (gateContext === "elaborate_to_execute") {
+					// Don't advance phase — stay in elaborate so agent can fix
 					syncSessionMetadata(slug, args.state_file as string | undefined)
 					return text(JSON.stringify({ action: "changes_requested", intent: slug, stage, feedback: reviewResult.feedback, annotations: reviewResult.annotations, message: `Changes requested on specs: ${reviewResult.feedback || "(see annotations)"}. Fix the specs, then call haiku_run_next { intent: "${slug}" } again.` }, null, 2))
 				}

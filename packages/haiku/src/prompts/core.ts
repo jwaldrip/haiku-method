@@ -186,7 +186,7 @@ function buildRunInstructions(
 			}
 			sections.push(
 				`### Instructions\n\n` +
-				`Stage has been started by the orchestrator (status: active, phase: decompose).\n\n` +
+				`Stage has been started by the orchestrator (status: active, phase: elaborate).\n\n` +
 				(action.follows
 					? `1. Load parent knowledge via \`haiku_knowledge_read\` for each file in parent_knowledge\n2. Call \`haiku_run_next { intent: "${slug}" }\` to get the next action\n`
 					: `1. Call \`haiku_run_next { intent: "${slug}" }\` to get the next action\n`),
@@ -194,7 +194,7 @@ function buildRunInstructions(
 			break
 		}
 
-		case "decompose": {
+		case "elaborate": {
 			const stage = action.stage as string
 			const elaboration = (action.elaboration as string) || "collaborative"
 			const stageDef = readStageDef(studio, stage)
