@@ -8,6 +8,7 @@
 // Primary tool: haiku_run_next { intent }
 // Returns an action object the agent follows.
 
+import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import matter from "gray-matter"
@@ -98,8 +99,6 @@ function resolveStageMetadata(studio: string, stage: string): { description: str
 
 // ── External review detection ─────────────────────────────────────────────
 
-import { execSync } from "node:child_process"
-
 /**
  * Best-effort check if an external review URL has been approved.
  * Supports GitHub PRs (gh), GitLab MRs (glab), and generic URLs.
@@ -108,14 +107,14 @@ import { execSync } from "node:child_process"
 function checkExternalApproval(url: string): boolean {
 	try {
 		if (url.includes("github.com") && url.includes("/pull/")) {
-			// GitHub PR — check via gh CLI
-			const state = execSync(`gh pr view "${url}" --json state -q .state`, { encoding: "utf8", stdio: "pipe" }).trim()
-			return state === "MERGED" || state === "CLOSED" // CLOSED could mean approved+merged
+			// GitHub PR — check via gh CLI (argument array avoids shell injection)
+			const state = execFileSync("gh", ["pr", "view", url, "--json", "state", "-q", ".state"], { encoding: "utf8", stdio: "pipe" }).trim()
+			return state === "MERGED" // CLOSED means rejected/abandoned, not approved
 		}
 		if (url.includes("gitlab") && url.includes("/merge_requests/")) {
-			// GitLab MR — check via glab CLI
-			const state = execSync(`glab mr view "${url}" --output json 2>/dev/null | grep -o '"state":"[^"]*"' | head -1`, { encoding: "utf8", stdio: "pipe" }).trim()
-			return state.includes("merged")
+			// GitLab MR — check via glab CLI (argument array avoids shell injection)
+			const output = execFileSync("glab", ["mr", "view", url, "--output", "json"], { encoding: "utf8", stdio: "pipe" }).trim()
+			return (JSON.parse(output) as { state?: string }).state === "merged"
 		}
 		// Unknown URL type — can't check automatically
 		return false

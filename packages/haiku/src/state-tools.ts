@@ -3,7 +3,7 @@
 // One tool per resource per operation. Under the hood: frontmatter + JSON files.
 // The caller doesn't need to know file paths — just resource identifiers.
 
-import { execSync } from "node:child_process"
+import { execFileSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { z } from "zod"
@@ -105,8 +105,8 @@ export function timestamp(): string {
 export function gitCommitState(message: string): void {
 	try {
 		const haikuRoot = findHaikuRoot()
-		execSync(`git add "${haikuRoot}"`, { encoding: "utf8", stdio: "pipe" })
-		execSync(`git commit -m "${message}" --allow-empty`, { encoding: "utf8", stdio: "pipe" })
+		execFileSync("git", ["add", haikuRoot], { encoding: "utf8", stdio: "pipe" })
+		execFileSync("git", ["commit", "-m", message, "--allow-empty"], { encoding: "utf8", stdio: "pipe" })
 	} catch {
 		// Git failures are non-fatal — state was already written to disk
 	}

@@ -4,17 +4,17 @@
 // Unit isolation: each unit gets a worktree off the intent branch
 // All operations are non-fatal — git failures never crash the MCP.
 
-import { execSync } from "node:child_process"
-import { existsSync, mkdirSync } from "node:fs"
+import { execFileSync } from "node:child_process"
+import { existsSync, mkdirSync, rmSync } from "node:fs"
 import { join } from "node:path"
 
-function run(cmd: string, cwd?: string): string {
-	return execSync(cmd, { encoding: "utf8", stdio: "pipe", cwd }).trim()
+function run(args: string[], cwd?: string): string {
+	return execFileSync(args[0], args.slice(1), { encoding: "utf8", stdio: "pipe", cwd }).trim()
 }
 
-function tryRun(cmd: string, cwd?: string): string {
+function tryRun(args: string[], cwd?: string): string {
 	try {
-		return run(cmd, cwd)
+		return run(args, cwd)
 	} catch {
 		return ""
 	}
@@ -22,7 +22,7 @@ function tryRun(cmd: string, cwd?: string): string {
 
 /** Get the current branch name */
 export function getCurrentBranch(): string {
-	return tryRun("git rev-parse --abbrev-ref HEAD")
+	return tryRun(["git", "rev-parse", "--abbrev-ref", "HEAD"])
 }
 
 /** Check if we're on the intent's branch */
@@ -39,13 +39,13 @@ export function createIntentBranch(slug: string): string {
 	const branch = `haiku/${slug}/main`
 	try {
 		// Check if branch exists
-		tryRun(`git rev-parse --verify ${branch}`)
+		tryRun(["git", "rev-parse", "--verify", branch])
 		if (getCurrentBranch() !== branch) {
-			run(`git checkout ${branch}`)
+			run(["git", "checkout", branch])
 		}
 	} catch {
 		try {
-			run(`git checkout -b ${branch}`)
+			run(["git", "checkout", "-b", branch])
 		} catch { /* already on it or can't create */ }
 	}
 	return branch
@@ -70,10 +70,10 @@ export function createUnitWorktree(slug: string, unit: string): string | null {
 		mkdirSync(worktreeBase, { recursive: true })
 
 		// Create unit branch from intent branch
-		tryRun(`git branch ${unitBranch} ${intentBranch}`)
+		tryRun(["git", "branch", unitBranch, intentBranch])
 
 		// Create worktree
-		run(`git worktree add "${worktreePath}" ${unitBranch}`)
+		run(["git", "worktree", "add", worktreePath, unitBranch])
 
 		return worktreePath
 	} catch {
@@ -97,20 +97,20 @@ export function mergeUnitWorktree(slug: string, unit: string): { success: boolea
 		}
 
 		// Commit any uncommitted changes in the worktree
-		tryRun(`git -C "${worktreePath}" add -A`)
-		tryRun(`git -C "${worktreePath}" commit -m "haiku: complete ${unit}" --allow-empty`)
+		tryRun(["git", "-C", worktreePath, "add", "-A"])
+		tryRun(["git", "-C", worktreePath, "commit", "-m", `haiku: complete ${unit}`, "--allow-empty"])
 
 		// Make sure we're on the intent branch
 		if (getCurrentBranch() !== intentBranch) {
-			run(`git checkout ${intentBranch}`)
+			run(["git", "checkout", intentBranch])
 		}
 
 		// Merge the unit branch
-		run(`git merge ${unitBranch} --no-edit -m "haiku: merge ${unit}"`)
+		run(["git", "merge", unitBranch, "--no-edit", "-m", `haiku: merge ${unit}`])
 
 		// Clean up worktree and branch
-		tryRun(`git worktree remove "${worktreePath}" --force`)
-		tryRun(`git branch -d ${unitBranch}`)
+		tryRun(["git", "worktree", "remove", worktreePath, "--force"])
+		tryRun(["git", "branch", "-d", unitBranch])
 
 		return { success: true, message: `merged ${unitBranch}` }
 	} catch (err) {
@@ -123,7 +123,7 @@ export function mergeUnitWorktree(slug: string, unit: string): { success: boolea
  */
 export function cleanupIntentWorktrees(slug: string): void {
 	const worktreeBase = join(process.cwd(), ".haiku", "worktrees", slug)
-	tryRun(`rm -rf "${worktreeBase}"`)
-	tryRun("git worktree prune")
+	try { rmSync(worktreeBase, { recursive: true, force: true }) } catch { /* non-fatal */ }
+	tryRun(["git", "worktree", "prune"])
 }
 
