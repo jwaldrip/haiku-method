@@ -28439,12 +28439,10 @@ async function handleOrchestratorTool(name, args2) {
         console.error(`[haiku] gate_review failed: ${errorMsg}`);
         reportError(err, { intent: slug, stage });
         try {
-          const { writeFileSync: writeFileSync7, mkdirSync: mkdirSync7 } = await import("node:fs");
-          const { join: join23 } = await import("node:path");
-          const logDir = join23(process.cwd(), ".haiku", "logs");
-          mkdirSync7(logDir, { recursive: true });
-          writeFileSync7(
-            join23(logDir, "gate-review-error.log"),
+          const logDir = join7(process.cwd(), ".haiku", "logs");
+          mkdirSync4(logDir, { recursive: true });
+          writeFileSync3(
+            join7(logDir, "gate-review-error.log"),
             `${(/* @__PURE__ */ new Date()).toISOString()}
 intent: ${slug}
 stage: ${stage}
@@ -28455,6 +28453,14 @@ ${errorStack}
             { flag: "a" }
           );
         } catch {
+        }
+        const agentFixable = errorMsg.includes("Could not parse intent") || errorMsg.includes("not found") || errorMsg.includes("No such file") || errorMsg.includes("ENOENT") || errorMsg.includes("frontmatter") || errorMsg.includes("Invalid");
+        if (agentFixable) {
+          syncSessionMetadata(slug, args2.state_file);
+          return {
+            content: [{ type: "text", text: `GATE BLOCKED: ${errorMsg}. This is a data issue the agent can fix \u2014 check that the intent directory and files are correctly structured, then call haiku_run_next again.` }],
+            isError: true
+          };
         }
         if (stFile) logSessionEvent(stFile, { event: "gate_elicitation_fallback", intent: slug, stage, error: errorMsg });
         if (_elicitInput) {

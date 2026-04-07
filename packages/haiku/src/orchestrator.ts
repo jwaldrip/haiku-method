@@ -1358,8 +1358,6 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 
 				// Log full error to .haiku/ for debugging
 				try {
-					const { writeFileSync, mkdirSync } = await import("node:fs")
-					const { join } = await import("node:path")
 					const logDir = join(process.cwd(), ".haiku", "logs")
 					mkdirSync(logDir, { recursive: true })
 					writeFileSync(join(logDir, "gate-review-error.log"),
@@ -1367,7 +1365,23 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 						{ flag: "a" })
 				} catch { /* logging failure is non-fatal */ }
 
-				// Fall back to elicitation — ask the user directly via MCP client UI
+				// Classify error: agent-fixable errors should go back to the agent, not to elicitation
+				const agentFixable = errorMsg.includes("Could not parse intent") ||
+					errorMsg.includes("not found") ||
+					errorMsg.includes("No such file") ||
+					errorMsg.includes("ENOENT") ||
+					errorMsg.includes("frontmatter") ||
+					errorMsg.includes("Invalid")
+
+				if (agentFixable) {
+					syncSessionMetadata(slug, args.state_file as string | undefined)
+					return {
+						content: [{ type: "text" as const, text: `GATE BLOCKED: ${errorMsg}. This is a data issue the agent can fix — check that the intent directory and files are correctly structured, then call haiku_run_next again.` }],
+						isError: true,
+					}
+				}
+
+				// Infrastructure failure — fall back to elicitation
 				if (stFile) logSessionEvent(stFile, { event: "gate_elicitation_fallback", intent: slug, stage, error: errorMsg })
 				if (_elicitInput) {
 					try {
