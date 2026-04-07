@@ -7,6 +7,7 @@ bolt: 0
 hat: ""
 refs:
   - knowledge/DISCOVERY.md
+  - knowledge/PROMPTS-SERVER-DISCOVERY.md
 ---
 
 # Delete Plugin Skills
