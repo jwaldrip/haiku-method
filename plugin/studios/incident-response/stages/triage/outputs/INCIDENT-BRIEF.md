@@ -1,6 +1,6 @@
 ---
 name: incident-brief
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/triage/artifacts/
 scope: intent
 format: text
 required: true

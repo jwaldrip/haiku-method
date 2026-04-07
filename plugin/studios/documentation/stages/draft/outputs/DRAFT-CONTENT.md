@@ -1,6 +1,6 @@
 ---
 name: draft-content
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/draft/artifacts/
 scope: intent
 format: text
 required: true

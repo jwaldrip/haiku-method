@@ -1,6 +1,6 @@
 ---
 name: migration-inventory
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/assessment/artifacts/
 scope: intent
 format: text
 required: true

@@ -1,6 +1,6 @@
 ---
 name: final-deliverable
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/deliver/artifacts/
 scope: intent
 format: text
 required: true

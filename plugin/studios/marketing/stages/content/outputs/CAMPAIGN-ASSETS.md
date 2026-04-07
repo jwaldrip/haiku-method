@@ -1,6 +1,6 @@
 ---
 name: campaign-assets
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/content/artifacts/
 scope: intent
 format: text
 required: true

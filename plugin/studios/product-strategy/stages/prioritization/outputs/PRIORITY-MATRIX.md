@@ -1,6 +1,6 @@
 ---
 name: priority-matrix
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/prioritization/artifacts/
 scope: intent
 format: text
 required: true

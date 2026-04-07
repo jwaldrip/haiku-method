@@ -1,6 +1,6 @@
 ---
 name: decision-brief
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/decide/artifacts/
 scope: intent
 format: text
 required: true

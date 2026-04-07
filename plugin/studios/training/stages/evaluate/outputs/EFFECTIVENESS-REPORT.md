@@ -1,6 +1,6 @@
 ---
 name: effectiveness-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/evaluate/artifacts/
 scope: intent
 format: text
 required: true

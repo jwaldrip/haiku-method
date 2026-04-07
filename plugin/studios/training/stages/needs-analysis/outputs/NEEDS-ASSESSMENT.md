@@ -1,6 +1,6 @@
 ---
 name: needs-assessment
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/needs-analysis/artifacts/
 scope: intent
 format: text
 required: true

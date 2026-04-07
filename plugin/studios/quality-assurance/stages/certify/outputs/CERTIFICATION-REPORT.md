@@ -1,6 +1,6 @@
 ---
 name: certification-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/certify/artifacts/
 scope: intent
 format: text
 required: true

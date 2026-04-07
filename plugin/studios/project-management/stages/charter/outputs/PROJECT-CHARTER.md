@@ -1,6 +1,6 @@
 ---
 name: project-charter
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/charter/artifacts/
 scope: intent
 format: text
 required: true

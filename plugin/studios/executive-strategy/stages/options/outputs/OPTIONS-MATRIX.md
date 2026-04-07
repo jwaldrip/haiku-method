@@ -1,6 +1,6 @@
 ---
 name: options-matrix
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/options/artifacts/
 scope: intent
 format: text
 required: true

@@ -1,6 +1,6 @@
 ---
 name: landscape-analysis
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/landscape/artifacts/
 scope: intent
 format: text
 required: true

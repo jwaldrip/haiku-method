@@ -1,6 +1,6 @@
 ---
 name: audit-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/audit/artifacts/
 scope: intent
 format: text
 required: true

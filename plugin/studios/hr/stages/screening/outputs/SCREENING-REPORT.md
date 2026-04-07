@@ -1,6 +1,6 @@
 ---
 name: screening-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/screening/artifacts/
 scope: intent
 format: text
 required: true

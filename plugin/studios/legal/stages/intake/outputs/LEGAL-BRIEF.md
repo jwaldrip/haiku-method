@@ -1,6 +1,6 @@
 ---
 name: legal-brief
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/intake/artifacts/
 scope: intent
 format: text
 required: true

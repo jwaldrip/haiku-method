@@ -1,6 +1,6 @@
 ---
 name: test-strategy
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/plan/artifacts/
 scope: intent
 format: text
 required: true

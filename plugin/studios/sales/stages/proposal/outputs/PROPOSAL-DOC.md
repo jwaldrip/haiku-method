@@ -1,6 +1,6 @@
 ---
 name: proposal-doc
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/proposal/artifacts/
 scope: intent
 format: text
 required: true

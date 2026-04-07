@@ -1,6 +1,6 @@
 ---
 name: audit-readiness
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/certify/artifacts/
 scope: intent
 format: text
 required: true

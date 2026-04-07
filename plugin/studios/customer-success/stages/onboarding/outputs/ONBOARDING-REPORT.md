@@ -1,6 +1,6 @@
 ---
 name: onboarding-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/onboarding/artifacts/
 scope: intent
 format: text
 required: true

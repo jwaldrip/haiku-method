@@ -1,6 +1,6 @@
 ---
 name: interview-scorecard
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/interview/artifacts/
 scope: intent
 format: text
 required: true

@@ -1,6 +1,6 @@
 ---
 name: roadmap-doc
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/roadmap/artifacts/
 scope: intent
 format: text
 required: true

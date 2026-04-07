@@ -1,6 +1,6 @@
 ---
 name: forecast-model
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/forecast/artifacts/
 scope: intent
 format: text
 required: true

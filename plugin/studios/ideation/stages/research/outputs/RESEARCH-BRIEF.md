@@ -1,6 +1,6 @@
 ---
 name: research-brief
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/research/artifacts/
 scope: intent
 format: text
 required: true

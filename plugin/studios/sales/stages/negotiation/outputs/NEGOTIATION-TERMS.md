@@ -1,6 +1,6 @@
 ---
 name: negotiation-terms
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/negotiation/artifacts/
 scope: intent
 format: text
 required: true

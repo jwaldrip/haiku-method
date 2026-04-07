@@ -1,6 +1,6 @@
 ---
 name: review-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/review/artifacts/
 scope: intent
 format: text
 required: true

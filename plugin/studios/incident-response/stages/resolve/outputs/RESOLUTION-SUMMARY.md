@@ -1,6 +1,6 @@
 ---
 name: resolution-summary
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/resolve/artifacts/
 scope: intent
 format: text
 required: true

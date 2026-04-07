@@ -1,6 +1,6 @@
 ---
 name: opportunity-brief
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/expansion/artifacts/
 scope: intent
 format: text
 required: true

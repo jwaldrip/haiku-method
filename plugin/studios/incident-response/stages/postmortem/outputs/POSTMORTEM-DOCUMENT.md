@@ -1,6 +1,6 @@
 ---
 name: postmortem-document
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/postmortem/artifacts/
 scope: intent
 format: text
 required: true

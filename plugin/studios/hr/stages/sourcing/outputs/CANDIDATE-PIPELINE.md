@@ -1,6 +1,6 @@
 ---
 name: candidate-pipeline
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/sourcing/artifacts/
 scope: intent
 format: text
 required: true

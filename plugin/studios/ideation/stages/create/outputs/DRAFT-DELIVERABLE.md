@@ -1,6 +1,6 @@
 ---
 name: draft-deliverable
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/create/artifacts/
 scope: intent
 format: text
 required: true

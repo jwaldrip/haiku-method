@@ -1,6 +1,6 @@
 ---
 name: job-spec
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/requisition/artifacts/
 scope: intent
 format: text
 required: true

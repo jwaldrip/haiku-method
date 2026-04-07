@@ -1,6 +1,6 @@
 ---
 name: onboarding-checklist
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/onboard/artifacts/
 scope: intent
 format: text
 required: true

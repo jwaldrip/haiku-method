@@ -1,6 +1,6 @@
 ---
 name: insights-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/user-research/artifacts/
 scope: intent
 format: text
 required: true

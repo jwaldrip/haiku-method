@@ -1,6 +1,6 @@
 ---
 name: rfp-document
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/requirements/artifacts/
 scope: intent
 format: text
 required: true

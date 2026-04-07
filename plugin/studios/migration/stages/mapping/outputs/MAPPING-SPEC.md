@@ -1,6 +1,6 @@
 ---
 name: mapping-spec
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/mapping/artifacts/
 scope: intent
 format: text
 required: true

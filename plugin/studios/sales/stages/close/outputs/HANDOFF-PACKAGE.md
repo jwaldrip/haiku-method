@@ -1,6 +1,6 @@
 ---
 name: handoff-package
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/close/artifacts/
 scope: intent
 format: text
 required: true

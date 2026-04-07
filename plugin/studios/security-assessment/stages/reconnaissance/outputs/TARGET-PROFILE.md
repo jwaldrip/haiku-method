@@ -1,6 +1,6 @@
 ---
 name: target-profile
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/reconnaissance/artifacts/
 scope: intent
 format: text
 required: true

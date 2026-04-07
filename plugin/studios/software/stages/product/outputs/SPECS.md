@@ -1,6 +1,6 @@
 ---
 name: specs
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/product/artifacts/
 scope: intent
 format: text
 required: true

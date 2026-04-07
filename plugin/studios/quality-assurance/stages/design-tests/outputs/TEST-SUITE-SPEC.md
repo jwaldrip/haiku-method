@@ -1,6 +1,6 @@
 ---
 name: test-suite-spec
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/design-tests/artifacts/
 scope: intent
 format: text
 required: true

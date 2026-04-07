@@ -1,6 +1,6 @@
 ---
 name: market-landscape
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/discovery/artifacts/
 scope: intent
 format: text
 required: true

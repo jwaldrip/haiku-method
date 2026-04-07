@@ -1,6 +1,6 @@
 ---
 name: remediation-log
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/remediate/artifacts/
 scope: intent
 format: text
 required: true

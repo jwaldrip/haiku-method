@@ -1,6 +1,6 @@
 ---
 name: alignment-record
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/stakeholder-review/artifacts/
 scope: intent
 format: text
 required: true

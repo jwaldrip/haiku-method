@@ -1,6 +1,6 @@
 ---
 name: validation-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/validation/artifacts/
 scope: intent
 format: text
 required: true

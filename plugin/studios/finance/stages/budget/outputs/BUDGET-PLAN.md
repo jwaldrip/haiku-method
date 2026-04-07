@@ -1,6 +1,6 @@
 ---
 name: budget-plan
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/budget/artifacts/
 scope: intent
 format: text
 required: true

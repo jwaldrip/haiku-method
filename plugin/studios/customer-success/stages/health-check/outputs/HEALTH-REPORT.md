@@ -1,6 +1,6 @@
 ---
 name: health-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/health-check/artifacts/
 scope: intent
 format: text
 required: true

@@ -1,6 +1,6 @@
 ---
 name: status-report
-location: .haiku/intents/{intent-slug}/knowledge/
+location: .haiku/intents/{intent-slug}/stages/track/artifacts/
 scope: intent
 format: text
 required: true
