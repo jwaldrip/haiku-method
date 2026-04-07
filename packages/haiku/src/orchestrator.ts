@@ -331,8 +331,36 @@ export function runNext(slug: string): OrchestratorAction {
 				message: `Elaborate stage '${currentStage}' into units with completion criteria`,
 			}
 		}
-		// Units exist — move to execute
-		// FSM side effect: advance phase
+		// Units exist — validate types before allowing execution
+		const stageMetadata = resolveStageMetadata(studio, currentStage)
+		const allowedTypes = stageMetadata?.unit_types || []
+
+		if (allowedTypes.length > 0) {
+			const unitFiles = readdirSync(unitsDir).filter(f => f.endsWith(".md"))
+			const violations: Array<{ unit: string; type: string }> = []
+			for (const f of unitFiles) {
+				const fm = readFrontmatter(join(unitsDir, f))
+				const unitType = (fm.type as string) || ""
+				if (unitType && !allowedTypes.includes(unitType)) {
+					violations.push({ unit: f.replace(".md", ""), type: unitType })
+				}
+			}
+			if (violations.length > 0) {
+				// Block the transition — units have wrong types for this stage
+				return {
+					action: "spec_validation_failed",
+					intent: slug,
+					stage: currentStage,
+					violations,
+					allowed_types: allowedTypes,
+					message: `Cannot advance to execute: ${violations.length} unit(s) have types not allowed in stage '${currentStage}' (allowed: ${allowedTypes.join(", ")}). ` +
+						violations.map(v => `${v.unit} is '${v.type}'`).join(", ") +
+						`. Fix the unit types or move them to the appropriate stage, then call haiku_run_next again.`,
+				}
+			}
+		}
+
+		// All units valid — advance to execute
 		fsmAdvancePhase(slug, currentStage, "execute")
 
 		return {

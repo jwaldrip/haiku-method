@@ -16,6 +16,7 @@ import { subagentHook } from "./subagent-hook.js"
 import { generateSubagentContext } from "./subagent-context.js"
 import { injectContext } from "./inject-context.js"
 import { injectStateFile } from "./inject-state-file.js"
+import { validateUnitType } from "./validate-unit-type.js"
 
 // Read stdin synchronously (hooks are synchronous)
 function readStdin(): string {
@@ -68,6 +69,9 @@ export async function runHook(name: string, _args: string[]): Promise<void> {
 			break
 		case "inject-state-file":
 			await injectStateFile(parsed)
+			break
+		case "validate-unit-type":
+			await validateUnitType(parsed, pluginRoot)
 			break
 		default:
 			// For hooks not yet ported to TypeScript, fall through
