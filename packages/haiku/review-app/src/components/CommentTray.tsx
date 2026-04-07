@@ -31,7 +31,7 @@ export function CommentTray({ comments, onDelete, onEdit, onClearAll, onScrollTo
     <div className="fixed bottom-0 left-0 right-0 z-50">
       {/* Expanded list */}
       {expanded && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-stone-900 border border-b-0 border-stone-200 dark:border-stone-700 rounded-t-xl shadow-xl max-h-64 overflow-y-auto">
             <div className="p-3 space-y-2">
               {comments.map((c) => (
@@ -149,7 +149,7 @@ export function CommentTray({ comments, onDelete, onEdit, onClearAll, onScrollTo
 
       {/* Collapsed bar */}
       <div className="bg-white dark:bg-stone-900 border-t border-stone-200 dark:border-stone-700 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-3">
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}

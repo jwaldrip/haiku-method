@@ -399,10 +399,10 @@ function IntentReview({
       disabled: knowledgeFiles.length === 0 && stageArtifacts.length === 0,
       content: (
         <>
-          <div className="flex gap-6">
+          <div className="flex gap-6 items-start">
             {/* Sticky sidebar TOC */}
-            <div className="hidden lg:block w-56 flex-shrink-0">
-              <div className="sticky top-4">
+            <div className="hidden lg:block w-56 flex-shrink-0 self-start">
+              <div className="sticky top-20">
                 <nav className="text-sm space-y-1">
                   <h3 className="font-semibold text-stone-900 dark:text-stone-100 mb-2">Contents</h3>
                   {knowledgeFiles.map((kf, i) => (
