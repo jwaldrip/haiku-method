@@ -1,14 +1,15 @@
 ---
 name: unit-06-docs-update
 type: frontend
-status: active
+status: completed
 depends_on:
   - unit-05-delete-skills
 bolt: 1
-hat: planner
+hat: reviewer
 refs:
   - knowledge/DELETE-SKILLS-DISCOVERY.md
 started_at: '2026-04-07T04:18:33Z'
+completed_at: '2026-04-07T04:21:19Z'
 ---
 
 # Website Documentation Update
@@ -19,7 +20,7 @@ Update website docs to reflect migration from skills to MCP prompts. Remove depr
 
 ## Completion Criteria
 
-- [ ] Deprecated commands removed from docs: elaborate, execute, resume, cleanup, compound
-- [ ] Internal skills no longer listed as commands: fundamentals, completion-criteria, blockers, backpressure
-- [ ] Getting-started guide references only valid MCP prompt commands
-- [ ] No references to `plugin/skills/` in `website/content/docs/`
+- [x] Deprecated commands removed from docs: elaborate, execute, resume, cleanup, compound
+- [x] Internal skills no longer listed as commands: fundamentals, completion-criteria, blockers, backpressure
+- [x] Getting-started guide references only valid MCP prompt commands
+- [x] No references to `plugin/skills/` in `website/content/docs/`
