@@ -5,7 +5,7 @@ status: active
 depends_on:
   - unit-01-prompts-infrastructure
 bolt: 1
-hat: planner
+hat: reviewer
 refs:
   - knowledge/SUPPORTING-PROMPTS-DISCOVERY.md
   - knowledge/BEHAVIORAL-SPEC.md
