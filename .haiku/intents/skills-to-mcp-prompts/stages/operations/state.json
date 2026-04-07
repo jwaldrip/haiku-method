@@ -1,0 +1,9 @@
+{
+  "stage": "operations",
+  "status": "active",
+  "phase": "decompose",
+  "started_at": "2026-04-07T06:22:56Z",
+  "completed_at": null,
+  "gate_entered_at": null,
+  "gate_outcome": null
+}

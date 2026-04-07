@@ -9,8 +9,8 @@ stages:
   - operations
   - security
 mode: continuous
-active_stage: development
-status: completed
+active_stage: operations
+status: active
 started_at: '2026-04-06'
 completed_at: null
 ---
