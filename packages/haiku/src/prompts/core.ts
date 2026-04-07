@@ -186,10 +186,10 @@ function buildRunInstructions(
 			}
 			sections.push(
 				`### Instructions\n\n` +
-				`1. Call \`haiku_stage_start { intent: "${slug}", stage: "${stage}" }\`\n` +
+				`Stage has been started by the orchestrator (status: active, phase: decompose).\n\n` +
 				(action.follows
-					? `2. Load parent knowledge via \`haiku_knowledge_read\` for each file in parent_knowledge\n3. Call \`haiku_run_next { intent: "${slug}" }\` to get the next action\n`
-					: `2. Call \`haiku_run_next { intent: "${slug}" }\` to get the next action\n`),
+					? `1. Load parent knowledge via \`haiku_knowledge_read\` for each file in parent_knowledge\n2. Call \`haiku_run_next { intent: "${slug}" }\` to get the next action\n`
+					: `1. Call \`haiku_run_next { intent: "${slug}" }\` to get the next action\n`),
 			)
 			break
 		}
@@ -228,8 +228,7 @@ function buildRunInstructions(
 				`1. Research and write discovery artifacts\n` +
 				`2. Break work into units at \`.haiku/intents/${slug}/stages/${stage}/units/\`\n` +
 				`3. \`open_review { intent_dir: "${dir}", review_type: "intent" }\`\n` +
-				`4. After approval: \`haiku_stage_set { intent: "${slug}", stage: "${stage}", field: "phase", value: "execute" }\`\n` +
-				`5. \`haiku_run_next { intent: "${slug}" }\``,
+				`4. After approval: call \`haiku_run_next { intent: "${slug}" }\` — the orchestrator advances the phase automatically`,
 			)
 			break
 		}
@@ -334,8 +333,8 @@ function buildRunInstructions(
 			const toPhase = action.to_phase as string
 			sections.push(
 				`## Advance Phase\n\n` +
-				`1. \`haiku_stage_set { intent: "${slug}", stage: "${stage}", field: "phase", value: "${toPhase}" }\`\n` +
-				`2. Call \`haiku_run_next { intent: "${slug}" }\``,
+				`Phase advanced to "${toPhase}" by the orchestrator.\n\n` +
+				`Call \`haiku_run_next { intent: "${slug}" }\` to continue.`,
 			)
 			break
 		}
@@ -356,9 +355,7 @@ function buildRunInstructions(
 				`### Instructions\n\n` +
 				`1. Spawn one subagent per review agent (in parallel), each with the diff and stage outputs\n` +
 				`2. Collect findings; if HIGH severity, fix and re-review (up to 3 cycles)\n` +
-				`3. \`haiku_stage_set { intent: "${slug}", stage: "${stage}", field: "phase", value: "gate" }\`\n` +
-				`4. \`haiku_stage_set { intent: "${slug}", stage: "${stage}", field: "gate_entered_at", value: "${new Date().toISOString()}" }\`\n` +
-				`5. Call \`haiku_run_next { intent: "${slug}" }\``,
+				`3. Call \`haiku_run_next { intent: "${slug}" }\` — the orchestrator advances to the gate phase automatically`,
 			)
 			break
 		}
@@ -384,11 +381,11 @@ function buildRunInstructions(
 			const stage = action.stage as string
 			sections.push(
 				`## Gate: External Review\n\n` +
-				`Stage "${stage}" is complete. Push for external review.\n\n` +
+				`Stage "${stage}" is complete. The gate has been entered by the orchestrator.\n\n` +
 				`### Instructions\n\n` +
 				`1. Push the branch and commit stage artifacts\n` +
 				`2. Share the review URL with the reviewer\n` +
-				`3. \`haiku_stage_complete { intent: "${slug}", stage: "${stage}", gate_outcome: "blocked" }\``,
+				`3. Report: "Awaiting external review. Run /haiku:run when review is complete."`,
 			)
 			break
 		}
@@ -397,11 +394,10 @@ function buildRunInstructions(
 			const stage = action.stage as string
 			sections.push(
 				`## Gate: Awaiting External Event\n\n` +
-				`Stage "${stage}" is complete, waiting for an external event.\n\n` +
+				`Stage "${stage}" is complete. The gate has been entered by the orchestrator.\n\n` +
 				`### Instructions\n\n` +
 				`1. Report what is being awaited\n` +
-				`2. \`haiku_stage_complete { intent: "${slug}", stage: "${stage}", gate_outcome: "awaiting" }\`\n` +
-				`3. Stop. Run /haiku:run when the event occurs.`,
+				`2. Stop. Run /haiku:run when the event occurs.`,
 			)
 			break
 		}
@@ -411,11 +407,9 @@ function buildRunInstructions(
 			const nextStage = action.next_stage as string
 			sections.push(
 				`## Advance Stage\n\n` +
-				`Gate passed. Moving from "${stage}" to "${nextStage}".\n\n` +
+				`Gate passed. The orchestrator has advanced from "${stage}" to "${nextStage}".\n\n` +
 				`### Instructions\n\n` +
-				`1. \`haiku_stage_complete { intent: "${slug}", stage: "${stage}", gate_outcome: "advanced" }\`\n` +
-				`2. \`haiku_intent_set { slug: "${slug}", field: "active_stage", value: "${nextStage}" }\`\n` +
-				`3. Call \`haiku_run_next { intent: "${slug}" }\``,
+				`Call \`haiku_run_next { intent: "${slug}" }\` to continue.`,
 			)
 			break
 		}
@@ -425,11 +419,9 @@ function buildRunInstructions(
 			const nextStage = action.next_stage as string
 			sections.push(
 				`## Stage Complete (Discrete Mode)\n\n` +
-				`Stage "${stage}" is complete.\n\n` +
+				`Stage "${stage}" has been completed by the orchestrator.\n\n` +
 				`### Instructions\n\n` +
-				`1. \`haiku_stage_complete { intent: "${slug}", stage: "${stage}", gate_outcome: "advanced" }\`\n` +
-				`2. \`haiku_intent_set { slug: "${slug}", field: "active_stage", value: "${nextStage}" }\`\n` +
-				`3. Report: "Stage complete. Run /haiku:run to start '${nextStage}'."`,
+				`Report: "Stage complete. Run /haiku:run to start '${nextStage}'."`,
 			)
 			break
 		}
@@ -437,11 +429,9 @@ function buildRunInstructions(
 		case "intent_complete": {
 			sections.push(
 				`## Intent Complete\n\n` +
-				`All stages are done for intent "${slug}".\n\n` +
+				`All stages are done for intent "${slug}". The orchestrator has marked it as completed.\n\n` +
 				`### Instructions\n\n` +
-				`1. \`haiku_intent_set { slug: "${slug}", field: "status", value: "completed" }\`\n` +
-				`2. \`haiku_intent_set { slug: "${slug}", field: "completed_at", value: "${new Date().toISOString().split("T")[0]}" }\`\n` +
-				`3. Report completion summary. Suggest /haiku:review then PR creation.`,
+				`Report completion summary. Suggest /haiku:review then PR creation.`,
 			)
 			break
 		}
@@ -465,8 +455,7 @@ function buildRunInstructions(
 				`## Composite: Run ${compositeStudio}:${stage}\n\n` +
 				`Hats: ${hats.join(" -> ")}\n\n` +
 				`Follow the same instructions as start_stage, but for this composite studio:stage pair.\n\n` +
-				`1. \`haiku_stage_start { intent: "${slug}", stage: "${stage}" }\`\n` +
-				`2. Call \`haiku_run_next { intent: "${slug}" }\``,
+				`Call \`haiku_run_next { intent: "${slug}" }\` to continue.`,
 			)
 			break
 		}

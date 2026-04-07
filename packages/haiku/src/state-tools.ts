@@ -33,12 +33,12 @@ export function stageDir(slug: string, stage: string): string {
 	return join(intentDir(slug), "stages", stage)
 }
 
-function unitPath(slug: string, stage: string, unit: string): string {
+export function unitPath(slug: string, stage: string, unit: string): string {
 	const name = unit.endsWith(".md") ? unit : `${unit}.md`
 	return join(stageDir(slug, stage), "units", name)
 }
 
-function stageStatePath(slug: string, stage: string): string {
+export function stageStatePath(slug: string, stage: string): string {
 	return join(stageDir(slug, stage), "state.json")
 }
 
@@ -59,7 +59,7 @@ export function parseFrontmatter(raw: string): { data: Record<string, unknown>; 
 	return { data: normalizeDates(data as Record<string, unknown>), body: content.trim() }
 }
 
-function setFrontmatterField(filePath: string, field: string, value: unknown): void {
+export function setFrontmatterField(filePath: string, field: string, value: unknown): void {
 	const raw = readFileSync(filePath, "utf8")
 	const parsed = matter(raw)
 	parsed.data[field] = value
@@ -83,17 +83,17 @@ function getNestedField(obj: Record<string, unknown>, path: string): unknown {
 	return current
 }
 
-function readJson(path: string): Record<string, unknown> {
+export function readJson(path: string): Record<string, unknown> {
 	if (!existsSync(path)) return {}
 	return JSON.parse(readFileSync(path, "utf8"))
 }
 
-function writeJson(path: string, data: Record<string, unknown>): void {
+export function writeJson(path: string, data: Record<string, unknown>): void {
 	mkdirSync(join(path, ".."), { recursive: true })
 	writeFileSync(path, JSON.stringify(data, null, 2) + "\n")
 }
 
-function timestamp(): string {
+export function timestamp(): string {
 	return new Date().toISOString().replace(/\.\d{3}Z$/, "Z")
 }
 
@@ -101,7 +101,7 @@ function timestamp(): string {
  * Git add + commit for lifecycle state changes.
  * Non-fatal: git failures are logged but never crash the MCP.
  */
-function gitCommitState(message: string): void {
+export function gitCommitState(message: string): void {
 	try {
 		const haikuRoot = findHaikuRoot()
 		execSync(`git add "${haikuRoot}"`, { encoding: "utf8", stdio: "pipe" })
@@ -143,7 +143,7 @@ function resolveStageScope(intent: string, stage: string): string {
  * The state_file path is injected by the pre_tool_use hook — the MCP server
  * never resolves session IDs or config dirs. If no state_file, this is a no-op.
  */
-function syncSessionMetadata(intent: string, stateFile: string | undefined): void {
+export function syncSessionMetadata(intent: string, stateFile: string | undefined): void {
 	if (!stateFile) return
 	try {
 		const root = findHaikuRoot()
@@ -211,11 +211,6 @@ export const stateToolDefs = [
 		inputSchema: { type: "object" as const, properties: { slug: { type: "string" }, field: { type: "string" } }, required: ["slug", "field"] },
 	},
 	{
-		name: "haiku_intent_set",
-		description: "Set a field in an intent's frontmatter",
-		inputSchema: { type: "object" as const, properties: { slug: { type: "string" }, field: { type: "string" }, value: { type: "string" } }, required: ["slug", "field", "value"] },
-	},
-	{
 		name: "haiku_intent_list",
 		description: "List all intents in the workspace",
 		inputSchema: { type: "object" as const, properties: {} },
@@ -225,21 +220,6 @@ export const stateToolDefs = [
 		name: "haiku_stage_get",
 		description: "Read a field from a stage's state",
 		inputSchema: { type: "object" as const, properties: { intent: { type: "string" }, stage: { type: "string" }, field: { type: "string" } }, required: ["intent", "stage", "field"] },
-	},
-	{
-		name: "haiku_stage_set",
-		description: "Set a field in a stage's state",
-		inputSchema: { type: "object" as const, properties: { intent: { type: "string" }, stage: { type: "string" }, field: { type: "string" }, value: { type: "string" } }, required: ["intent", "stage", "field", "value"] },
-	},
-	{
-		name: "haiku_stage_start",
-		description: "Mark a stage as started (sets status, phase, timestamp)",
-		inputSchema: { type: "object" as const, properties: { intent: { type: "string" }, stage: { type: "string" } }, required: ["intent", "stage"] },
-	},
-	{
-		name: "haiku_stage_complete",
-		description: "Mark a stage as completed (sets status, timestamp, gate outcome)",
-		inputSchema: { type: "object" as const, properties: { intent: { type: "string" }, stage: { type: "string" }, gate_outcome: { type: "string", enum: ["advanced", "paused", "blocked", "awaiting"] } }, required: ["intent", "stage"] },
 	},
 	// Unit tools
 	{
@@ -326,14 +306,6 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const val = data[args.field as string]
 			return text(val == null ? "" : typeof val === "object" ? JSON.stringify(val) : String(val))
 		}
-		case "haiku_intent_set": {
-			const file = join(intentDir(args.slug as string), "intent.md")
-			setFrontmatterField(file, args.field as string, args.value)
-			if (args.field === "active_stage" || args.field === "status") {
-				syncSessionMetadata(args.slug as string, args.state_file as string | undefined)
-			}
-			return text("ok")
-		}
 		case "haiku_intent_list": {
 			const root = findHaikuRoot()
 			const intentsDir = join(root, "intents")
@@ -352,82 +324,6 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const data = readJson(path)
 			const val = data[args.field as string]
 			return text(val == null ? "" : String(val))
-		}
-		case "haiku_stage_set": {
-			const path = stageStatePath(args.intent as string, args.stage as string)
-			const data = readJson(path)
-
-			// Guard: enforce valid phase transitions (decompose → execute → review → gate)
-			if (args.field === "phase") {
-				const validTransitions: Record<string, string[]> = {
-					"": ["decompose"],
-					"decompose": ["execute"],
-					"execute": ["review"],
-					"review": ["gate"],
-					"gate": [], // gate advances via haiku_gate_approve or haiku_stage_complete
-				}
-				const currentPhase = (data.phase as string) || ""
-				const nextPhase = args.value as string
-				const allowed = validTransitions[currentPhase] || []
-				if (!allowed.includes(nextPhase)) {
-					return text(JSON.stringify({
-						error: "invalid_phase_transition",
-						current_phase: currentPhase,
-						requested_phase: nextPhase,
-						allowed: allowed,
-						message: `Cannot transition from '${currentPhase}' to '${nextPhase}'. Valid next phases: ${allowed.join(", ") || "none (use haiku_run_next)"}. Use haiku_run_next to progress through phases.`,
-					}))
-				}
-			}
-
-			data[args.field as string] = args.value
-			writeJson(path, data)
-			if (args.field === "phase") {
-				emitTelemetry("haiku.stage.phase", { intent: args.intent as string, stage: args.stage as string, phase: args.value as string })
-				syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
-			} else if (args.field === "gate_entered_at") {
-				emitTelemetry("haiku.gate.entered", { intent: args.intent as string, stage: args.stage as string })
-			}
-			return text("ok")
-		}
-		case "haiku_stage_start": {
-			const path = stageStatePath(args.intent as string, args.stage as string)
-			const data = readJson(path)
-			data.stage = args.stage
-			data.status = "active"
-			data.phase = "decompose"
-			data.started_at = timestamp()
-			data.completed_at = null
-			data.gate_entered_at = null
-			data.gate_outcome = null
-			writeJson(path, data)
-			emitTelemetry("haiku.stage.started", { intent: args.intent as string, stage: args.stage as string })
-			gitCommitState(`haiku: start stage ${args.stage as string}`)
-			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
-			return text("ok")
-		}
-		case "haiku_stage_complete": {
-			const path = stageStatePath(args.intent as string, args.stage as string)
-			const data = readJson(path)
-
-			// Guard: stage must have passed through gate phase before completion
-			const phase = (data.phase as string) || ""
-			if (phase !== "gate" && phase !== "review") {
-				return text(JSON.stringify({
-					error: "phase_not_ready",
-					current_phase: phase,
-					message: `Cannot complete stage: phase is '${phase}', must reach 'gate' first. Use haiku_run_next to progress through phases (decompose → execute → review → gate).`,
-				}))
-			}
-
-			data.status = "completed"
-			data.completed_at = timestamp()
-			data.gate_outcome = (args.gate_outcome as string) || "advanced"
-			writeJson(path, data)
-			emitTelemetry("haiku.stage.completed", { intent: args.intent as string, stage: args.stage as string, gate_outcome: data.gate_outcome as string })
-			gitCommitState(`haiku: complete stage ${args.stage as string}`)
-			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
-			return text("ok")
 		}
 
 		// ── Unit ──

@@ -92,7 +92,7 @@ registerPrompt({
 					intentCtx,
 					"",
 					"Autopilot mode will:",
-					"1. Set mode=autopilot on the intent (use haiku_intent_set to set mode to 'autopilot')",
+					"1. Ensure mode=autopilot is set on the intent (set during /haiku:new creation)",
 					"2. If no intent exists, run /haiku:new to create one from the description",
 					"3. Run /haiku:run in a loop, advancing through all stages",
 					"4. Override ask gates to auto (only external gates pause autopilot)",

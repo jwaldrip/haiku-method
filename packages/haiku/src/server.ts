@@ -343,7 +343,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 	const { name, arguments: args } = request.params
 
 	// Orchestration tools
-	if (name === "haiku_run_next" || name === "haiku_gate_approve") {
+	if (name === "haiku_run_next" || name === "haiku_gate_approve" || name === "haiku_go_back") {
 		const result = handleOrchestratorTool(name, (args ?? {}) as Record<string, unknown>)
 
 		// Auto-open visual review on gate_ask (interactive mode only)

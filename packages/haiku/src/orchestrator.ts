@@ -1,7 +1,9 @@
 // orchestrator.ts — H·AI·K·U stage loop orchestration
 //
-// Deterministic orchestration logic. The MCP tells the agent what to do next.
-// The agent executes. No interpretation of prose instructions needed.
+// Deterministic FSM driver. `runNext()` reads state, determines the next
+// action, performs the state mutation as a side effect, and returns the action
+// to the agent. The agent only calls `haiku_run_next` to advance — it never
+// mutates stage/intent state directly.
 //
 // Primary tool: haiku_run_next { intent }
 // Returns an action object the agent follows.
@@ -10,36 +12,28 @@ import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import matter from "gray-matter"
 import { emitTelemetry } from "./telemetry.js"
+import {
+	findHaikuRoot,
+	intentDir,
+	stageDir,
+	stageStatePath,
+	readJson,
+	writeJson,
+	setFrontmatterField,
+	gitCommitState,
+	timestamp,
+	parseFrontmatter,
+	unitPath,
+	syncSessionMetadata,
+} from "./state-tools.js"
 
 // ── Path helpers ───────────────────────────────────────────────────────────
-
-function findHaikuRoot(): string {
-	let dir = process.cwd()
-	for (let i = 0; i < 20; i++) {
-		if (existsSync(join(dir, ".haiku"))) return join(dir, ".haiku")
-		const parent = join(dir, "..")
-		if (parent === dir) break
-		dir = parent
-	}
-	throw new Error("No .haiku/ directory found")
-}
 
 function readFrontmatter(filePath: string): Record<string, unknown> {
 	if (!existsSync(filePath)) return {}
 	const raw = readFileSync(filePath, "utf8")
-	const { data } = matter(raw)
-	// Normalize Date objects to ISO date strings
-	for (const key in data) {
-		if (data[key] instanceof Date) {
-			data[key] = (data[key] as Date).toISOString().split("T")[0]
-		}
-	}
-	return data as Record<string, unknown>
-}
-
-function readJson(path: string): Record<string, unknown> {
-	if (!existsSync(path)) return {}
-	return JSON.parse(readFileSync(path, "utf8"))
+	const { data } = parseFrontmatter(raw)
+	return data
 }
 
 // ── Studio resolution ──────────────────────────────────────────────────────
@@ -108,12 +102,89 @@ export interface OrchestratorAction {
 	[key: string]: unknown
 }
 
+// ── FSM side-effect helpers ────────────────────────────────────────────────
+
+function fsmStartStage(slug: string, stage: string): void {
+	const path = stageStatePath(slug, stage)
+	const data = readJson(path)
+	data.stage = stage
+	data.status = "active"
+	data.phase = "decompose"
+	data.started_at = timestamp()
+	data.completed_at = null
+	data.gate_entered_at = null
+	data.gate_outcome = null
+	writeJson(path, data)
+
+	// Set intent's active_stage
+	const intentFile = join(intentDir(slug), "intent.md")
+	if (existsSync(intentFile)) {
+		setFrontmatterField(intentFile, "active_stage", stage)
+	}
+
+	emitTelemetry("haiku.stage.started", { intent: slug, stage })
+	gitCommitState(`haiku: start stage ${stage}`)
+}
+
+function fsmAdvancePhase(slug: string, stage: string, toPhase: string): void {
+	const path = stageStatePath(slug, stage)
+	const data = readJson(path)
+	data.phase = toPhase
+	writeJson(path, data)
+	emitTelemetry("haiku.stage.phase", { intent: slug, stage, phase: toPhase })
+}
+
+function fsmCompleteStage(slug: string, stage: string, gateOutcome: string): void {
+	const path = stageStatePath(slug, stage)
+	const data = readJson(path)
+	data.status = "completed"
+	data.completed_at = timestamp()
+	data.gate_outcome = gateOutcome
+	writeJson(path, data)
+	emitTelemetry("haiku.stage.completed", { intent: slug, stage, gate_outcome: gateOutcome })
+	gitCommitState(`haiku: complete stage ${stage}`)
+}
+
+function fsmAdvanceStage(slug: string, currentStage: string, nextStage: string): void {
+	// Complete current stage
+	fsmCompleteStage(slug, currentStage, "advanced")
+
+	// Update intent's active_stage to next
+	const intentFile = join(intentDir(slug), "intent.md")
+	if (existsSync(intentFile)) {
+		setFrontmatterField(intentFile, "active_stage", nextStage)
+	}
+}
+
+function fsmGateAsk(slug: string, stage: string): void {
+	const path = stageStatePath(slug, stage)
+	const data = readJson(path)
+	data.phase = "gate"
+	data.gate_entered_at = timestamp()
+	writeJson(path, data)
+	emitTelemetry("haiku.gate.entered", { intent: slug, stage })
+}
+
+function fsmIntentComplete(slug: string): void {
+	const intentFile = join(intentDir(slug), "intent.md")
+	if (existsSync(intentFile)) {
+		setFrontmatterField(intentFile, "status", "completed")
+		setFrontmatterField(intentFile, "completed_at", timestamp())
+	}
+	emitTelemetry("haiku.intent.completed", { intent: slug })
+	gitCommitState(`haiku: complete intent ${slug}`)
+}
+
+function fsmStageCompleteDiscrete(slug: string, stage: string): void {
+	fsmCompleteStage(slug, stage, "paused")
+}
+
 // ── Main orchestration function ────────────────────────────────────────────
 
 export function runNext(slug: string): OrchestratorAction {
 	const root = findHaikuRoot()
-	const intentDir = join(root, "intents", slug)
-	const intentFile = join(intentDir, "intent.md")
+	const iDir = join(root, "intents", slug)
+	const intentFile = join(iDir, "intent.md")
 
 	if (!existsSync(intentFile)) {
 		return { action: "error", message: `Intent '${slug}' not found` }
@@ -136,7 +207,7 @@ export function runNext(slug: string): OrchestratorAction {
 
 	// Composite intent handling
 	if (intent.composite) {
-		return runNextComposite(slug, intent, intentDir)
+		return runNextComposite(slug, intent, iDir)
 	}
 
 	const allStudioStages = resolveStudioStages(studio)
@@ -158,13 +229,14 @@ export function runNext(slug: string): OrchestratorAction {
 		const idx = allStudioStages.indexOf(currentStage)
 		const next = allStudioStages.slice(idx + 1).find(s => !skipStages.includes(s))
 		if (!next) {
+			fsmIntentComplete(slug)
 			return { action: "intent_complete", intent: slug, studio, message: `All stages complete for intent '${slug}'` }
 		}
 		currentStage = next
 	}
 
 	// Load stage state
-	const stageState = readJson(join(intentDir, "stages", currentStage, "state.json"))
+	const stageState = readJson(join(iDir, "stages", currentStage, "state.json"))
 	const phase = (stageState.phase as string) || ""
 	const stageStatus = (stageState.status as string) || "pending"
 
@@ -180,6 +252,10 @@ export function runNext(slug: string): OrchestratorAction {
 				parentKnowledge.push(...readdirSync(parentKnowledgeDir).filter(f => f.endsWith(".md")))
 			}
 		}
+
+		// FSM side effect: start the stage
+		fsmStartStage(slug, currentStage)
+
 		return {
 			action: "start_stage",
 			intent: slug,
@@ -197,7 +273,7 @@ export function runNext(slug: string): OrchestratorAction {
 
 	// Stage in elaboration phase
 	if (phase === "decompose") {
-		const unitsDir = join(intentDir, "stages", currentStage, "units")
+		const unitsDir = join(iDir, "stages", currentStage, "units")
 		const hasUnits = existsSync(unitsDir) && readdirSync(unitsDir).filter(f => f.endsWith(".md")).length > 0
 		if (!hasUnits) {
 			// Read elaboration mode from STAGE.md
@@ -222,6 +298,9 @@ export function runNext(slug: string): OrchestratorAction {
 			}
 		}
 		// Units exist — move to execute
+		// FSM side effect: advance phase
+		fsmAdvancePhase(slug, currentStage, "execute")
+
 		return {
 			action: "advance_phase",
 			intent: slug,
@@ -234,12 +313,15 @@ export function runNext(slug: string): OrchestratorAction {
 
 	// Stage in execute phase
 	if (phase === "execute") {
-		const units = listUnits(intentDir, currentStage)
+		const units = listUnits(iDir, currentStage)
 		const readyUnits = units.filter(u => u.status === "pending" && u.depsComplete)
 		const activeUnits = units.filter(u => u.status === "active")
 		const allComplete = units.every(u => u.status === "completed")
 
 		if (allComplete) {
+			// FSM side effect: advance phase
+			fsmAdvancePhase(slug, currentStage, "review")
+
 			return {
 				action: "advance_phase",
 				intent: slug,
@@ -311,6 +393,10 @@ export function runNext(slug: string): OrchestratorAction {
 
 	// Stage in review phase
 	if (phase === "review") {
+		// FSM side effect: advance to gate phase so next haiku_run_next call
+		// proceeds to gate logic after the agent completes the review work.
+		fsmAdvancePhase(slug, currentStage, "gate")
+
 		return {
 			action: "review",
 			intent: slug,
@@ -324,7 +410,9 @@ export function runNext(slug: string): OrchestratorAction {
 	// via gitCommitState() in MCP state tools (stage_start/complete, unit_start/complete).
 	// If phase is "persist" (legacy), treat as gate-ready.
 	if (phase === "persist") {
-		// Auto-advance to gate
+		// FSM side effect: auto-advance to gate
+		fsmAdvancePhase(slug, currentStage, "gate")
+
 		return {
 			action: "advance_phase",
 			intent: slug,
@@ -354,27 +442,41 @@ export function runNext(slug: string): OrchestratorAction {
 
 		if (reviewType === "auto") {
 			if (isLastStage) {
+				// FSM side effect: complete current stage + intent
+				fsmCompleteStage(slug, currentStage, "advanced")
+				fsmIntentComplete(slug)
 				return { action: "intent_complete", intent: slug, studio, message: `All stages complete for intent '${slug}'` }
 			}
 			if (effectiveMode === "continuous") {
+				// FSM side effect: advance stage
+				fsmAdvanceStage(slug, currentStage, nextStage)
 				return { action: "advance_stage", intent: slug, stage: currentStage, next_stage: nextStage, gate_outcome: "advanced", message: `Gate auto-passed — advancing to '${nextStage}'` }
 			}
+			// FSM side effect: complete stage as discrete (paused)
+			fsmStageCompleteDiscrete(slug, currentStage)
 			return { action: "stage_complete_discrete", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete. Run /haiku:run to start '${nextStage}'.` }
 		}
 
 		if (reviewType === "ask") {
+			// FSM side effect: set gate_entered_at (marks the gate as waiting for approval)
+			fsmGateAsk(slug, currentStage)
 			return { action: "gate_ask", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete — awaiting your approval to advance` }
 		}
 
 		if (reviewType === "external") {
+			// FSM side effect: enter gate
+			fsmGateAsk(slug, currentStage)
 			return { action: "gate_external", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete — push for external review` }
 		}
 
 		if (reviewType === "await") {
+			// FSM side effect: enter gate
+			fsmGateAsk(slug, currentStage)
 			return { action: "gate_await", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete — awaiting external event before advancing` }
 		}
 
 		// Fallback
+		fsmAdvanceStage(slug, currentStage, nextStage!)
 		return { action: "advance_stage", intent: slug, stage: currentStage, next_stage: nextStage, gate_outcome: "advanced", message: `Advancing to '${nextStage}'` }
 	}
 
@@ -383,9 +485,14 @@ export function runNext(slug: string): OrchestratorAction {
 		const stageIdx = studioStages.indexOf(currentStage)
 		const nextStage = stageIdx < studioStages.length - 1 ? studioStages[stageIdx + 1] : null
 		if (!nextStage) {
+			fsmIntentComplete(slug)
 			return { action: "intent_complete", intent: slug, studio, message: `All stages complete for intent '${slug}'` }
 		}
 		const hats = resolveStageHats(studio, nextStage)
+
+		// FSM side effect: start next stage
+		fsmStartStage(slug, nextStage)
+
 		return { action: "start_stage", intent: slug, studio, stage: nextStage, hats, phase: "decompose", stage_metadata: resolveStageMetadata(studio, nextStage), message: `Start stage '${nextStage}'` }
 	}
 
@@ -394,7 +501,7 @@ export function runNext(slug: string): OrchestratorAction {
 
 // ── Composite orchestration ────────────────────────────────────────────────
 
-function runNextComposite(slug: string, intent: Record<string, unknown>, intentDir: string): OrchestratorAction {
+function runNextComposite(slug: string, intent: Record<string, unknown>, intentDirPath: string): OrchestratorAction {
 	const composite = intent.composite as Array<{ studio: string; stages: string[] }>
 	const compositeState = (intent.composite_state || {}) as Record<string, string>
 	const syncRules = (intent.sync || []) as Array<{ wait: string[]; then: string[] }>
@@ -442,6 +549,7 @@ function runNextComposite(slug: string, intent: Record<string, unknown>, intentD
 	// Check if all complete
 	const allComplete = composite.every(e => compositeState[e.studio] === "complete")
 	if (allComplete) {
+		fsmIntentComplete(slug)
 		return { action: "intent_complete", intent: slug, message: `All composite studios complete for '${slug}'` }
 	}
 
@@ -459,8 +567,8 @@ interface UnitInfo {
 	depsComplete: boolean
 }
 
-function listUnits(intentDir: string, stage: string): UnitInfo[] {
-	const unitsDir = join(intentDir, "stages", stage, "units")
+function listUnits(intentDirPath: string, stage: string): UnitInfo[] {
+	const unitsDir = join(intentDirPath, "stages", stage, "units")
 	if (!existsSync(unitsDir)) return []
 
 	const files = readdirSync(unitsDir).filter(f => f.endsWith(".md"))
@@ -485,15 +593,138 @@ function listUnits(intentDir: string, stage: string): UnitInfo[] {
 	return units
 }
 
+// ── Go back (stage/phase regression) ──────────────────────────────────────
+
+function goBack(slug: string, targetStage?: string, targetPhase?: string): OrchestratorAction {
+	const root = findHaikuRoot()
+	const iDir = join(root, "intents", slug)
+	const intentFile = join(iDir, "intent.md")
+
+	if (!existsSync(intentFile)) {
+		return { action: "error", message: `Intent '${slug}' not found` }
+	}
+
+	const intent = readFrontmatter(intentFile)
+	const studio = (intent.studio as string) || "ideation"
+	const currentActiveStage = (intent.active_stage as string) || ""
+
+	if (targetStage) {
+		// Validate target stage exists in the studio
+		const allStages = resolveStudioStages(studio)
+		if (!allStages.includes(targetStage)) {
+			return { action: "error", message: `Stage '${targetStage}' not found in studio '${studio}'` }
+		}
+
+		// Reset the target stage's state
+		const path = stageStatePath(slug, targetStage)
+		const data: Record<string, unknown> = {
+			stage: targetStage,
+			status: "active",
+			phase: "decompose",
+			started_at: timestamp(),
+			completed_at: null,
+			gate_entered_at: null,
+			gate_outcome: null,
+		}
+		writeJson(path, data)
+
+		// Re-queue all units in the target stage to pending
+		const unitsDir = join(iDir, "stages", targetStage, "units")
+		if (existsSync(unitsDir)) {
+			const files = readdirSync(unitsDir).filter(f => f.endsWith(".md"))
+			for (const f of files) {
+				const unitFile = join(unitsDir, f)
+				setFrontmatterField(unitFile, "status", "pending")
+				setFrontmatterField(unitFile, "bolt", 0)
+				setFrontmatterField(unitFile, "hat", "")
+				setFrontmatterField(unitFile, "started_at", null)
+				setFrontmatterField(unitFile, "completed_at", null)
+			}
+		}
+
+		// Update intent's active_stage
+		setFrontmatterField(intentFile, "active_stage", targetStage)
+
+		emitTelemetry("haiku.go_back.stage", { intent: slug, from_stage: currentActiveStage, to_stage: targetStage })
+		gitCommitState(`haiku: go back to stage ${targetStage}`)
+
+		return {
+			action: "went_back",
+			intent: slug,
+			target_stage: targetStage,
+			reset_phase: "decompose",
+			message: `Went back to stage '${targetStage}' — stage reset to decompose, all units re-queued`,
+		}
+	}
+
+	if (targetPhase) {
+		if (!currentActiveStage) {
+			return { action: "error", message: `No active stage to go back within` }
+		}
+
+		// Valid phases in order
+		const phaseOrder = ["decompose", "execute", "review", "gate"]
+		const targetIdx = phaseOrder.indexOf(targetPhase)
+		if (targetIdx < 0) {
+			return { action: "error", message: `Invalid phase '${targetPhase}'. Valid phases: ${phaseOrder.join(", ")}` }
+		}
+
+		const path = stageStatePath(slug, currentActiveStage)
+		const stageState = readJson(path)
+		const currentPhase = (stageState.phase as string) || ""
+		const currentIdx = phaseOrder.indexOf(currentPhase)
+
+		if (targetIdx >= currentIdx) {
+			return { action: "error", message: `Cannot go back: '${targetPhase}' is not before current phase '${currentPhase}'` }
+		}
+
+		// Set phase back
+		stageState.phase = targetPhase
+		stageState.gate_entered_at = null
+		stageState.gate_outcome = null
+		writeJson(path, stageState)
+
+		// If going back to decompose or execute, re-queue affected units
+		if (targetPhase === "decompose" || targetPhase === "execute") {
+			const unitsDir = join(iDir, "stages", currentActiveStage, "units")
+			if (existsSync(unitsDir)) {
+				const files = readdirSync(unitsDir).filter(f => f.endsWith(".md"))
+				for (const f of files) {
+					const unitFile = join(unitsDir, f)
+					setFrontmatterField(unitFile, "status", "pending")
+					setFrontmatterField(unitFile, "bolt", 0)
+					setFrontmatterField(unitFile, "hat", "")
+					setFrontmatterField(unitFile, "started_at", null)
+					setFrontmatterField(unitFile, "completed_at", null)
+				}
+			}
+		}
+
+		emitTelemetry("haiku.go_back.phase", { intent: slug, stage: currentActiveStage, from_phase: currentPhase, to_phase: targetPhase })
+		gitCommitState(`haiku: go back to phase ${targetPhase} in ${currentActiveStage}`)
+
+		return {
+			action: "went_back",
+			intent: slug,
+			stage: currentActiveStage,
+			target_phase: targetPhase,
+			message: `Went back to phase '${targetPhase}' in stage '${currentActiveStage}'`,
+		}
+	}
+
+	return { action: "error", message: "Must specify either target_stage or target_phase" }
+}
+
 // ── Tool definitions ───────────────────────────────────────────────────────
 
 export const orchestratorToolDefs = [
 	{
 		name: "haiku_run_next",
 		description:
-			"Get the next action for an intent. Returns what the agent should do next: " +
-			"start a stage, elaborate, execute a unit, review, advance, or report completion. " +
-			"The orchestrator handles all state logic — the agent just follows the returned action.",
+			"Advance an intent through its lifecycle. The FSM reads state, determines the next action, " +
+			"performs the state mutation (start stage, advance phase, complete stage, etc.), and returns " +
+			"the action to the agent. The agent follows the returned action — it never mutates stage or " +
+			"intent state directly.",
 		inputSchema: {
 			type: "object" as const,
 			properties: {
@@ -514,6 +745,23 @@ export const orchestratorToolDefs = [
 			required: ["intent", "stage"],
 		},
 	},
+	{
+		name: "haiku_go_back",
+		description:
+			"Go back to a previous stage or phase within the current stage. " +
+			"If target_stage is provided: resets that stage (status: active, phase: decompose), re-queues all its units. " +
+			"If target_phase is provided: sets phase back within the current active stage, re-queues affected units. " +
+			"This is a human-initiated action — the agent should only call this when explicitly requested.",
+		inputSchema: {
+			type: "object" as const,
+			properties: {
+				intent: { type: "string", description: "Intent slug" },
+				target_stage: { type: "string", description: "Stage to go back to (resets the stage entirely)" },
+				target_phase: { type: "string", description: "Phase to go back to within the current active stage (decompose, execute, review)" },
+			},
+			required: ["intent"],
+		},
+	},
 ]
 
 // ── Tool handlers ──────────────────────────────────────────────────────────
@@ -524,14 +772,18 @@ export function handleOrchestratorTool(name: string, args: Record<string, unknow
 	if (name === "haiku_run_next") {
 		const result = runNext(args.intent as string)
 		emitTelemetry("haiku.orchestrator.action", { intent: args.intent as string, action: result.action })
+
+		// Sync session metadata after FSM mutations
+		syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
+
 		return text(JSON.stringify(result, null, 2))
 	}
 
 	if (name === "haiku_gate_approve") {
 		// Approve an ask gate — advance to next stage
 		const root = findHaikuRoot()
-		const intentDir = join(root, "intents", args.intent as string)
-		const intentFm = readFrontmatter(join(intentDir, "intent.md"))
+		const iDir = join(root, "intents", args.intent as string)
+		const intentFm = readFrontmatter(join(iDir, "intent.md"))
 		const studio = (intentFm.studio as string) || "ideation"
 		const stages = resolveStudioStages(studio)
 		const currentIdx = stages.indexOf(args.stage as string)
@@ -540,9 +792,28 @@ export function handleOrchestratorTool(name: string, args: Record<string, unknow
 		emitTelemetry("haiku.gate.resolved", { intent: args.intent as string, stage: args.stage as string, gate_type: "ask", outcome: "advanced" })
 
 		if (nextStage) {
+			// FSM side effect: advance stage
+			fsmAdvanceStage(args.intent as string, args.stage as string, nextStage)
+			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
 			return text(JSON.stringify({ action: "advance_stage", intent: args.intent, stage: args.stage, next_stage: nextStage, gate_outcome: "advanced" }))
 		}
+
+		// Last stage — complete the intent
+		fsmCompleteStage(args.intent as string, args.stage as string, "advanced")
+		fsmIntentComplete(args.intent as string)
+		syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
 		return text(JSON.stringify({ action: "intent_complete", intent: args.intent }))
+	}
+
+	if (name === "haiku_go_back") {
+		const result = goBack(
+			args.intent as string,
+			args.target_stage as string | undefined,
+			args.target_phase as string | undefined,
+		)
+		emitTelemetry("haiku.orchestrator.action", { intent: args.intent as string, action: result.action })
+		syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
+		return text(JSON.stringify(result, null, 2))
 	}
 
 	return text(`Unknown orchestrator tool: ${name}`)

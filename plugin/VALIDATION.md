@@ -12,7 +12,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 - [ ] Unit state lives in `unit-*.md` frontmatter (`bolt`, `hat`, `status`, `started_at`, `completed_at`)
 - [ ] Stage state lives in `stages/{stage}/state.json` (`phase`, `status`, `started_at`, `completed_at`, `gate_entered_at`, `gate_outcome`)
 - [ ] No lifecycle state is stored in `state/iteration.json` (deprecated)
-- [ ] Every state write goes through MCP tools (`haiku_intent_set`, `haiku_stage_set`, `haiku_unit_set`, etc.) — exception: hooks may write directly for auto-reconciliation (post-merge, auto-complete)
+- [ ] Stage/intent lifecycle transitions are performed by the `haiku_run_next` FSM driver — the agent never mutates stage or intent state directly. Unit-level writes go through `haiku_unit_start`, `haiku_unit_complete`, etc. Exception: hooks may write directly for auto-reconciliation (post-merge, auto-complete)
 - [ ] Lifecycle transitions (stage start/complete, unit start/complete) are committed to git automatically. Incremental updates (hat advance, bolt increment, phase set) are committed by the agent as part of its workflow.
 
 ### Orchestration
@@ -66,18 +66,18 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 1. **Intent creation:**
    - [ ] `intent.md` created with: title, studio: software, stages: [...], mode, status: active, started_at: now
    - [ ] `.haiku/intents/{slug}/` directory created with `knowledge/` subdirectory
-   - [ ] MCP tool `haiku_intent_set` used to set initial fields
+   - [ ] Intent fields set during creation (mode, studio, etc.)
 
 2. **First `/haiku:run`:**
    - [ ] `haiku_run_next` returns `start_stage` with stage: inception, hats: [architect, decomposer]
-   - [ ] Agent calls `haiku_stage_start { intent, stage: inception }`
-   - [ ] `state.json` created with phase: decompose
+   - [ ] Orchestrator performs FSM side effect: writes `state.json` (status: active, phase: decompose), sets `active_stage`
+   - [ ] Agent follows the returned action
 
 3. **Elaboration:**
    - [ ] `haiku_run_next` returns `decompose`
    - [ ] Agent reads STAGE.md for inception: inputs, unit_types, criteria guidance
    - [ ] Agent writes unit files to `stages/inception/units/`
-   - [ ] Agent calls `haiku_stage_set { phase: execute }`
+   - [ ] Agent calls `haiku_run_next` — orchestrator detects units exist, advances phase to execute
 
 4. **Execution:**
    - [ ] `haiku_run_next` returns `start_unit` with first ready unit and first hat
@@ -97,8 +97,8 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 6. **Persist + Gate:**
    - [ ] Stage outputs persisted to scoped locations
    - [ ] `haiku_run_next` returns appropriate gate action based on `review:` in STAGE.md
-   - [ ] Inception has `review: auto` → returns `advance_stage`
-   - [ ] Agent calls `haiku_stage_complete` + `haiku_intent_set { active_stage: design }`
+   - [ ] Inception has `review: auto` → orchestrator auto-advances (completes stage, sets active_stage)
+   - [ ] `haiku_run_next` returns `advance_stage` with mutations already applied
 
 7. **Continuous mode:**
    - [ ] After gate passes, `haiku_run_next` returns `start_stage` for design
@@ -107,7 +107,7 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 
 8. **Completion:**
    - [ ] After final stage gate passes, `haiku_run_next` returns `intent_complete`
-   - [ ] Agent calls `haiku_intent_set { status: completed, completed_at: now }`
+   - [ ] Orchestrator has already marked intent as completed (status: completed, completed_at: now)
 
 ### Telemetry Verification
 
@@ -146,9 +146,8 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 
 **Trigger:** Stage has `review: await` (e.g., sales proposal).
 
-- [ ] `haiku_run_next` returns `gate_await`
+- [ ] `haiku_run_next` returns `gate_await` — orchestrator enters the gate (sets gate_entered_at)
 - [ ] Agent reports what is being awaited
-- [ ] Agent calls `haiku_stage_complete { gate_outcome: awaiting }`
 - [ ] Intent blocks until user runs `/haiku:run` again
 - [ ] On resume: agent confirms event occurred, then advances
 
@@ -158,9 +157,8 @@ These must ALWAYS be true regardless of studio, stage, or user action.
 
 **Trigger:** Stage has `review: external` (e.g., product stage).
 
-- [ ] `haiku_run_next` returns `gate_external`
+- [ ] `haiku_run_next` returns `gate_external` — orchestrator enters the gate (sets gate_entered_at)
 - [ ] Agent pushes branch and creates PR/MR
-- [ ] Agent calls `haiku_stage_complete { gate_outcome: blocked }`
 - [ ] Intent blocks until external review resolves
 
 ---
@@ -396,17 +394,20 @@ packages/
 
 Every MCP state transition emits its OTEL event — no manual calls needed:
 
-| MCP Tool | Event |
-|----------|-------|
-| `haiku_stage_start` | `haiku.stage.started` |
-| `haiku_stage_complete` | `haiku.stage.completed` |
-| `haiku_stage_set(phase)` | `haiku.stage.phase` |
-| `haiku_stage_set(gate_entered_at)` | `haiku.gate.entered` |
+| Source | Event |
+|--------|-------|
+| `haiku_run_next` (FSM: start_stage) | `haiku.stage.started` |
+| `haiku_run_next` (FSM: complete_stage) | `haiku.stage.completed` |
+| `haiku_run_next` (FSM: advance_phase) | `haiku.stage.phase` |
+| `haiku_run_next` (FSM: gate_ask/external/await) | `haiku.gate.entered` |
+| `haiku_run_next` (FSM: intent_complete) | `haiku.intent.completed` |
+| `haiku_run_next` | `haiku.orchestrator.action` |
+| `haiku_go_back` | `haiku.go_back.stage` / `haiku.go_back.phase` |
+| `haiku_gate_approve` | `haiku.gate.resolved` |
 | `haiku_unit_start` | `haiku.unit.started` |
 | `haiku_unit_complete` | `haiku.unit.completed` |
 | `haiku_unit_advance_hat` | `haiku.hat.transition` |
 | `haiku_unit_increment_bolt` | `haiku.bolt.iteration` |
-| `haiku_run_next` | `haiku.orchestrator.action` |
 
 ---
 

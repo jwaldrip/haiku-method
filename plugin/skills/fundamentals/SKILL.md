@@ -31,17 +31,16 @@ Every `haiku_run_next` response includes `stage_metadata` — the stage's descri
 
 | Tool | Purpose |
 |------|---------|
-| `haiku_run_next` | Get next action for an intent |
+| `haiku_run_next` | FSM driver — reads state, performs mutation, returns next action |
+| `haiku_go_back` | Go back to a previous stage or phase (human-initiated) |
+| `haiku_gate_approve` | Approve an ask gate |
 | `haiku_intent_list` | List all intents |
-| `haiku_intent_set` | Set intent field |
-| `haiku_stage_start` | Start a stage |
-| `haiku_stage_set` | Set stage field (phase, etc.) |
-| `haiku_stage_complete` | Complete a stage |
+| `haiku_intent_get` | Read an intent field |
+| `haiku_stage_get` | Read a stage field |
 | `haiku_unit_start` | Start a unit |
 | `haiku_unit_advance_hat` | Move to next hat |
 | `haiku_unit_complete` | Complete a unit |
 | `haiku_unit_increment_bolt` | New iteration cycle |
-| `haiku_gate_approve` | Approve an ask gate |
 | `open_review` | Open visual review page (blocks until user responds) |
 | `ask_user_visual_question` | Open question form (blocks until user responds) |
 | `haiku_studio_list` | List available studios |
