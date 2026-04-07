@@ -28664,28 +28664,49 @@ ${content.slice(0, 2e3)}${content.length > 2e3 ? "\n...(truncated)" : ""}`);
         }
       }
       const worktreePath = action.worktree || "";
+      const useTeams = process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === "true";
+      const hatIdx = hats.indexOf(hat);
+      const nextHat = hatIdx < hats.length - 1 ? hats[hatIdx + 1] : null;
+      const isLastHat = !nextHat;
       if (action.action === "start_unit") {
         sections.push(
           `### Mechanics
 
-Spawn an Agent subagent for this unit. The main agent orchestrates; subagents do unit work.
-` + (worktreePath ? `Worktree: \`${worktreePath}\` \u2014 the subagent works here.
+**You are the orchestrator.** Spawn a subagent for the "${hat}" hat. Do NOT do the hat's work yourself.
+` + (useTeams ? `Agent Teams enabled \u2014 use team-based execution.
+` : "") + (worktreePath ? `Worktree: \`${worktreePath}\`
+` : "") + `
+**Subagent prompt should include:**
+- The hat definition above
+- The unit spec and refs
+- The stage scope constraint
+- Instruction to call \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "${hat}" }\` first
 
-` : "\n") + `The subagent should:
-1. \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "${hat}" }\`
-2. Do the hat's work
-3. Advance hat or complete unit
-
-After the subagent completes, call \`haiku_run_next { intent: "${slug}" }\``
+**After subagent completes:**
+` + (isLastHat ? `This is the last hat. Check completion criteria:
+- If met: \`haiku_unit_complete { intent: "${slug}", stage: "${stage}", unit: "${unit}" }\`
+- If not: \`haiku_unit_increment_bolt { intent: "${slug}", stage: "${stage}", unit: "${unit}" }\`
+` : `Advance to next hat: \`haiku_unit_advance_hat { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "${nextHat}" }\`
+`) + `Then call \`haiku_run_next { intent: "${slug}" }\``
         );
       } else {
         sections.push(
           `### Mechanics
 
-1. Continue the "${hat}" hat's work
-2. \`haiku_unit_advance_hat { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "<next>" }\`
-3. After all hats \u2014 if criteria met: \`haiku_unit_complete { ... }\`, else: \`haiku_unit_increment_bolt { ... }\`
-4. \`haiku_run_next { intent: "${slug}" }\``
+**You are the orchestrator.** Spawn a subagent for the "${hat}" hat. Do NOT do the hat's work yourself.
+` + (useTeams ? `Agent Teams enabled \u2014 use team-based execution.
+` : "") + `
+**Subagent prompt should include:**
+- The hat definition above
+- The unit spec, refs, and any prior hat outputs
+- Instruction to continue the "${hat}" hat's work
+
+**After subagent completes:**
+` + (isLastHat ? `This is the last hat. Check completion criteria:
+- If met: \`haiku_unit_complete { intent: "${slug}", stage: "${stage}", unit: "${unit}" }\`
+- If not: \`haiku_unit_increment_bolt { intent: "${slug}", stage: "${stage}", unit: "${unit}" }\`
+` : `Advance to next hat: \`haiku_unit_advance_hat { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "${nextHat}" }\`
+`) + `Then call \`haiku_run_next { intent: "${slug}" }\``
         );
       }
       break;
@@ -28706,18 +28727,27 @@ Stay within this stage's scope \u2014 do not produce outputs belonging to other 
 Units: ${units.join(", ")}`);
       const worktrees = action.worktrees || {};
       const useTeams = process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === "true";
+      const wave = action.wave;
+      const totalWaves = action.total_waves;
       sections.push(
         `### Mechanics
 
-Spawn ${useTeams ? "an agent team" : "an Agent per unit"}. Each unit has its own worktree \u2014 subagents work there, the main agent orchestrates.
-Include the stage definition in each subagent's prompt.
+` + (wave !== void 0 ? `**Wave ${wave}/${totalWaves ?? "?"}** \u2014 ` : "") + `${units.length} units to run in parallel.
+**You are the orchestrator.** Spawn ${useTeams ? "an agent team" : "one subagent per unit"}. Do NOT do unit work yourself.
+Each subagent runs the FIRST hat ("${firstHat}") only. After all subagents complete, call \`haiku_run_next\` \u2014 the orchestrator will advance hats or start the next wave.
+
+**Each subagent prompt must include:**
+- The hat definition for "${firstHat}"
+- The unit spec and refs
+- The stage scope constraint
+- Instruction to call \`haiku_unit_start\` first
 
 ` + units.map((u3) => {
           const wt = worktrees[u3];
           return `- **${u3}**${wt ? ` (worktree: \`${wt}\`)` : ""}: \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${u3}", hat: "${firstHat}" }\``;
         }).join("\n") + `
 
-After all complete: \`haiku_run_next { intent: "${slug}" }\``
+After all subagents complete: \`haiku_run_next { intent: "${slug}" }\``
       );
       break;
     }
