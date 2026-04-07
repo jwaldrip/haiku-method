@@ -1,7 +1,11 @@
 ---
-status: pending
+status: active
 type: backend
-depends_on: [unit-01-cert-infrastructure]
+depends_on:
+  - unit-01-cert-infrastructure
+bolt: 1
+hat: architect
+started_at: '2026-04-07T14:38:57Z'
 ---
 
 # HTTPS Upgrade
