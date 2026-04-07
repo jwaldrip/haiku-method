@@ -136,17 +136,41 @@ Elaborate on the stage: research the problem space, produce knowledge artifacts,
 11. After user approval: `haiku_stage_set { intent, stage, field: "phase", value: "execute" }`
 12. Call `haiku_run_next` again
 
-## Visual Review Requirements (RFC 2119)
+## User Interaction Tools (RFC 2119)
 
 The key words "MUST", "MUST NOT", "SHALL", "SHALL NOT", "REQUIRED" in this section are to be interpreted as described in RFC 2119.
 
-1. The agent **MUST** use `open_review` to present elaboration plans. Presenting unit lists, criteria, or stage summaries as plain conversation text is a **violation**.
-2. The agent **MUST** run `open_review` in a **background subagent** (`run_in_background: true`). The tool blocks — running it in the foreground freezes the conversation.
-3. The agent **MUST** use `ask_user_visual_question` for any elaboration question involving rich content (specs, wireframes, multi-option comparisons, formatted tables). Simple yes/no clarifications MAY use the terminal.
-4. The agent **MUST** use `pick_design_direction` when presenting design alternatives.
-5. The agent **MUST NOT** present plans, reviews, specs, or structured data as plain conversation text when a visual MCP tool exists for that content type.
-6. The agent **SHALL** verify that the visual review tool was invoked before advancing the phase. If `open_review` was not called, the agent **MUST** call it before setting `phase: "execute"`.
-7. Gate reviews **MUST** use `open_review`. The orchestrator auto-opens it on `gate_ask`. If the response lacks `review_url`, the agent **MUST** call it explicitly in a background subagent.
+### Three interaction modes — when to use each:
+
+**1. Natural conversation (terminal text)**
+- **USE FOR:** Simple yes/no questions, brief clarifications, status updates, error messages, asking the user to describe something
+- The agent **MUST** use natural terminal conversation for questions that need a free-text answer
+- The agent **MUST NOT** use `AskUserQuestion` for free-text prompts — it renders as a clunky select form
+
+**2. `ask_user_visual_question` (rich HTML page in browser)**
+- **USE FOR:** Any content the user needs to SEE to evaluate — specs, wireframes, multi-option comparisons, formatted tables, design decisions, elaboration questions with context
+- The agent **MUST** use this for all rich content during elaboration
+- The agent **MUST** use this in `/haiku:new` Step 9 (intent direction review)
+- The tool opens a styled page in the browser with markdown rendering, images, radio/checkbox options
+- It blocks until the user submits — returns structured answers
+
+**3. `open_review` (full review page in browser, run in background subagent)**
+- **USE FOR:** Formal plan review (elaboration complete), gate approval, stage review
+- The agent **MUST** use this for the final elaboration plan presentation (step 10)
+- The agent **MUST** use this for all gate_ask approvals
+- The agent **MUST** run it in a background subagent — it blocks until the user decides
+- It shows the full intent/unit with inline commenting, annotation canvas, decision form
+
+**4. `pick_design_direction` (design archetype picker)**
+- **USE FOR:** Presenting 2+ design alternatives with visual previews
+- The agent **MUST** use this when the design stage needs a direction choice
+
+### Prohibited:
+
+- The agent **MUST NOT** use `AskUserQuestion` (the Claude Code built-in select/form tool) — it produces ugly select dropdowns. Use `ask_user_visual_question` instead for structured questions, or natural conversation for free-text.
+- The agent **MUST NOT** present unit lists, criteria tables, stage summaries, or specs as plain terminal text when a visual tool exists.
+- The agent **MUST NOT** advance from elaboration to execute without having used `open_review` for the plan.
+- The agent **MUST NOT** approve a gate without having used `open_review`.
 
 **Discovery vs. Output artifacts:** Stages define two artifact directories:
 - `stages/{stage}/discovery/` — knowledge artifacts produced during elaboration (research, analysis, specs)
