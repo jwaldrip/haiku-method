@@ -1,16 +1,17 @@
 ---
 name: unit-02-core-prompts
 type: backend
-status: pending
+status: active
 depends_on:
   - unit-01-prompts-infrastructure
-bolt: 0
-hat: ""
+bolt: 1
+hat: planner
 refs:
   - knowledge/CORE-PROMPTS-DISCOVERY.md
   - knowledge/BEHAVIORAL-SPEC.md
   - knowledge/DATA-CONTRACTS.md
   - stages/design/artifacts/PROMPT-CATALOG.md
+started_at: '2026-04-07T04:06:27Z'
 ---
 
 # Core Workflow Prompts
