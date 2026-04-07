@@ -126,6 +126,69 @@ function checkExternalApproval(url: string): boolean {
 	}
 }
 
+// ── Output validation ─────────────────────────────────────────────────────
+
+/**
+ * Validate that required stage outputs were created during execution.
+ * Returns an error action if outputs are missing, null if all present.
+ */
+function validateStageOutputs(slug: string, stage: string, studio: string, intentDirPath: string): OrchestratorAction | null {
+	const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || ""
+
+	// Read output definitions from the stage's outputs/ directory
+	for (const base of [join(process.cwd(), ".haiku", "studios"), join(pluginRoot, "studios")]) {
+		const outputsDir = join(base, studio, "stages", stage, "outputs")
+		if (!existsSync(outputsDir)) continue
+
+		const outputDefs = readdirSync(outputsDir).filter(f => f.endsWith(".md"))
+		const missing: Array<{ name: string; location: string }> = []
+
+		for (const f of outputDefs) {
+			const raw = readFileSync(join(outputsDir, f), "utf8")
+			const { data } = matter(raw)
+			const required = data.required !== false // default true
+			if (!required) continue
+
+			const location = (data.location as string) || ""
+			if (!location) continue
+
+			// Skip project-tree outputs (code, deployment configs) — can't validate a specific path
+			if (location.startsWith("(")) continue
+
+			// Resolve location with intent slug
+			const resolved = location.replace("{intent-slug}", slug)
+			const absPath = join(process.cwd(), resolved)
+
+			if (resolved.endsWith("/")) {
+				// Directory — check at least one file exists
+				if (!existsSync(absPath) || readdirSync(absPath).filter(e => e !== ".gitkeep").length === 0) {
+					missing.push({ name: (data.name as string) || f, location: resolved })
+				}
+			} else {
+				// Specific file
+				if (!existsSync(absPath)) {
+					missing.push({ name: (data.name as string) || f, location: resolved })
+				}
+			}
+		}
+
+		if (missing.length > 0) {
+			return {
+				action: "outputs_missing",
+				intent: slug,
+				stage,
+				missing,
+				message: `Cannot advance to review: ${missing.length} required output(s) not found.\n` +
+					missing.map(m => `- ${m.name}: expected at ${m.location}`).join("\n") +
+					`\n\nThe execution phase must produce these artifacts. Go back and create them, then call haiku_run_next again.`,
+			}
+		}
+		break // Only check first matching outputs dir
+	}
+
+	return null
+}
+
 // ── Unit type validation ──────────────────────────────────────────────────
 
 /**
@@ -440,6 +503,10 @@ export function runNext(slug: string): OrchestratorAction {
 		)
 
 		if (allComplete) {
+			// Pre-gate check: validate required outputs were created
+			const outputValidation = validateStageOutputs(slug, currentStage, studio, iDir)
+			if (outputValidation) return outputValidation
+
 			// FSM side effect: advance phase
 			fsmAdvancePhase(slug, currentStage, "review")
 

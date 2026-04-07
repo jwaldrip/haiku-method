@@ -27472,6 +27472,49 @@ function checkExternalApproval(url) {
     return false;
   }
 }
+function validateStageOutputs(slug, stage, studio, intentDirPath) {
+  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || "";
+  for (const base of [join5(process.cwd(), ".haiku", "studios"), join5(pluginRoot, "studios")]) {
+    const outputsDir = join5(base, studio, "stages", stage, "outputs");
+    if (!existsSync4(outputsDir)) continue;
+    const outputDefs = readdirSync2(outputsDir).filter((f) => f.endsWith(".md"));
+    const missing = [];
+    for (const f of outputDefs) {
+      const raw = readFileSync3(join5(outputsDir, f), "utf8");
+      const { data } = (0, import_gray_matter3.default)(raw);
+      const required2 = data.required !== false;
+      if (!required2) continue;
+      const location = data.location || "";
+      if (!location) continue;
+      if (location.startsWith("(")) continue;
+      const resolved = location.replace("{intent-slug}", slug);
+      const absPath = join5(process.cwd(), resolved);
+      if (resolved.endsWith("/")) {
+        if (!existsSync4(absPath) || readdirSync2(absPath).filter((e) => e !== ".gitkeep").length === 0) {
+          missing.push({ name: data.name || f, location: resolved });
+        }
+      } else {
+        if (!existsSync4(absPath)) {
+          missing.push({ name: data.name || f, location: resolved });
+        }
+      }
+    }
+    if (missing.length > 0) {
+      return {
+        action: "outputs_missing",
+        intent: slug,
+        stage,
+        missing,
+        message: `Cannot advance to review: ${missing.length} required output(s) not found.
+` + missing.map((m2) => `- ${m2.name}: expected at ${m2.location}`).join("\n") + `
+
+The execution phase must produce these artifacts. Go back and create them, then call haiku_run_next again.`
+      };
+    }
+    break;
+  }
+  return null;
+}
 function validateUnitTypes(intentDirPath, stage, studio) {
   const unitsDir = join5(intentDirPath, "stages", stage, "units");
   if (!existsSync4(unitsDir)) return null;
@@ -27703,6 +27746,8 @@ function runNext(slug) {
       (u3) => u3.status === "pending" && u3.depsComplete && unitWave.get(u3.name) === wave
     );
     if (allComplete) {
+      const outputValidation = validateStageOutputs(slug, currentStage, studio, iDir);
+      if (outputValidation) return outputValidation;
       fsmAdvancePhase(slug, currentStage, "review");
       return {
         action: "advance_phase",
