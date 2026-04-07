@@ -29,7 +29,10 @@ function listOperations(studio: string): { name: string; body: string }[] {
 			const raw = readFileSync(join(opsDir, f), "utf8")
 			results.push({ name: f.replace(/\.md$/, ""), body: raw })
 		}
-		if (results.length > 0) break // project overrides take precedence (intentional: unlike hats/agents which merge across paths, a project dir with any operations replaces all built-in operations)
+		// First non-empty directory wins — project-level overrides plugin-level entirely.
+		// Unlike hats/agents which merge across paths, a project dir with any operations
+		// replaces all built-in operations (intentional: project operations are a full override).
+		if (results.length > 0) break
 	}
 	return results
 }

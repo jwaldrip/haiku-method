@@ -32,6 +32,7 @@ import { createIntentBranch, isOnIntentBranch, createUnitWorktree } from "./git-
 import { getSessionIntent, logSessionEvent } from "./session-metadata.js"
 import { computeWaves } from "./dag.js"
 import type { DAGGraph } from "./types.js"
+import { validateIdentifier } from "./prompts/helpers.js"
 
 // ── Path helpers ───────────────────────────────────────────────────────────
 
@@ -184,7 +185,7 @@ function validateStageOutputs(slug: string, stage: string, studio: string, inten
 					`\n\nThe execution phase must produce these artifacts. Go back and create them, then call haiku_run_next again.`,
 			}
 		}
-		break // Only check first matching outputs dir
+		break // Project-level outputs dir takes precedence over plugin-level (first match wins)
 	}
 
 	return null
@@ -1238,31 +1239,8 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 		return text(JSON.stringify(result, null, 2))
 	}
 
-	if (name === "haiku_gate_approve") {
-		// Approve an ask gate — advance to next stage
-		const root = findHaikuRoot()
-		const iDir = join(root, "intents", args.intent as string)
-		const intentFm = readFrontmatter(join(iDir, "intent.md"))
-		const studio = (intentFm.studio as string) || "ideation"
-		const stages = resolveStudioStages(studio)
-		const currentIdx = stages.indexOf(args.stage as string)
-		const nextStage = currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null
-
-		emitTelemetry("haiku.gate.resolved", { intent: args.intent as string, stage: args.stage as string, gate_type: "ask", outcome: "advanced" })
-
-		if (nextStage) {
-			// FSM side effect: advance stage
-			fsmAdvanceStage(args.intent as string, args.stage as string, nextStage)
-			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
-			return text(JSON.stringify({ action: "advance_stage", intent: args.intent, stage: args.stage, next_stage: nextStage, gate_outcome: "advanced" }))
-		}
-
-		// Last stage — complete the intent
-		fsmCompleteStage(args.intent as string, args.stage as string, "advanced")
-		fsmIntentComplete(args.intent as string)
-		syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
-		return text(JSON.stringify({ action: "intent_complete", intent: args.intent }))
-	}
+	// haiku_gate_approve was removed — ask-gate approval is now handled
+	// directly by haiku_run_next via the FSM (see gate_review flow).
 
 	if (name === "haiku_intent_create") {
 		const description = args.description as string
@@ -1279,6 +1257,8 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 				.slice(0, 50)
 				.replace(/-$/, "")
 		}
+
+		slug = validateIdentifier(slug, "intent slug")
 
 		// One intent per session — reject if this session already has an active intent
 		const stateFile = args.state_file as string | undefined

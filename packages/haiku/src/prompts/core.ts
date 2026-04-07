@@ -241,8 +241,7 @@ function buildRunInstructions(
 					: `Mode: **autonomous** — elaborate independently.\n`) +
 				`1. Research and write discovery artifacts\n` +
 				`2. Break work into units at \`.haiku/intents/${slug}/stages/${stage}/units/\`\n` +
-				`3. \`open_review { intent_dir: "${dir}", review_type: "intent" }\`\n` +
-				`4. After approval: call \`haiku_run_next { intent: "${slug}" }\` — the orchestrator advances the phase automatically`,
+				`3. Call \`haiku_run_next { intent: "${slug}" }\` — the orchestrator opens the review and advances the phase automatically`,
 			)
 			break
 		}
@@ -409,9 +408,8 @@ function buildRunInstructions(
 				`Stage "${stage}" is complete and awaiting your approval to advance` +
 				(nextStage ? ` to "${nextStage}"` : "") + `.\n\n` +
 				`### Instructions\n\n` +
-				`CRITICAL: You MUST call \`open_review\` immediately as your first action. Do NOT skip this step.\n\n` +
-				`1. Call \`open_review { intent_dir: "${dir}", review_type: "intent" }\` — this blocks until the user responds\n` +
-				`2. If approved: \`haiku_gate_approve { intent: "${slug}", stage: "${stage}" }\` then \`haiku_run_next { intent: "${slug}" }\`\n` +
+				`1. Call \`haiku_run_next { intent: "${slug}" }\` — the orchestrator opens the review UI and blocks until the user responds\n` +
+				`2. If approved: the FSM advances automatically\n` +
 				`3. If changes_requested: analyze annotations and route to /haiku:refine for the appropriate upstream stage`,
 			)
 			break
@@ -497,6 +495,16 @@ function buildRunInstructions(
 				`Follow the same instructions as start_stage, but for this composite studio:stage pair.\n\n` +
 				`Call \`haiku_run_next { intent: "${slug}" }\` to continue.`,
 			)
+			break
+		}
+
+		case "outputs_missing": {
+			sections.push(`## Missing Required Outputs\n\n${action.message}`)
+			break
+		}
+
+		case "spec_validation_failed": {
+			sections.push(`## Spec Validation Failed\n\n${action.message}`)
 			break
 		}
 
@@ -612,8 +620,7 @@ registerPrompt({
 			`5. Write \`.haiku/intents/{slug}/intent.md\` with frontmatter (studio, mode, status: active, created date)\n` +
 			`6. Create directories: knowledge/, stages/, state/\n` +
 			`7. \`git add .haiku/intents/{slug}/\` && \`git commit -m "haiku: new intent -- {slug}"\`\n` +
-			`8. Present intent for review via \`open_review { intent_dir: ".haiku/intents/{slug}", review_type: "intent" }\` — this blocks until the user approves\n` +
-			`9. On approval, invoke /haiku:run (continuous) or report ready (discrete)`,
+			`8. Invoke /haiku:run — the orchestrator opens the review and advances automatically (continuous) or report ready (discrete)`,
 		)
 
 		const instructionText = contextParts.join("\n\n")
