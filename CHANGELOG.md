@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.85.0] - 2026-04-03
+
+Not logged in · Please run /login
+
 ## [1.84.1] - 2026-04-03
 
 Looking at the commits, version 1.84.1 reverts the haiku rebrand that was introduced in the previous release. Since the revert undoes changes without introducing new functionality or fixes a substantive issue, here's the minimal changelog entry:
