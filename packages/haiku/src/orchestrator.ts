@@ -83,6 +83,24 @@ function resolveStageReview(studio: string, stage: string): string {
 	return "auto"
 }
 
+function resolveStageMetadata(studio: string, stage: string): { description: string; unit_types: string[]; body: string } | null {
+	const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || ""
+	for (const base of [join(process.cwd(), ".haiku", "studios"), join(pluginRoot, "studios")]) {
+		const stageFile = join(base, studio, "stages", stage, "STAGE.md")
+		if (existsSync(stageFile)) {
+			const raw = readFileSync(stageFile, "utf8")
+			const fm = readFrontmatter(stageFile)
+			const { content } = matter(raw)
+			return {
+				description: (fm.description as string) || stage,
+				unit_types: (fm.unit_types as string[]) || [],
+				body: content.trim(),
+			}
+		}
+	}
+	return null
+}
+
 // ── Action types ───────────────────────────────────────────────────────────
 
 export interface OrchestratorAction {
@@ -169,6 +187,7 @@ export function runNext(slug: string): OrchestratorAction {
 			stage: currentStage,
 			hats,
 			phase: "decompose",
+			stage_metadata: resolveStageMetadata(studio, currentStage),
 			...(follows ? { follows, parent_knowledge: parentKnowledge } : {}),
 			message: follows
 				? `Start stage '${currentStage}' — this intent follows '${follows}'. Load parent knowledge before elaborating.`
@@ -198,6 +217,7 @@ export function runNext(slug: string): OrchestratorAction {
 				studio,
 				stage: currentStage,
 				elaboration: elaborationMode,
+				stage_metadata: resolveStageMetadata(studio, currentStage),
 				message: `Elaborate stage '${currentStage}' into units with completion criteria`,
 			}
 		}
@@ -241,6 +261,7 @@ export function runNext(slug: string): OrchestratorAction {
 				hat: unit.hat,
 				bolt: unit.bolt,
 				hats,
+				stage_metadata: resolveStageMetadata(studio, currentStage),
 				message: `Continue unit '${unit.name}' — hat: ${unit.hat}, bolt: ${unit.bolt}`,
 			}
 		}
@@ -256,6 +277,7 @@ export function runNext(slug: string): OrchestratorAction {
 				units: readyUnits.map(u => u.name),
 				first_hat: hats[0] || "",
 				hats,
+				stage_metadata: resolveStageMetadata(studio, currentStage),
 				message: `${readyUnits.length} units ready for parallel execution: ${readyUnits.map(u => u.name).join(", ")}`,
 			}
 		}
@@ -271,6 +293,7 @@ export function runNext(slug: string): OrchestratorAction {
 				unit: unit.name,
 				first_hat: hats[0] || "",
 				hats,
+				stage_metadata: resolveStageMetadata(studio, currentStage),
 				message: `Start unit '${unit.name}' with hat '${hats[0] || ""}' in stage '${currentStage}'`,
 			}
 		}
@@ -363,7 +386,7 @@ export function runNext(slug: string): OrchestratorAction {
 			return { action: "intent_complete", intent: slug, studio, message: `All stages complete for intent '${slug}'` }
 		}
 		const hats = resolveStageHats(studio, nextStage)
-		return { action: "start_stage", intent: slug, studio, stage: nextStage, hats, phase: "decompose", message: `Start stage '${nextStage}'` }
+		return { action: "start_stage", intent: slug, studio, stage: nextStage, hats, phase: "decompose", stage_metadata: resolveStageMetadata(studio, nextStage), message: `Start stage '${nextStage}'` }
 	}
 
 	return { action: "error", message: `Unknown state for stage '${currentStage}' — phase: ${phase}, status: ${stageStatus}` }
