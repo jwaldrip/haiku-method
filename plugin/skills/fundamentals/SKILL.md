@@ -41,9 +41,11 @@ Every `haiku_run_next` response includes `stage_metadata` — the stage's descri
 | `haiku_unit_advance_hat` | Move to next hat |
 | `haiku_unit_complete` | Complete a unit |
 | `haiku_unit_increment_bolt` | New iteration cycle |
-| `open_review` | Open visual review page (blocks until user responds) |
 | `ask_user_visual_question` | Open question form (blocks until user responds) |
+| `pick_design_direction` | Open design direction picker |
 | `haiku_studio_list` | List available studios |
+
+Review gates are handled automatically by `haiku_run_next` — it opens the review UI, blocks until the user decides, and returns the outcome. Do NOT call `open_review` directly.
 
 ## Commands (MCP Prompts)
 

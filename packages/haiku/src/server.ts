@@ -159,32 +159,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 		...orchestratorToolDefs,
 		// State management tools
 		...stateToolDefs,
-		{
-			name: "open_review",
-			description:
-				"Open a visual review page in the browser for an H·AI·K·U intent or unit. " +
-				"Parses intent/unit data and serves an interactive HTML review page.",
-			inputSchema: {
-				type: "object" as const,
-				properties: {
-					intent_dir: {
-						type: "string",
-						description:
-							"Path to the intent directory (e.g., .haiku/intents/my-intent)",
-					},
-					review_type: {
-						type: "string",
-						enum: ["intent", "unit"],
-						description: "Type of review: intent-level or unit-level",
-					},
-					target: {
-						type: "string",
-						description: "Unit slug to review (required for unit reviews)",
-					},
-				},
-				required: ["intent_dir", "review_type"],
-			},
-		},
+		// open_review is internal — used by the FSM for gate_ask, not exposed to the agent
 		{
 			name: "get_review_status",
 			description:
