@@ -124,6 +124,46 @@ function checkExternalApproval(url: string): boolean {
 	}
 }
 
+// ── Unit type validation ──────────────────────────────────────────────────
+
+/**
+ * Validate all units in a stage against the stage's allowed unit_types.
+ * Returns violations or null if all pass.
+ */
+function validateUnitTypes(intentDirPath: string, stage: string, studio: string): OrchestratorAction | null {
+	const unitsDir = join(intentDirPath, "stages", stage, "units")
+	if (!existsSync(unitsDir)) return null
+
+	const metadata = resolveStageMetadata(studio, stage)
+	const allowedTypes = metadata?.unit_types || []
+	if (allowedTypes.length === 0) return null
+
+	const unitFiles = readdirSync(unitsDir).filter(f => f.endsWith(".md"))
+	const violations: Array<{ unit: string; type: string }> = []
+	for (const f of unitFiles) {
+		const fm = readFrontmatter(join(unitsDir, f))
+		const unitType = (fm.type as string) || ""
+		if (unitType && !allowedTypes.includes(unitType)) {
+			violations.push({ unit: f.replace(".md", ""), type: unitType })
+		}
+	}
+
+	if (violations.length > 0) {
+		const slug = intentDirPath.split("/intents/")[1] || ""
+		return {
+			action: "spec_validation_failed",
+			intent: slug,
+			stage,
+			violations,
+			allowed_types: allowedTypes,
+			message: `${violations.length} unit(s) have types not allowed in stage '${stage}' (allowed: ${allowedTypes.join(", ")}). ` +
+				violations.map(v => `${v.unit} is '${v.type}'`).join(", ") +
+				`. Fix the unit types or move them to the appropriate stage.`,
+		}
+	}
+	return null
+}
+
 // ── Action types ───────────────────────────────────────────────────────────
 
 export interface OrchestratorAction {
@@ -332,33 +372,8 @@ export function runNext(slug: string): OrchestratorAction {
 			}
 		}
 		// Units exist — validate types before allowing execution
-		const stageMetadata = resolveStageMetadata(studio, currentStage)
-		const allowedTypes = stageMetadata?.unit_types || []
-
-		if (allowedTypes.length > 0) {
-			const unitFiles = readdirSync(unitsDir).filter(f => f.endsWith(".md"))
-			const violations: Array<{ unit: string; type: string }> = []
-			for (const f of unitFiles) {
-				const fm = readFrontmatter(join(unitsDir, f))
-				const unitType = (fm.type as string) || ""
-				if (unitType && !allowedTypes.includes(unitType)) {
-					violations.push({ unit: f.replace(".md", ""), type: unitType })
-				}
-			}
-			if (violations.length > 0) {
-				// Block the transition — units have wrong types for this stage
-				return {
-					action: "spec_validation_failed",
-					intent: slug,
-					stage: currentStage,
-					violations,
-					allowed_types: allowedTypes,
-					message: `Cannot advance to execute: ${violations.length} unit(s) have types not allowed in stage '${currentStage}' (allowed: ${allowedTypes.join(", ")}). ` +
-						violations.map(v => `${v.unit} is '${v.type}'`).join(", ") +
-						`. Fix the unit types or move them to the appropriate stage, then call haiku_run_next again.`,
-				}
-			}
-		}
+		const typeViolation = validateUnitTypes(iDir, currentStage, studio)
+		if (typeViolation) return typeViolation
 
 		// All units valid — advance to execute
 		fsmAdvancePhase(slug, currentStage, "execute")
@@ -375,6 +390,10 @@ export function runNext(slug: string): OrchestratorAction {
 
 	// Stage in execute phase
 	if (phase === "execute") {
+		// Validate unit types on every execute call — catch violations that snuck through
+		const execTypeViolation = validateUnitTypes(iDir, currentStage, studio)
+		if (execTypeViolation) return execTypeViolation
+
 		const units = listUnits(iDir, currentStage)
 		const readyUnits = units.filter(u => u.status === "pending" && u.depsComplete)
 		const activeUnits = units.filter(u => u.status === "active")
