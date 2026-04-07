@@ -16,14 +16,14 @@ allowed-tools:
   - TaskGet
 ---
 
-# AI-DLC Pre-Delivery Review
+# H·AI·K·U Pre-Delivery Review
 
 Fresh-context, multi-agent code review of the full diff against the base branch. Catches issues locally before external review bots or CI see the PR — eliminating the "push → bot finds issues → fix → push → repeat" cycle.
 
 This skill can be invoked:
-- **Standalone** — `/ai-dlc:review` on any branch with uncommitted or committed changes
-- **From execute** — called automatically by `/ai-dlc:advance` before PR creation (intent/hybrid strategy)
-- **From quick mode** — called automatically by `/ai-dlc:quick` after the hat loop completes
+- **Standalone** — `/haiku:review` on any branch with uncommitted or committed changes
+- **From execute** — called automatically by `/haiku:advance` before PR creation (intent/hybrid strategy)
+- **From quick mode** — called automatically by `/haiku:quick` after the hat loop completes
 
 ---
 
@@ -32,9 +32,9 @@ This skill can be invoked:
 ### Determine diff target
 
 ```bash
-# If inside an AI-DLC intent worktree, use the intent's base branch
+# If inside an H·AI·K·U intent worktree, use the intent's base branch
 INTENT_DIR=""
-for dir in .ai-dlc/*/; do
+for dir in .haiku/*/; do
   [ -f "${dir}intent.md" ] && INTENT_DIR="$dir" && break
 done
 
@@ -88,8 +88,8 @@ fi
 ### Load review agent config
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
-REVIEW_AGENTS=$(get_setting_value "review_agents")
+# Read review agent configuration from settings via MCP
+REVIEW_AGENTS=$(haiku_settings_get { field: "review_agents" } || echo "{}")
 # Defaults: security=true, performance=true, architecture=true, correctness=true, test_quality=true
 # Optional: data_integrity, schema_drift, accessibility, api_contract, design_system
 ```
@@ -108,9 +108,13 @@ If the diff is empty, tell the user "No changes to review against `{DIFF_BASE}`"
 
 ## Step 1: Multi-Agent Review
 
-Spawn specialized review agents **in parallel** using the Agent tool. Each agent gets the full diff, the review guidelines (REVIEW.md + CLAUDE.md), and a focused mandate. Agents run in fresh contexts with no builder bias.
+## Multi-Agent Review Requirements (RFC 2119)
 
-**CRITICAL: Every agent MUST receive the REVIEW.md and CLAUDE.md content as part of its prompt.** These are the project's review rules — findings that violate REVIEW.md "Always check" items should be HIGH severity, and files matching REVIEW.md "Skip" patterns should be excluded.
+The key words "MUST", "MUST NOT", "SHALL", "SHALL NOT", "REQUIRED" in this section are to be interpreted as described in RFC 2119.
+
+The agent **MUST** spawn specialized review agents **in parallel** using the Agent tool. Each agent gets the full diff, the review guidelines (REVIEW.md + CLAUDE.md), and a focused mandate. Agents **MUST** run in fresh contexts with no builder bias.
+
+Every agent **MUST** receive the REVIEW.md and CLAUDE.md content as part of its prompt. These are the project's review rules — findings that violate REVIEW.md "Always check" items **MUST** be HIGH severity, and files matching REVIEW.md "Skip" patterns **MUST** be excluded.
 
 ### Core agents (always run)
 
@@ -181,7 +185,7 @@ For each optional agent enabled in `REVIEW_AGENTS`, spawn an additional agent:
 
 ### Spawn all agents in parallel
 
-Launch ALL applicable agents simultaneously — do not serialize them. Each agent is independent and reviews the same diff from its own perspective.
+The agent **MUST** launch ALL applicable agents simultaneously — the agent **MUST NOT** serialize them. Each agent is independent and reviews the same diff from its own perspective.
 
 ---
 
@@ -218,7 +222,7 @@ After all agents complete, collect their YAML findings and:
 
 After fixing all HIGH findings:
 
-Stage only the files that were modified during fixes (not `git add -A` which would sweep in unrelated changes):
+The agent **MUST** stage only the files that were modified during fixes (the agent **MUST NOT** use `git add -A` which would sweep in unrelated changes):
 
 ```bash
 # Stage only files touched by the fixes
@@ -241,7 +245,7 @@ FULL_DIFF=$(git diff "${DIFF_BASE}...HEAD" 2>/dev/null || git diff "${DIFF_BASE}
 DIFF_STAT=$(git diff --stat "${DIFF_BASE}...HEAD" 2>/dev/null || git diff --stat "${DIFF_BASE}..HEAD")
 ```
 
-Spawn only the agents that previously found HIGH issues. If they find new HIGH issues (introduced by the fix), fix those too. **Loop until no HIGH findings remain or 3 iterations have passed.**
+The agent **MUST** spawn only the agents that previously found HIGH issues. If they find new HIGH issues (introduced by the fix), the agent **MUST** fix those too. The agent **MUST** loop until no HIGH findings remain or 3 iterations have passed.
 
 ### Circuit breaker
 
@@ -294,7 +298,7 @@ Present the review results:
 
 ## Step 5: Return Result
 
-When called from `/ai-dlc:advance` (as a subagent), return a structured result:
+When called from `/haiku:advance` (as a subagent), return a structured result:
 
 ```yaml
 status: approved | needs_attention | aborted
@@ -313,7 +317,7 @@ When called standalone, the report from Step 4 is the final output.
 
 ## Standalone Usage
 
-When invoked directly via `/ai-dlc:review`:
+When invoked directly via `/haiku:review`:
 
 1. Run Steps 0-4 as described above
 2. After the review completes (**APPROVED** or **NEEDS ATTENTION** where the user chose "Proceed anyway"), ask:

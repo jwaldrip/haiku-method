@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://ai-dlc.dev/schemas/providers/linear.schema.json",
+	"$id": "https://haiku.dev/schemas/providers/linear.schema.json",
 	"title": "Linear Provider Config",
 	"description": "Provider-specific configuration for Linear ticketing",
 	"type": "object",
@@ -55,6 +55,11 @@
 				"type": "string",
 				"enum": ["required", "optional", "none"]
 			}
+		},
+		"url_template": {
+			"type": "string",
+			"description": "URL template for linking to Linear issues. Variables: {team_id} (Linear team identifier), {key} (issue key, e.g. TEAM-123)",
+			"default": "https://linear.app/{team_id}/issue/{key}"
 		}
 	},
 	"required": ["project_key"],

@@ -7,17 +7,17 @@ argument-hint: "[hat-name]"
 
 ## Name
 
-`ai-dlc:pressure-testing` - Evaluation-Driven Development for hat definitions.
+`haiku:pressure-testing` - Evaluation-Driven Development for hat definitions.
 
 ## Synopsis
 
 ```
-/ai-dlc:pressure-testing [hat-name]
+/haiku:pressure-testing [hat-name]
 ```
 
 ## Description
 
-**User-facing command** - Apply TDD (RED-GREEN-REFACTOR) to AI-DLC's own hat definitions. Tests that hat instructions hold up under stress -- when the agent is tempted to rationalize skipping steps.
+**User-facing command** - Apply TDD (RED-GREEN-REFACTOR) to H·AI·K·U's own hat definitions. Tests that hat instructions hold up under stress -- when the agent is tempted to rationalize skipping steps.
 
 **Core principle: NO SKILL WITHOUT A FAILING TEST FIRST.**
 
@@ -28,7 +28,7 @@ This skill systematically discovers loopholes in hat instructions by simulating 
 ### RED: Establish Baseline Failure
 
 1. Pick a hat to test (from argument or prompt user)
-2. Read the hat definition from `.ai-dlc/hats/{hat-name}.md`
+2. Resolve the hat definition from the active stage
 3. Design a pressure scenario combining 3+ pressures from the table below:
 
 | Pressure Type | Example |
@@ -61,7 +61,7 @@ Make a concrete decision and justify it.
 
 #### Documenting the RED Result
 
-Record the following in `.ai-dlc/pressure-tests/{hat-name}/{scenario-slug}.md`:
+Record the following in `.haiku/pressure-tests/{hat-name}/{scenario-slug}.md`:
 
 ```markdown
 ---
@@ -178,22 +178,30 @@ Hat definition held under pressure. No changes needed.
 
 ```bash
 HAT_NAME="${1}"
-HAT_FILE=".ai-dlc/hats/${HAT_NAME}.md"
+# Read hat instructions from the hat file directly (no shell lib needed)
+HAT_FILE="$CLAUDE_PLUGIN_ROOT/studios/software/stages/development/hats/$HAT_NAME.md"
+HAT_INSTRUCTIONS=$(cat "$HAT_FILE" 2>/dev/null || echo "")
 ```
 
-If no hat name provided, list available hats:
+If no hat name provided, list available hats from stages:
 ```bash
-ls .ai-dlc/hats/*.md 2>/dev/null | sed 's|.*/||;s|\.md$||'
+# List hats from all stages in the software studio (no shell lib needed)
+for stage_file in "${CLAUDE_PLUGIN_ROOT}/studios/software/stages/"*/STAGE.md; do
+  [ -f "$stage_file" ] || continue
+  stage=$(basename "$(dirname "$stage_file")")
+  hats=$(haiku_studio_stage_get { studio: "software", stage: "$stage" } | parse hats and join with " ")
+  echo "$stage: $hats"
+done
 ```
 
 Use `AskUserQuestion` to let the user pick a hat.
 
-If `HAT_FILE` does not exist:
+If hat instructions are empty:
 ```
-No hat found at .ai-dlc/hats/{hat-name}.md
+No hat definition found for {hat-name} in any stage.
 
-Available hats:
-{list of .md files in .ai-dlc/hats/}
+Available hats by stage:
+{list of stages and their hats}
 ```
 
 ### Step 1: Design Pressure Scenario
@@ -237,7 +245,7 @@ Use `AskUserQuestion` to get approval.
 5. Write the RED phase results to the scenario file
 
 ```bash
-mkdir -p .ai-dlc/pressure-tests/${HAT_NAME}
+mkdir -p .haiku/pressure-tests/${HAT_NAME}
 ```
 
 If the agent followed the rules even without the anti-rationalization table, note this -- it means the base instructions are strong for this scenario. Consider designing a harder scenario.
@@ -278,13 +286,13 @@ Add this to {hat-name}.md? (yes / modify)
 ### Step 5: Commit Artifacts
 
 ```bash
-git add .ai-dlc/pressure-tests/${HAT_NAME}/${SCENARIO_SLUG}.md
+git add .haiku/pressure-tests/${HAT_NAME}/${SCENARIO_SLUG}.md
 git commit -m "pressure-test(${HAT_NAME}): ${SCENARIO_SLUG}"
 ```
 
-If hat definition was updated:
+If hat augmentation was updated:
 ```bash
-git add .ai-dlc/hats/${HAT_NAME}.md
+git add .haiku/hats/${HAT_NAME}.md
 git commit -m "refine(${HAT_NAME}): close rationalization loophole from pressure test"
 ```
 
@@ -311,6 +319,6 @@ Present the results:
 {List of anti-rationalization rows added, if any}
 
 ### Next Steps
-- Run `/ai-dlc:pressure-testing {hat-name}` again with a different scenario
+- Run `/haiku:pressure-testing {hat-name}` again with a different scenario
 - Test other hats: {list of untested hats}
 ```

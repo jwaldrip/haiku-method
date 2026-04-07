@@ -1,25 +1,27 @@
 ---
-description: Refine intent or unit specs mid-execution without losing progress
-argument-hint: "[unit-slug]"
+description: Refine intent, unit, or upstream stage outputs mid-execution without losing progress
+argument-hint: "[unit-slug | stage:<stage-name>]"
 ---
 
-# AI-DLC Refine
+# H·AI·K·U Refine
 
-You are refining an AI-DLC intent or unit specification mid-execution. Your job is to collaborate with the user to amend specs without destroying in-flight progress.
+You are refining an H·AI·K·U artifact mid-execution. Your job is to amend specs without destroying in-flight progress. Supports three targets: intent-level specs, specific units, and **upstream stage outputs** (stage-scoped refinement).
 
 ---
 
-## Pre-check: Reject Cowork Mode
+## Pre-check: Reject Cowork Mode (RFC 2119)
+
+The key words "MUST", "MUST NOT", "SHALL", "SHALL NOT", "REQUIRED" in this section are to be interpreted as described in RFC 2119.
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /ai-dlc:refine cannot run in cowork mode."
+  echo "ERROR: /haiku:refine cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi
 ```
 
-If `CLAUDE_CODE_IS_COWORK=1`, stop immediately with the message above. Do NOT proceed.
+If `CLAUDE_CODE_IS_COWORK=1`, the agent **MUST** stop immediately with the message above. The agent **MUST NOT** proceed.
 
 ---
 
@@ -27,30 +29,31 @@ If `CLAUDE_CODE_IS_COWORK=1`, stop immediately with the message above. Do NOT pr
 
 ```bash
 # Intent-level state is stored on current branch (intent branch)
-# Intent slug is derived from .ai-dlc directory structure
-INTENT_SLUG=$(basename "$(find .ai-dlc -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)")
-INTENT_DIR=".ai-dlc/${INTENT_SLUG}"
-STATE=$(dlc_state_load "$INTENT_DIR" "iteration.json")
-INTENT_DIR=".ai-dlc/${INTENT_SLUG}"
+# Intent slug is derived from .haiku directory structure
+INTENT_SLUG=$(basename "$(find .haiku -maxdepth 2 -name 'intent.md' -exec dirname {} \; | head -1)")
+INTENT_DIR=".haiku/intents/${INTENT_SLUG}"
+STATE=$(haiku_stage_get { intent: INTENT_SLUG, stage: ACTIVE_STAGE, field: "phase" })
 ```
 
 If no state exists:
 ```
-No AI-DLC state found. Run /ai-dlc:elaborate to start a new task.
+No H·AI·K·U state found. Run /haiku:elaborate to start a new task.
 ```
 
 If status is "completed":
 ```
-Intent is already complete. Run /ai-dlc:elaborate to start a new task.
+Intent is already complete. Run /haiku:elaborate to start a new task.
 ```
 
 ---
 
 ## Step 2: Determine Refinement Target
 
-If an argument was provided (unit slug), target that unit directly.
+**If argument starts with `stage:`** (e.g., `stage:design`): target that stage for stage-scoped refinement. Skip to Step 3b.
 
-If no argument provided, ask what to refine:
+**If argument is a unit slug**: target that unit directly.
+
+**If no argument provided**, ask what to refine:
 
 ```json
 {
@@ -59,21 +62,26 @@ If no argument provided, ask what to refine:
     "header": "Target",
     "options": [
       {"label": "Intent-level spec", "description": "Refine problem statement, solution approach, domain model, or intent-level success criteria"},
-      {"label": "Specific unit", "description": "Refine a specific unit's spec, criteria, or boundaries"}
+      {"label": "Specific unit", "description": "Refine a specific unit's spec, criteria, or boundaries"},
+      {"label": "Upstream stage output", "description": "Add or update an output from a prior stage (e.g., add a missing design screen)"}
     ],
     "multiSelect": false
   }]
 }
 ```
 
+If "Upstream stage output" is selected, list completed and in-progress stages and ask which one to refine.
+
 If "Specific unit" is selected, list available units and ask which one:
 
 ```bash
 # List all units
-for unit_file in "$INTENT_DIR"/unit-*.md; do
+for unit_file in "$INTENT_DIR"/stages/*/units/unit-*.md; do
   [ -f "$unit_file" ] || continue
   unit_name=$(basename "$unit_file" .md)
-  status=$(dlc_frontmatter_get "status" "$unit_file" 2>/dev/null || echo "pending")
+  unit_name=$(basename "$unit_file" .md)
+  stage_name=$(basename "$(dirname "$(dirname "$unit_file")")")
+  status=$(haiku_unit_get { intent: "$INTENT_SLUG", stage: "$stage_name", unit: "$unit_name", field: "status" } 2>/dev/null || echo "pending")
   echo "- **${unit_name}** (${status})"
 done
 ```
@@ -102,6 +110,56 @@ Display the full file contents in a markdown code block.
 
 ---
 
+## Step 3b: Stage-Scoped Refinement
+
+When the target is an upstream stage, the goal is to add or update a **specific output** from that stage without re-running the entire stage.
+
+1. **Load the target stage's definition:**
+   ```bash
+   # Read stage metadata via MCP tool
+   local metadata=$(haiku_stage_get { intent: "$INTENT_SLUG", stage: "$TARGET_STAGE", field: "metadata" })
+   ```
+
+2. **Show existing stage outputs:**
+   List the stage's completed units and their outputs. Show what already exists so the user/agent can identify what's missing.
+
+3. **Create a targeted unit** in the upstream stage:
+   - Write a new unit file to `.haiku/intents/{slug}/stages/{target-stage}/units/`
+   - The unit describes only the new/updated output (e.g., "Design screen for feature X")
+   - Mark it `status: pending`
+
+4. **Run the upstream stage's hats for this unit only:**
+   - Load the target stage's hat sequence
+   - Execute each hat for the new unit (bolt loop)
+   - Run quality gates
+   - The agent **MUST NOT** re-run existing completed units in that stage
+
+5. **Persist the updated output:**
+   ```bash
+   haiku_stage_set { intent: "$INTENT_SLUG", stage: "$TARGET_STAGE", field: "outputs_persisted", value: "true" }
+   ```
+
+6. **Return to the current stage:**
+   - The current stage's elaboration or execution can now reference the new/updated upstream output
+   - The agent **MUST NOT** change `active_stage` — the upstream refinement is a scoped side-trip
+
+7. **Commit:**
+   ```bash
+   git add "$INTENT_DIR/stages/$TARGET_STAGE/"
+   git commit -m "refine: add output to ${TARGET_STAGE} stage for ${INTENT_SLUG}"
+   ```
+
+**This can be invoked by the agent autonomously** during elaboration (step 4.1 of the stage loop) when a gap is detected, or by the user explicitly via `/haiku:refine stage:<name>`. When invoked by the agent, it should still surface what it's doing:
+
+```
+Gap detected: development stage needs a design for screen X, but design stage output doesn't include it.
+Running targeted refinement on the design stage to add this screen.
+```
+
+After stage-scoped refinement completes, skip to Step 7 (Handoff).
+
+---
+
 ## Step 4: Collaborate on Amendments
 
 Work with the user to identify what needs to change. Use `AskUserQuestion` to focus the refinement:
@@ -127,7 +185,7 @@ For each selected aspect:
 2. Ask the user what should change
 3. Confirm the updated content before writing
 
-**CRITICAL:** Preserve all frontmatter fields (status, depends_on, branch, discipline, ticket, etc.) when rewriting files. Only modify the content sections being refined.
+**CRITICAL:** The agent **MUST** preserve all frontmatter fields (status, depends_on, branch, discipline, ticket, etc.) when rewriting files. The agent **MUST** only modify the content sections being refined.
 
 ---
 
@@ -172,24 +230,21 @@ For each affected unit:
 3. Write the updated file
 
 Update state:
-- For each affected unit, reset `hat` to the first hat in the workflow (in unit frontmatter)
-- Clear `currentUnit` in iteration.json
+- For each affected unit, reset `hat` to the first hat in its stage (in unit frontmatter)
+- The current unit tracking is managed by stage state via MCP tools
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
-
-# Re-queue affected units and reset hat tracking in frontmatter
-WORKFLOW_HATS=$(echo "$STATE" | dlc_json_get "workflow")
-FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
+# Re-queue affected units and reset hat tracking via MCP tools
+ACTIVE_STAGE=$(haiku_intent_get { slug, field: "active_stage" } 2>/dev/null || echo "development")
+STUDIO=$(haiku_intent_get { slug, field: "studio" } 2>/dev/null || echo "software")
+# Read first hat from the stage definition via MCP
+FIRST_HAT=$(haiku_studio_stage_get { studio: "$STUDIO", stage: "$ACTIVE_STAGE" } | parse hats[0] || echo "planner")
 
 for unit_file in $AFFECTED_UNITS; do
-  update_unit_status "$unit_file" "pending"
-  dlc_frontmatter_set "hat" "${FIRST_HAT}" "$unit_file"
+  UNIT_NAME=$(basename "$unit_file" .md)
+  haiku_unit_set { intent: "$INTENT_SLUG", stage: "$ACTIVE_STAGE", unit: "$UNIT_NAME", field: "status", value: "pending" }
+  haiku_unit_advance_hat { intent: "$INTENT_SLUG", stage: "$ACTIVE_STAGE", unit: "$UNIT_NAME", hat: "${FIRST_HAT}" }
 done
-
-# Clear currentUnit in iteration.json
-STATE=$(echo "$STATE" | dlc_json_set "currentUnit" "")
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
 
 git add "$INTENT_DIR/"
 git commit -m "refine: re-queue affected units for ${INTENT_SLUG}"
@@ -200,34 +255,26 @@ git commit -m "refine: re-queue affected units for ${INTENT_SLUG}"
 Re-queue only the target unit:
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
-
-# Re-queue the specific unit
-update_unit_status "$INTENT_DIR/${UNIT_NAME}.md" "pending"
+# Re-queue the specific unit via MCP tools
+haiku_unit_set { intent: "$INTENT_SLUG", stage: "$ACTIVE_STAGE", unit: "$UNIT_NAME", field: "status", value: "pending" }
 
 # Reset hat tracking in unit frontmatter
-WORKFLOW_HATS=$(echo "$STATE" | dlc_json_get "workflow")
-FIRST_HAT=$(echo "$WORKFLOW_HATS" | jq -r '.[0]')
-dlc_frontmatter_set "hat" "${FIRST_HAT}" "$INTENT_DIR/${UNIT_NAME}.md"
-
-# Clear currentUnit if it matches
-CURRENT_UNIT=$(echo "$STATE" | dlc_json_get "currentUnit" "")
-if [ "$CURRENT_UNIT" = "$UNIT_NAME" ]; then
-  STATE=$(echo "$STATE" | dlc_json_set "currentUnit" "")
-fi
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+ACTIVE_STAGE=$(haiku_intent_get { slug, field: "active_stage" } 2>/dev/null || echo "development")
+STUDIO=$(haiku_intent_get { slug, field: "studio" } 2>/dev/null || echo "software")
+# Read first hat from the stage definition via MCP
+FIRST_HAT=$(haiku_studio_stage_get { studio: "$STUDIO", stage: "$ACTIVE_STAGE" } | parse hats[0] || echo "planner")
+haiku_unit_advance_hat { intent: "$INTENT_SLUG", stage: "$ACTIVE_STAGE", unit: "$UNIT_NAME", hat: "${FIRST_HAT}" }
 
 git add "$INTENT_DIR/"
 git commit -m "refine: re-queue ${UNIT_NAME} for ${INTENT_SLUG}"
 ```
 
-**Note:** Units that are already completed and unaffected by the change stay completed. Only re-queue units that are directly impacted.
+**Note:** Units that are already completed and unaffected by the change **MUST** stay completed. The agent **MUST** only re-queue units that are directly impacted.
 
-If `integratorComplete` was set to `true` in `iteration.json`, reset it to `false` since the spec has changed:
+If the integrator had completed, reset it since the spec has changed:
 
-```bash
-STATE=$(echo "$STATE" | dlc_json_set "integratorComplete" "false")
-dlc_state_save "$INTENT_DIR" "iteration.json" "$STATE"
+```
+haiku_stage_set { intent: INTENT_SLUG, stage: ACTIVE_STAGE, field: "integrator_complete", value: "false" }
 ```
 
 ---
@@ -244,5 +291,5 @@ Re-queued units: {list of re-queued units}
 Unaffected units: {list of units that stay completed}
 
 To resume the build loop:
-  /ai-dlc:execute
+  /haiku:execute
 ```

@@ -81,7 +81,7 @@ export function renderStaticLayout(
   <!-- Dark mode: system preference default, toggle cycles system→dark→light -->
   <script>
     (function() {
-      var KEY = 'ai-dlc-dashboard-theme';
+      var KEY = 'haiku-dashboard-theme';
       function getEffective() {
         var s = localStorage.getItem(KEY);
         if (s === 'dark' || s === 'light') return s;

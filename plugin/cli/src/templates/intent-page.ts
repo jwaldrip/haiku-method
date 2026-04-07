@@ -1,5 +1,5 @@
-import type { ParsedIntent, ParsedUnit, CriterionItem, Section } from "@ai-dlc/shared";
-import { markdownToHtml } from "@ai-dlc/shared";
+import type { ParsedIntent, ParsedUnit, CriterionItem, Section } from "@haiku/shared";
+import { markdownToHtml } from "@haiku/shared";
 import { escapeHtml, escapeAttr } from "./layout.js";
 import {
   renderTabs,

@@ -22,11 +22,11 @@ Unlike the Reviewer hat (which validates individual units), this skill validates
 
 ## Input
 
-This skill is invoked by `/ai-dlc:advance` or `/ai-dlc:execute` when all units are complete. It receives its context via the subagent prompt, including:
+This skill is invoked by `/haiku:advance` or `/haiku:execute` when all units are complete. It receives its context via the subagent prompt, including:
 
 - **Intent slug** - The intent being validated
 - **Worktree path** - Path to the intent worktree (contains all merged unit work)
-- **Intent branch** - The branch name (`ai-dlc/{intent-slug}/main`)
+- **Intent branch** - The branch name (`haiku/{intent-slug}/main`)
 - **Intent-level success criteria** - From `intent.md`
 - **Completed units list** - All units that were built and merged
 
@@ -34,7 +34,7 @@ This skill is invoked by `/ai-dlc:advance` or `/ai-dlc:execute` when all units a
 
 ## Step 1: Verify Merged State Integrity
 
-- You MUST confirm you are on the intent branch (`ai-dlc/{intent-slug}/main`)
+- You MUST confirm you are on the intent branch (`haiku/{intent-slug}/main`)
 - You MUST verify all unit branches have been merged
 - You MUST check for merge conflicts or incomplete merges
 - You MUST run `git log --oneline` to confirm all unit merge commits are present
@@ -106,7 +106,7 @@ This skill is invoked by `/ai-dlc:advance` or `/ai-dlc:execute` when all units a
 
 **Condition**: Only run when any completed unit has an `operations:` block in its frontmatter. If no units have operations blocks, skip this step entirely.
 
-- You MUST read all operation specs in `.ai-dlc/{intent}/operations/` directory
+- You MUST read all operation specs in `.haiku/intents/{intent}/operations/` directory
 - You MUST check for schedule collisions: two scheduled operations running at the same cron time that could conflict (e.g., both writing to the same resource). Parse cron expressions from operation spec frontmatter.
 - You MUST check for overlapping reactive triggers: two reactive operations triggered by the same event but performing conflicting actions
 - You MUST verify operation scripts reference resources that exist in the merged deployment (e.g., database names, service URLs, secret references)
@@ -118,7 +118,7 @@ This skill is invoked by `/ai-dlc:advance` or `/ai-dlc:execute` when all units a
 
 ## Step 9: Full-Stack Dry-Run
 
-**Condition**: Only run when the project has stack config with providers (check via `get_stack_layer` for non-empty layers). If no stack providers are configured, skip this step entirely. This step is best-effort — if tools are not available, skip with a warning rather than blocking.
+**Condition**: Only run when the project has stack config with providers (check `.haiku/settings.yml` for non-empty `stack.*` layers). If no stack providers are configured, skip this step entirely. This step is best-effort -- if tools are not available, skip with a warning rather than blocking.
 
 - If stack has `infrastructure` layer with `terraform`: run `terraform validate` (and `terraform plan` if state backend is accessible) on merged IaC directory
 - If stack has `packaging` layer with `helm`: run `helm template` on merged Helm charts to verify they render without errors
@@ -162,10 +162,9 @@ Operations validity: PASS (or SKIPPED — no operations blocks)
 Full-stack dry-run: PASS (or SKIPPED — no stack config)
 ```
 
-```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_integration_result "${INTENT_SLUG}" "true" "0"
+```
+# Integration result is tracked automatically by the MCP server
+# No manual telemetry call needed
 ```
 
 ### On REJECT
@@ -196,10 +195,9 @@ Dry-run failures:
 - {terraform plan failure, helm template error, etc.}
 ```
 
-```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_integration_result "${INTENT_SLUG}" "false" "${ISSUE_COUNT}"
+```
+# Integration result is tracked automatically by the MCP server
+# No manual telemetry call needed
 ```
 
 ---

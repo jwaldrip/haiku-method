@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://ai-dlc.dev/schemas/providers/jira.schema.json",
+	"$id": "https://haiku.dev/schemas/providers/jira.schema.json",
 	"title": "Jira Provider Config",
 	"description": "Provider-specific configuration for Jira ticketing",
 	"type": "object",
@@ -78,6 +78,11 @@
 				"type": "string",
 				"enum": ["required", "optional", "none"]
 			}
+		},
+		"url_template": {
+			"type": "string",
+			"description": "URL template for linking to Jira issues. Variables: {cloud_id} (Atlassian site URL), {key} (issue key, e.g. PROJ-123)",
+			"default": "https://{cloud_id}/browse/{key}"
 		}
 	},
 	"required": ["project_key"],

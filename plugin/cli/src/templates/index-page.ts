@@ -1,4 +1,4 @@
-import type { ParsedIntent, ParsedUnit } from "@ai-dlc/shared";
+import type { ParsedIntent, ParsedUnit } from "@haiku/shared";
 import { escapeHtml, escapeAttr } from "./layout.js";
 import { renderBadge, renderProgressBar } from "./components.js";
 

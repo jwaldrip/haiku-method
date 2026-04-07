@@ -1,5 +1,5 @@
 ---
-description: Configure AI-DLC for this project — auto-detects VCS, hosting, CI/CD, and MCP providers. Creates or updates .ai-dlc/settings.yml.
+description: Configure H·AI·K·U for this project — auto-detects VCS, hosting, CI/CD, and MCP providers. Creates or updates .haiku/settings.yml.
 disable-model-invocation: true
 allowed-tools:
   - Read
@@ -27,11 +27,11 @@ allowed-tools:
   - "mcp__*__memory"
 ---
 
-# AI-DLC Setup
+# H·AI·K·U Setup
 
-You are the **Setup Assistant** for AI-DLC. Your job is to configure this project's `.ai-dlc/settings.yml` by auto-detecting the environment and confirming settings with the user.
+You are the **Setup Assistant** for H·AI·K·U. Your job is to configure this project's `.haiku/settings.yml` by auto-detecting the environment and confirming settings with the user.
 
-This skill is **idempotent** — re-running `/ai-dlc:setup` preserves existing settings as defaults.
+This skill is **idempotent** — re-running `/haiku:setup` preserves existing settings as defaults.
 
 ---
 
@@ -39,24 +39,24 @@ This skill is **idempotent** — re-running `/ai-dlc:setup` preserves existing s
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /ai-dlc:setup cannot run in cowork mode."
+  echo "ERROR: /haiku:setup cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session inside your project directory."
   exit 1
 fi
 ```
 
-If `CLAUDE_CODE_IS_COWORK=1`, stop immediately with the message above. Do NOT proceed.
+If `CLAUDE_CODE_IS_COWORK=1`, the agent **MUST** stop immediately with the message above. The agent **MUST NOT** proceed.
 
 ---
 
 ### Configuration Precedence
 
-AI-DLC uses a Master + Overrides pattern for configuration:
+H·AI·K·U uses a Master + Overrides pattern for configuration:
 
 | Level | Location | Scope | Precedence |
 |-------|----------|-------|------------|
 | **Global** | `settings.yml` | All intents | Lowest |
-| **Intent** | `.ai-dlc/{intent}/settings.yml` | This intent | Medium |
+| **Intent** | `.haiku/intents/{intent}/settings.yml` | This intent | Medium |
 | **Unit** | Unit frontmatter fields | This unit | Highest |
 
 **Examples:**
@@ -70,11 +70,11 @@ When reading configuration, always resolve in order: unit frontmatter → intent
 
 ## Phase 0: Load Existing Settings
 
-1. Check if `.ai-dlc/settings.yml` exists using the `Read` tool.
+1. Check if `.haiku/settings.yml` exists using the `Read` tool.
    - If it exists, parse the current values — these become the **defaults** for all prompts below.
-   - If `.ai-dlc/` doesn't exist, create it:
+   - If `.haiku/` doesn't exist, create it:
      ```bash
-     mkdir -p .ai-dlc
+     mkdir -p .haiku
      ```
 
 2. Store the existing settings (or empty `{}`) as `EXISTING_SETTINGS` for reference throughout.
@@ -86,12 +86,29 @@ When reading configuration, always resolve in order: unit frontmatter → intent
 Run these detections via Bash by sourcing the config library:
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/config.sh"
+# Auto-detect environment directly (no shell lib needed)
 
-VCS=$(detect_vcs)
-VCS_HOSTING=$(detect_vcs_hosting)
-CI_CD=$(detect_ci_cd)
-DEFAULT_BRANCH=$(resolve_default_branch "auto")
+# VCS detection
+if git rev-parse --git-dir &>/dev/null; then VCS="git"
+elif jj root &>/dev/null 2>&1; then VCS="jj"
+else VCS="unknown"; fi
+
+# Hosting detection
+REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+if echo "$REMOTE_URL" | grep -qi github; then VCS_HOSTING="github"
+elif echo "$REMOTE_URL" | grep -qi gitlab; then VCS_HOSTING="gitlab"
+elif echo "$REMOTE_URL" | grep -qi bitbucket; then VCS_HOSTING="bitbucket"
+else VCS_HOSTING=""; fi
+
+# CI/CD detection
+if [ -d ".github/workflows" ]; then CI_CD="github-actions"
+elif [ -f ".gitlab-ci.yml" ]; then CI_CD="gitlab-ci"
+elif [ -f "Jenkinsfile" ]; then CI_CD="jenkins"
+elif [ -d ".circleci" ]; then CI_CD="circleci"
+else CI_CD=""; fi
+
+# Default branch
+DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||' || echo "main")
 
 echo "vcs=$VCS"
 echo "vcs_hosting=$VCS_HOSTING"
@@ -117,6 +134,8 @@ Use `ToolSearch` to discover available MCP providers. Run **all probes in parall
 | Spec | `"notion"`, `"confluence"`, `"google docs"` |
 | Design | `"figma"` |
 | Comms | `"slack"`, `"teams"`, `"discord"` |
+| CRM | `"salesforce"`, `"hubspot"` |
+| Knowledge | `"notion"`, `"confluence"`, `"google docs"` (same tools as spec, different purpose) |
 
 Also check:
 - If `DETECTED_HOSTING` is `github` and `gh` CLI exists (`command -v gh`), suggest `github-issues` as a zero-config ticketing option
@@ -131,6 +150,8 @@ Build a detection results map:
 | Spec | e.g., `confluence` | MCP tool found: `mcp__*confluence*` |
 | Design | e.g., `figma` | MCP tool found: `mcp__*figma*` |
 | Comms | e.g., `slack` | MCP tool found: `mcp__*slack*` |
+| CRM | e.g., `salesforce` | MCP tool found: `mcp__*salesforce*` |
+| Knowledge | e.g., `notion` | MCP tool found or same as spec provider |
 
 If existing settings already declare a provider for a category, keep that as the default even if detection found something different.
 
@@ -172,7 +193,62 @@ Use `AskUserQuestion`:
 - "Are these detected settings correct?"
 - Options: "Yes, looks good" / "Need to adjust"
 
-If **"Need to adjust"** → ask follow-up questions for each category they want to change. Use `AskUserQuestion` with the valid enum values from the settings schema for each provider type.
+If **"Need to adjust"** → ask follow-up questions for each category they want to change. Use `AskUserQuestion` with these options per category:
+
+**Ticketing:**
+```json
+{
+  "questions": [{
+    "question": "Which ticketing system does this project use?",
+    "header": "Ticketing Provider",
+    "options": [
+      {"label": "Jira", "description": "Atlassian Jira — requires project_key and cloud_id"},
+      {"label": "Linear", "description": "Linear — requires project_key and team_id"},
+      {"label": "GitHub Issues", "description": "GitHub Issues — zero config, uses the current repo"},
+      {"label": "GitLab Issues", "description": "GitLab Issues — requires project_id"},
+      {"label": "None", "description": "No external ticketing system"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+**Spec:**
+```json
+{
+  "questions": [{
+    "question": "Which spec/documentation tool does this project use?",
+    "header": "Spec Provider",
+    "options": [
+      {"label": "Notion", "description": "Notion — optional workspace_id"},
+      {"label": "Confluence", "description": "Atlassian Confluence — optional space_key and cloud_id"},
+      {"label": "Google Docs", "description": "Google Docs — optional folder_id"},
+      {"label": "None", "description": "No external spec tool"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+**Design:**
+```json
+{
+  "questions": [{
+    "question": "Which design tool does this project use?",
+    "header": "Design Provider",
+    "options": [
+      {"label": "Figma", "description": "Figma — optional team_id and file_key"},
+      {"label": "Canva", "description": "Canva — optional brand_kit_id"},
+      {"label": "Pencil", "description": "Pencil — local design tool with MCP integration"},
+      {"label": "Penpot", "description": "Penpot — open-source design platform"},
+      {"label": "None", "description": "No external design tool"}
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+Map user selections to provider types: "Jira" → `jira`, "Linear" → `linear`, "GitHub Issues" → `github-issues`, "GitLab Issues" → `gitlab-issues`, "Notion" → `notion`, "Confluence" → `confluence`, "Google Docs" → `google-docs`, "Figma" → `figma`, "Canva" → `canva`, "Pencil" → `pencil`, "Penpot" → `penpot`, "None" → omit from settings.
 
 ---
 
@@ -184,7 +260,7 @@ Use `AskUserQuestion`:
 ```json
 {
   "questions": [{
-    "question": "Enable browser-based visual review for elaboration gates? (Requires the ai-dlc-review MCP server, which is bundled with the plugin.)",
+    "question": "Enable browser-based visual review for elaboration gates? (Requires the haiku-review MCP server, which is bundled with the plugin.)",
     "header": "Visual Review",
     "options": [
       {"label": "Enable", "description": "Use the browser-based review UI at elaboration gates"},
@@ -196,7 +272,7 @@ Use `AskUserQuestion`:
 ```
 
 - If the MCP tool was detected, append `(MCP server detected)` to the Enable description.
-- If NOT detected, append `(MCP server NOT detected — ensure ai-dlc-review is registered in .mcp.json)` to the Enable description.
+- If NOT detected, append `(MCP server NOT detected — ensure haiku-review is registered in .mcp.json)` to the Enable description.
 
 Store the result as `VISUAL_REVIEW_ENABLED` (`true` or `false`).
 
@@ -249,7 +325,7 @@ Pre-fill all values from existing `settings.yml` if re-running.
 
 ## Phase 4b: Provider Instructions
 
-For each **confirmed provider**, offer to customize how AI-DLC interacts with it. AI-DLC ships with sensible built-in defaults (in `plugin/providers/{category}.md`), but every team is different — custom instructions let projects tailor behavior to their workflow.
+For each **confirmed provider**, offer to customize how H·AI·K·U interacts with it. H·AI·K·U ships with sensible built-in defaults (in `plugin/providers/{category}.md`), but every team is different — custom instructions let projects tailor behavior to their workflow.
 
 ### For each confirmed provider:
 
@@ -259,7 +335,7 @@ For each **confirmed provider**, offer to customize how AI-DLC interacts with it
    ```
    Where `{category}` is `ticketing`, `spec`, `design`, or `comms`.
 
-2. **Check for existing project override** at `.ai-dlc/providers/{type}.md` (e.g., `.ai-dlc/providers/jira.md`). If it exists, read it and show its contents.
+2. **Check for existing project override** at `.haiku/providers/{type}.md` (e.g., `.haiku/providers/jira.md`). If it exists, read it and show its contents.
 
 3. **Show the user the current instructions** (built-in defaults, or existing override if present) and ask:
 
@@ -270,7 +346,7 @@ For each **confirmed provider**, offer to customize how AI-DLC interacts with it
      - **"Customize"** — Create a project override file to tailor behavior
 
 4. **If "Customize"**:
-   - Create `.ai-dlc/providers/{type}.md` with the built-in defaults pre-populated as a starting template:
+   - Create `.haiku/providers/{type}.md` with the built-in defaults pre-populated as a starting template:
      ```markdown
      ---
      category: {category}
@@ -279,25 +355,25 @@ For each **confirmed provider**, offer to customize how AI-DLC interacts with it
 
      {contents of built-in default, body only (after frontmatter)}
      ```
-   - Tell the user: "Created `.ai-dlc/providers/{type}.md` with defaults as a starting point. Edit this file to customize how AI-DLC interacts with {type} for this project."
+   - Tell the user: "Created `.haiku/providers/{type}.md` with defaults as a starting point. Edit this file to customize how H·AI·K·U interacts with {type} for this project."
    - Commit the new override file immediately:
      ```bash
-     git add .ai-dlc/providers/{type}.md && git commit -m "ai-dlc: configure {type} provider"
+     git add .haiku/providers/{type}.md && git commit -m "haiku: configure {type} provider"
      ```
 
 5. **If "Use defaults"** → skip, no file created. The built-in defaults apply automatically.
 
-6. **If an override file already exists** from a previous `/ai-dlc:setup` run, change the question to:
-   - "Project override exists at `.ai-dlc/providers/{type}.md`. Want to keep it, reset to defaults, or remove it?"
+6. **If an override file already exists** from a previous `/haiku:setup` run, change the question to:
+   - "Project override exists at `.haiku/providers/{type}.md`. Want to keep it, reset to defaults, or remove it?"
    - Options:
      - **"Keep as-is"** — Don't touch the existing override
      - **"Reset to defaults"** — Overwrite with current built-in defaults, then commit:
        ```bash
-       git add .ai-dlc/providers/{type}.md && git commit -m "ai-dlc: reset {type} provider to defaults"
+       git add .haiku/providers/{type}.md && git commit -m "haiku: reset {type} provider to defaults"
        ```
      - **"Remove override"** — Delete the file, revert to built-in defaults only, then commit the removal:
        ```bash
-       git rm .ai-dlc/providers/{type}.md && git commit -m "ai-dlc: remove {type} provider override"
+       git rm .haiku/providers/{type}.md && git commit -m "haiku: remove {type} provider override"
        ```
 
 **Skip** this phase for any provider category that has no confirmed provider.
@@ -354,57 +430,64 @@ Ask the user about their preferred workflow intensity:
 
 **Granularity:**
 - **Coarse** — Fewer, larger units. Less process overhead. Good for experienced teams or small features.
-- **Standard (default)** — Balanced decomposition. Recommended for most work.
+- **Standard (default)** — Balanced elaboration. Recommended for most work.
 - **Fine** — Many small units with detailed specs. Good for complex features or onboarding.
 
 ---
 
-## Phase 5b: Default Iteration Passes
+## Phase 5b: Default Studio
 
-Ask the user about their default cross-functional iteration passes for new intents. Most teams only need a single dev pass.
+Ask the user which studio to use as the default for new intents.
 
-First, discover all available passes (built-in + project-defined) by running:
-
-```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/pass.sh"
-list_available_passes
-```
-
-This returns pass names one per line (e.g., `design`, `dev`, `product`). For each discovered pass, load its metadata to get a description:
+First, discover all available studios (built-in + project-defined) by running:
 
 ```bash
-load_pass_metadata "<pass_name>"
+# List all available studios by reading STUDIO.md files directly
+for studio_dir in "$CLAUDE_PLUGIN_ROOT/studios"/*/; do
+  [ -d "$studio_dir" ] || continue
+  echo "$(basename "$studio_dir")"
+done
+# Also check project-defined studios
+for studio_dir in .haiku/studios/*/; do
+  [ -d "$studio_dir" ] || continue
+  echo "$(basename "$studio_dir")"
+done
 ```
 
-Build the `AskUserQuestion` options dynamically from the discovered passes:
+This returns studio names. For each, load its metadata by reading the STUDIO.md frontmatter:
+
+```bash
+# Read studio metadata via MCP
+haiku_studio_get { studio: "<studio_name>" }
+```
 
 Use `AskUserQuestion`:
 
 ```json
 {
   "questions": [{
-    "question": "What iteration passes should new intents use by default?",
-    "header": "Default Iteration Passes",
+    "question": "Which studio should new intents use by default?",
+    "header": "Default Studio",
     "options": [
-      {"label": "Dev only", "description": "Single pass — elaborate and build (default for most work)"},
-      {"label": "Select passes", "description": "Choose from available passes: <list discovered pass names with descriptions>"},
-      {"label": "Custom", "description": "Enter a comma-separated list of pass names"}
+      {"label": "Software", "description": "Full SDLC: inception → design → product → development → operations → security"},
+      {"label": "Ideation", "description": "Universal: research → create → review → deliver"},
+      {"label": "Custom", "description": "Select from project-defined studios"}
     ],
     "multiSelect": false
   }]
 }
 ```
 
-For "Select passes", present a follow-up multi-select with all discovered passes (built-in and project-defined), each showing its description from the pass metadata. For "Custom", ask the user to type a comma-separated list of pass names.
+Build the options dynamically from discovered studios. Include any project-defined studios found at `.haiku/studios/*/STUDIO.md`.
 
-To add custom passes, users can create `.ai-dlc/passes/{name}.md` files before running setup.
+For "Custom", present a follow-up with all discovered custom studios. To create custom studios, users can run `/haiku:scaffold studio <name>`.
 
-Map selections to `default_passes` in settings.yml:
-- "Dev only" → `default_passes: []`
-- "Select passes" → `default_passes: [<selected pass names>]`
-- "Custom" → `default_passes: [<user-typed pass names>]`
+Map selections to `studio` in settings.yml:
+- "Software" → `studio: software`
+- "Ideation" → `studio: ideation`
+- "Custom" → `studio: <selected studio name>`
 
-Pre-fill from existing `settings.yml` `default_passes` if available.
+Pre-fill from existing `settings.yml` `studio` if available.
 
 ---
 
@@ -514,7 +597,7 @@ Map user selections to config values:
 
 ## Phase 7: Write Settings File
 
-1. Read existing `.ai-dlc/settings.yml` via `Read` tool (if it exists) to preserve any manual edits or fields not covered by this wizard.
+1. Read existing `.haiku/settings.yml` via `Read` tool (if it exists) to preserve any manual edits or fields not covered by this wizard.
 
 2. Merge new values over existing. Build the YAML structure:
 
@@ -529,11 +612,11 @@ git:  # or jj:
 # Visual review: browser-based review UI for elaboration gates
 visual_review: true  # or false
 
+# Default studio for new intents (default: auto-detected)
+studio: software
+
 # Announcement formats for intent completion (default: [changelog])
 default_announcements: [changelog]
-
-# Only include if non-default (non-empty)
-default_passes: [design, dev]
 
 # Only include providers that were confirmed
 providers:
@@ -549,19 +632,22 @@ providers:
     type: slack
 ```
 
-Rules:
-- Only include `git:` or `jj:` — not both — based on `DETECTED_VCS`
-- Set `visual_review` to the value of `VISUAL_REVIEW_ENABLED` from Phase 3b
-- Only include provider sections for providers the user confirmed
-- Preserve any `instructions:` fields from existing settings
-- Preserve any fields not covered by this wizard (e.g., custom `config` keys)
-- Output must validate against `plugin/schemas/settings.schema.json`
+### Settings File Rules (RFC 2119)
 
-3. Write the file using the `Write` tool to `.ai-dlc/settings.yml`.
+The key words "MUST", "MUST NOT", "SHALL", "SHALL NOT", "REQUIRED" in this section are to be interpreted as described in RFC 2119.
+
+- The agent **MUST** only include `git:` or `jj:` — not both — based on `DETECTED_VCS`
+- The agent **MUST** set `visual_review` to the value of `VISUAL_REVIEW_ENABLED` from Phase 3b
+- The agent **MUST** only include provider sections for providers the user confirmed
+- The agent **MUST** preserve any `instructions:` fields from existing settings
+- The agent **MUST** preserve any fields not covered by this wizard (e.g., custom `config` keys)
+- Output **MUST** validate against `plugin/schemas/settings.schema.json`
+
+3. Write the file using the `Write` tool to `.haiku/settings.yml`.
 
 4. Commit the settings file immediately:
    ```bash
-   git add .ai-dlc/settings.yml && git commit -m "ai-dlc: configure project settings"
+   git add .haiku/settings.yml && git commit -m "haiku: configure project settings"
    ```
 
 ---
@@ -587,19 +673,19 @@ Display a final summary:
 | Design | — |
 | Comms | slack |
 
-Settings written to `.ai-dlc/settings.yml`.
+Settings written to `.haiku/settings.yml`.
 ```
 
 If any provider override files were created in Phase 4b, list them:
 
 ```
 Provider instruction overrides (edit to customize):
-- `.ai-dlc/providers/jira.md`
-- `.ai-dlc/providers/confluence.md`
+- `.haiku/providers/jira.md`
+- `.haiku/providers/confluence.md`
 ```
 
 Finish with:
 
 ```
-Next: Run `/ai-dlc:elaborate` to start your first intent.
+Next: Run `/haiku:elaborate` to start your first intent.
 ```

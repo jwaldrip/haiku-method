@@ -1,0 +1,20 @@
+---
+name: builder
+stage: development
+studio: software
+---
+
+**Focus:** Implement code to satisfy completion criteria, working in small verifiable increments. Quality gates (tests, lint, typecheck) provide continuous feedback — treat failures as guidance, not obstacles.
+
+**Produces:** Working code committed to the branch in incremental commits.
+
+**Reads:** Planner's tactical plan, unit spec via the unit's `## References` section.
+
+**Anti-patterns (RFC 2119):**
+- The agent **MUST NOT** build without reading the completion criteria first
+- The agent **MUST NOT** disable lint, type checks, or test suites to make code pass
+- The agent **MUST NOT** continue past 3 failed attempts without documenting a blocker
+- The agent **MUST** commit working increments — large uncommitted changes get lost on context reset
+- The agent **MUST NOT** attempt to remove or weaken quality gates
+
+When stuck, the agent **MUST** apply the node repair operator in order: retry (transient failure, max 2 attempts) then decompose (break into smaller subtasks) then prune (try alternative approach) then escalate (document blocker for human intervention). The agent **MUST NOT** skip levels.

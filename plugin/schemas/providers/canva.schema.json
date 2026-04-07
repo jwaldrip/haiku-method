@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://ai-dlc.dev/schemas/providers/canva.schema.json",
+	"$id": "https://haikumethod.ai/schemas/providers/canva.schema.json",
 	"title": "Canva Provider Config",
 	"description": "Provider-specific configuration for Canva design provider",
 	"type": "object",
@@ -18,6 +18,11 @@
 			"enum": ["png", "jpg", "pdf"],
 			"default": "png",
 			"description": "Default export format for design assets"
+		},
+		"url_template": {
+			"type": "string",
+			"description": "URL template for linking to Canva designs. Variables: {key} (Canva design ID)",
+			"default": "https://canva.com/design/{key}"
 		}
 	},
 	"additionalProperties": false

@@ -90,10 +90,10 @@ export default function HomeContent({
 						By The Bushido Collective
 					</div>
 					<h1 className="mb-4 bg-gradient-to-r from-blue-500 to-amber-400 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl lg:text-6xl">
-						AI-DLC: How It Works
+						H·AI·K·U: How It Works
 					</h1>
 					<p className="mx-auto mb-8 max-w-xl text-lg text-gray-500 dark:text-gray-400">
-						The AI-Driven Development Lifecycle &mdash; from idea to production.
+						Lifecycle orchestration &mdash; from idea to production.
 					</p>
 
 					<ModeToggle mode={mode} onChange={setMode} />
@@ -578,11 +578,11 @@ export default function HomeContent({
 						className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
 					>
 						<ShortcutPill
-							cmd="/ai-dlc:quick"
+							cmd="/haiku:quick"
 							desc="Skip everything for tiny fixes -- typos, config changes, one-liners"
 						/>
 						<ShortcutPill
-							cmd="/ai-dlc:autopilot"
+							cmd="/haiku:autopilot"
 							desc="AI handles the whole cycle autonomously for well-understood features"
 						/>
 					</motion.div>
@@ -593,7 +593,7 @@ export default function HomeContent({
 						forceOpen={isRef}
 					>
 						<p className="mb-3">
-							AI-DLC is a Claude Code plugin with a well-organized file
+							H·AI·K·U is a Claude plugin with a well-organized file
 							structure. Everything is self-contained.
 						</p>
 						<div className="rounded-lg border border-gray-200 bg-gray-50 p-4 font-mono text-xs leading-relaxed dark:border-gray-700 dark:bg-gray-950">
@@ -607,15 +607,15 @@ export default function HomeContent({
 								<span className="text-gray-400">-- Plugin manifest</span>
 							</div>
 							<div className="pl-5">
-								<span className="font-semibold text-blue-500">hats/</span>{" "}
+								<span className="font-semibold text-blue-500">studios/</span>{" "}
 								<span className="text-gray-400">
-									-- 15 hat definition files (.md)
+									-- 120+ hat definitions in studios/*/stages/*/hats/
 								</span>
 							</div>
 							<div className="pl-5">
 								<span className="font-semibold text-blue-500">hooks/</span>{" "}
 								<span className="text-gray-400">
-									-- 9 lifecycle hooks (.sh)
+									-- 10 lifecycle hooks (compiled TypeScript)
 								</span>
 							</div>
 							<div className="pl-5">
@@ -638,12 +638,12 @@ export default function HomeContent({
 							</div>
 							<div className="pl-5">
 								<span className="font-semibold text-blue-500">skills/</span>{" "}
-								<span className="text-gray-400">-- 28 skill definitions</span>
+								<span className="text-gray-400">-- 34 skill definitions</span>
 							</div>
 							<div className="pl-5">
-								<span className="text-gray-500">workflows.yml</span>{" "}
+								<span className="font-semibold text-blue-500">bin/</span>{" "}
 								<span className="text-gray-400">
-									-- Named workflow sequences
+									-- Compiled haiku binary
 								</span>
 							</div>
 						</div>
@@ -1126,7 +1126,7 @@ export default function HomeContent({
 							<ChatBubble speaker="system">
 								All artifacts committed to{" "}
 								<code className="text-amber-500">
-									ai-dlc/&#123;slug&#125;/main
+									haiku/&#123;slug&#125;/main
 								</code>{" "}
 								branch. The plan is saved. Time to build.
 							</ChatBubble>
@@ -1163,7 +1163,7 @@ export default function HomeContent({
 						className="mb-2 text-gray-500 dark:text-gray-400"
 					>
 						Now the AI works. You typed{" "}
-						<code className="text-amber-500">/ai-dlc:execute</code>. Three loops
+						<code className="text-amber-500">/haiku:run</code>. Three loops
 						nest inside each other, from big to small.
 					</motion.p>
 
@@ -1244,7 +1244,7 @@ export default function HomeContent({
 						</div>
 						<p className="text-xs text-gray-500 dark:text-gray-400">
 							The gates were detected from your repo tooling during{" "}
-							<code className="text-amber-500">/ai-dlc:elaborate</code> and
+							<code className="text-amber-500">/haiku:elaborate</code> and
 							saved to <code className="text-amber-500">intent.md</code>{" "}
 							frontmatter. The harness reads them and runs each command
 							synchronously —{" "}
@@ -1302,7 +1302,7 @@ export default function HomeContent({
 					>
 						This is the clever part. AI agents have limited memory -- called a
 						&ldquo;context window.&rdquo; When the memory fills up, a normal AI
-						would forget everything. AI-DLC solves this by saving progress to
+						would forget everything. H·AI·K·U solves this by saving progress to
 						files on disk. When a new session starts, the AI reads those files
 						and picks up exactly where it left off. This is called a{" "}
 						<strong className="text-violet-500">bolt</strong> -- one focused
@@ -1312,10 +1312,10 @@ export default function HomeContent({
 					<FuelGauge />
 
 					<ChatBubble speaker="system">
-						<code className="text-amber-500">enforce-iteration.sh</code> fires
+						The <code className="text-amber-500">enforce-iteration</code> hook fires
 						when a session ends. It checks what work remains. If units are still
 						in progress, it tells the next session to call{" "}
-						<code className="text-amber-500">/ai-dlc:execute</code> to continue.
+						<code className="text-amber-500">/haiku:run</code> to continue.
 						The AI never &ldquo;forgets&rdquo; mid-task.
 					</ChatBubble>
 
@@ -1325,7 +1325,7 @@ export default function HomeContent({
 						forceOpen={isRef}
 					>
 						<p className="mb-3">
-							AI-DLC uses a two-tier persistence model that separates permanent
+							H·AI·K·U uses a two-tier persistence model that separates permanent
 							project artifacts from temporary working state.
 						</p>
 						<div className="grid gap-4 sm:grid-cols-2">
@@ -1337,7 +1337,7 @@ export default function HomeContent({
 									Checked into version control. Survives everything.
 								</p>
 								<code className="text-xs text-gray-400">
-									.ai-dlc/&#123;intent-slug&#125;/
+									.haiku/&#123;intent-slug&#125;/
 								</code>
 								<ul className="mt-2 list-disc pl-4 text-xs text-gray-500">
 									<li>intent.md</li>
@@ -1354,19 +1354,19 @@ export default function HomeContent({
 									Gitignored. Survives /clear but not branch switches.
 								</p>
 								<code className="text-xs text-gray-400">
-									.ai-dlc/&#123;intent-slug&#125;/state/
+									.haiku/&#123;intent-slug&#125;/state/
 								</code>
 								<ul className="mt-2 list-disc pl-4 text-xs text-gray-500">
-									<li>iteration.json</li>
+									<li>state.json (per stage)</li>
+									<li>Unit frontmatter (bolt, hat, status, timestamps)</li>
 									<li>scratchpad.md</li>
 									<li>blockers.md</li>
-									<li>current-plan.md</li>
 								</ul>
 							</div>
 						</div>
 						<p className="mt-3">
 							If ephemeral state is lost,{" "}
-							<code className="text-amber-500">/ai-dlc:resume</code> can
+							<code className="text-amber-500">/haiku:resume</code> can
 							reconstruct it from the committed artifacts and git history.
 						</p>
 					</DeepDive>
@@ -1483,56 +1483,62 @@ export default function HomeContent({
 						forceOpen={isRef}
 					>
 						<p className="mb-3">
-							Eight hooks (plus one support script) form the automated safety
-							system. Each fires at a specific point in the Claude Code
-							lifecycle.
+							10 lifecycle hooks &mdash; all compiled into a single{" "}
+							<code className="text-amber-500">bin/haiku</code> binary &mdash;
+							form the automated safety system. Each fires at a specific point
+							in the Claude lifecycle.
 						</p>
 						<div className="space-y-2">
 							{[
 								{
-									name: "inject-context.sh",
+									name: "inject-context",
 									trigger: "Session start",
 									desc: "Loads state from filesystem. Injects current hat instructions, intent description, completion criteria.",
 								},
 								{
-									name: "redirect-plan-mode.sh",
+									name: "redirect-plan-mode",
 									trigger: "Pre-tool-use",
-									desc: "Intercepts Claude's native plan mode and redirects to /ai-dlc:elaborate.",
+									desc: "Intercepts Claude's native plan mode and redirects to /haiku:elaborate.",
 								},
 								{
-									name: "subagent-hook.sh",
+									name: "subagent-hook",
 									trigger: "Pre-tool-use (Task)",
-									desc: "Injects AI-DLC context into sub-agents so child agents are aware of the current intent.",
+									desc: "Injects H·AI·K·U context into sub-agents so child agents are aware of the current intent.",
 								},
 								{
-									name: "prompt-guard.sh",
+									name: "prompt-guard",
 									trigger: "Pre-tool-use",
-									desc: "Scans .ai-dlc/ files for potential prompt injection patterns.",
+									desc: "Scans .haiku/ files for potential prompt injection patterns.",
 								},
 								{
-									name: "workflow-guard.sh",
+									name: "workflow-guard",
 									trigger: "Pre-tool-use",
 									desc: "Warns when the AI attempts file edits outside the scope of the current hat.",
 								},
 								{
-									name: "context-monitor.sh",
+									name: "context-monitor",
 									trigger: "Post-tool-use",
 									desc: "Monitors context window usage. Warns at 35% remaining.",
 								},
 								{
-									name: "quality-gate.sh",
+									name: "quality-gate",
 									trigger: "Session end (sync)",
 									desc: "Harness-enforced quality gates. Reads quality_gates: from intent and unit frontmatter, runs each gate command, and blocks the agent from stopping if any fail. Only enforced on building hats.",
 								},
 								{
-									name: "enforce-iteration.sh",
+									name: "enforce-iteration",
 									trigger: "Session end",
 									desc: 'Checks DAG status for remaining work. The "keep going" mechanism.',
 								},
 								{
-									name: "subagent-context.sh",
+									name: "subagent-context",
 									trigger: "Support script",
-									desc: "Provides the context payload that subagent-hook.sh injects.",
+									desc: "Provides the context payload that subagent-hook injects.",
+								},
+								{
+									name: "stage-transition",
+									trigger: "Stage boundary",
+									desc: "Validates stage completion and orchestrates transition to the next stage in the pipeline.",
 								},
 							].map((hook) => (
 								<div
@@ -1685,7 +1691,7 @@ export default function HomeContent({
 						<FinishStage num={4} numColor="bg-violet-500/15 text-violet-400">
 							<h3 className="text-lg font-bold text-violet-400">Reflection</h3>
 							<p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								This is what separates AI-DLC from &ldquo;just running an
+								This is what separates H·AI·K·U from &ldquo;just running an
 								AI.&rdquo; The system learns from every cycle.
 							</p>
 							<div className="mt-3 space-y-3">
@@ -1763,7 +1769,7 @@ export default function HomeContent({
 
 					{/* Deep Dive: Integration */}
 					<DeepDive
-						title="Deep Dive: Integration Validation -- The 10 Steps of /ai-dlc:integrate"
+						title="Deep Dive: Integration Validation -- The 10 Steps of /haiku:integrate"
 						forceOpen={isRef}
 					>
 						<ol className="list-decimal space-y-1.5 pl-5">
@@ -1810,8 +1816,8 @@ export default function HomeContent({
 					{/* Before You Build */}
 					<ToolkitGroup title="Before You Build" color="violet">
 						<ToolkitCard
-							cmd="/ai-dlc:setup"
-							tagline="Configure AI-DLC for your project"
+							cmd="/haiku:setup"
+							tagline="Configure H·AI·K·U for your project"
 							color="violet"
 						>
 							<ul className="list-disc pl-4">
@@ -1819,14 +1825,14 @@ export default function HomeContent({
 									Auto-detects your VCS, hosting, CI/CD, and connected tools
 								</li>
 								<li>
-									Creates <code>.ai-dlc/settings.yml</code> with your
+									Creates <code>.haiku/settings.yml</code> with your
 									preferences
 								</li>
 								<li>You only run this once</li>
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:ideate"
+							cmd="/haiku:ideate"
 							tagline="Surface improvement ideas from your codebase"
 							color="violet"
 						>
@@ -1837,7 +1843,7 @@ export default function HomeContent({
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:backlog"
+							cmd="/haiku:backlog"
 							tagline="Parking lot for ideas not ready yet"
 							color="violet"
 						>
@@ -1850,7 +1856,7 @@ export default function HomeContent({
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:seed"
+							cmd="/haiku:seed"
 							tagline="Plant ideas that surface at the right time"
 							color="violet"
 						>
@@ -1860,7 +1866,7 @@ export default function HomeContent({
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:autopilot"
+							cmd="/haiku:autopilot"
 							tagline="Full autonomous lifecycle in one command"
 							color="violet"
 						>
@@ -1876,34 +1882,56 @@ export default function HomeContent({
 					{/* While You Build */}
 					<ToolkitGroup title="While You Build" color="amber">
 						<ToolkitCard
-							cmd="/ai-dlc:elaborate"
-							tagline="Plan your work collaboratively"
+							cmd="/haiku:new"
+							tagline="Create an intent and start working"
 							color="amber"
 						>
 							<p>
-								The main entry point: define intent, explore domain, decompose
-								into units, set success criteria.
+								The main entry point: creates intent, enters the first stage
+								seamlessly. One command to go from idea to working.
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:execute"
-							tagline="Run the autonomous build loop"
+							cmd="/haiku:run"
+							tagline="Continue, resume, or run the next stage"
 							color="amber"
 						>
 							<p>
-								Picks up units from the DAG, spawns hatted agents, iterates
-								until done.
+								Picks up where you left off, runs the next stage in the
+								pipeline, or resumes an interrupted session.
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:refine"
+							cmd="/haiku:elaborate"
+							tagline="Plan your work collaboratively (deprecated)"
+							color="amber"
+						>
+							<p>
+								Legacy entry point. Use{" "}
+								<code className="text-amber-500">/haiku:new</code> instead,
+								which combines intent creation and elaboration.
+							</p>
+						</ToolkitCard>
+						<ToolkitCard
+							cmd="/haiku:execute"
+							tagline="Run the autonomous build loop (deprecated)"
+							color="amber"
+						>
+							<p>
+								Legacy command. Use{" "}
+								<code className="text-amber-500">/haiku:run</code> instead,
+								which handles all stage execution.
+							</p>
+						</ToolkitCard>
+						<ToolkitCard
+							cmd="/haiku:refine"
 							tagline="Change specs mid-construction"
 							color="amber"
 						>
 							<p>Preserves frontmatter and state, re-queues affected units.</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:quick"
+							cmd="/haiku:quick"
 							tagline="Skip everything for tiny fixes"
 							color="amber"
 						>
@@ -1917,7 +1945,7 @@ export default function HomeContent({
 					{/* When Things Go Sideways */}
 					<ToolkitGroup title="When Things Go Sideways" color="rose">
 						<ToolkitCard
-							cmd="/ai-dlc:resume"
+							cmd="/haiku:resume"
 							tagline="Pick up where you left off"
 							color="rose"
 						>
@@ -1927,14 +1955,14 @@ export default function HomeContent({
 								<li>Creates worktrees and restores state</li>
 							</ul>
 						</ToolkitCard>
-						<ToolkitCard cmd="/ai-dlc:reset" tagline="Start fresh" color="rose">
+						<ToolkitCard cmd="/haiku:reset" tagline="Start fresh" color="rose">
 							<ul className="list-disc pl-4">
-								<li>Clears all AI-DLC state</li>
+								<li>Clears all H·AI·K·U state</li>
 								<li>Preserves your git commits and branches</li>
 							</ul>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:cleanup"
+							cmd="/haiku:cleanup"
 							tagline="Remove stale worktrees"
 							color="rose"
 						>
@@ -1948,7 +1976,7 @@ export default function HomeContent({
 					{/* After You Build */}
 					<ToolkitGroup title="After You Build" color="green">
 						<ToolkitCard
-							cmd="/ai-dlc:reflect"
+							cmd="/haiku:reflect"
 							tagline="Analyze what happened"
 							color="green"
 						>
@@ -1958,7 +1986,7 @@ export default function HomeContent({
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:operate"
+							cmd="/haiku:operate"
 							tagline="Manage post-deployment operations"
 							color="green"
 						>
@@ -1967,7 +1995,7 @@ export default function HomeContent({
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:followup"
+							cmd="/haiku:followup"
 							tagline="Iterate on a completed intent"
 							color="green"
 						>
@@ -1977,7 +2005,7 @@ export default function HomeContent({
 							</p>
 						</ToolkitCard>
 						<ToolkitCard
-							cmd="/ai-dlc:compound"
+							cmd="/haiku:compound"
 							tagline="Capture learnings from this session"
 							color="green"
 						>
@@ -1994,23 +2022,23 @@ export default function HomeContent({
 						className="mt-10 rounded-lg border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-900/50"
 					>
 						<h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-							Internal Skills (run automatically)
+							Internal Subskills (run automatically)
 						</h4>
 						<p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-							These fire behind the scenes -- you never call them directly:
+							These are subskills under <code className="text-amber-500">execute/subskills/</code> -- they fire behind the scenes and are not user-invocable commands:
 						</p>
 						<div className="flex flex-wrap gap-1.5">
 							{[
-								"/ai-dlc:advance",
-								"/ai-dlc:fail",
-								"/ai-dlc:integrate",
-								"/ai-dlc:elaborate-discover",
-								"/ai-dlc:elaborate-wireframes",
-								"/ai-dlc:elaborate-ticket-sync",
-								"/ai-dlc:fundamentals",
-								"/ai-dlc:completion-criteria",
-								"/ai-dlc:backpressure",
-								"/ai-dlc:blockers",
+								"/haiku:advance",
+								"/haiku:fail",
+								"/haiku:integrate",
+								"/haiku:elaborate-discover",
+								"/haiku:elaborate-wireframes",
+								"/haiku:elaborate-ticket-sync",
+								"/haiku:fundamentals",
+								"/haiku:completion-criteria",
+								"/haiku:backpressure",
+								"/haiku:blockers",
 							].map((skill) => (
 								<span
 									key={skill}
@@ -2053,7 +2081,7 @@ export default function HomeContent({
 							</div>
 							<div>
 								<code>
-									/plugin install ai-dlc@thebushidocollective-ai-dlc --scope
+									/plugin install haiku@thebushidocollective-ai-dlc --scope
 									project
 								</code>
 							</div>

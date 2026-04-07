@@ -1,10 +1,10 @@
 ---
 title: Core Concepts
-description: Fundamental concepts of AI-DLC - completion criteria, backpressure, operating modes, and units
+description: Fundamental concepts of H·AI·K·U - completion criteria, backpressure, operating modes, and units
 order: 5
 ---
 
-Understanding these concepts is essential to using AI-DLC effectively. They form the foundation of the methodology.
+Understanding these concepts is essential to using H·AI·K·U effectively. They form the foundation of the methodology.
 
 ## Intents and Units
 
@@ -54,75 +54,67 @@ add-recommendation-engine/
   unit-04-frontend.md           # Display recommendations
 ```
 
-### Pass
+### Stage
 
-A **Pass** is a typed iteration through the standard AI-DLC loop (elaborate → units → construct → review) focused on a specific discipline. Passes enable cross-functional handoffs within a single intent.
+A **Stage** is a typed phase within a studio's pipeline, each focused on a specific discipline. Stages organize work into focused phases -- each with its own set of hats -- enabling cross-functional iteration within a single intent.
 
-**Pass Types:**
+**Stage Types (Software Studio):**
 
-| Pass | Participants | Mode | Output |
-|------|-------------|------|--------|
-| `design` | Design + Product | OHOTL | High-fidelity design artifacts |
-| `product` | Product + Design | HITL | Behavioral specs, acceptance criteria |
-| `dev` | Dev + Product + Design | AHOTL/HITL | Working code |
+| Stage | Hats | Mode | Output |
+|-------|------|------|--------|
+| `design` | Designer, Design Reviewer | OHOTL | High-fidelity design artifacts |
+| `product` | Product Owner, Specification Writer | HITL | Behavioral specs, acceptance criteria |
+| `development` | Planner, Builder, Reviewer | AHOTL/HITL | Working code |
 
 **How it works:**
 
-1. Each pass runs the full AI-DLC loop independently
-2. The output of one pass becomes input to the next
-3. Backward flow is expected -- dev discovering a constraint feeds back to product; product finding a design gap feeds back to design
+1. Each stage runs independently through its hat sequence
+2. The output of one stage becomes input to the next
+3. Backward flow is expected -- development discovering a constraint feeds back to product; product finding a design gap feeds back to design
 
 **Configuration:**
 
-Passes are optional. Single-pass (dev only) is the default. Add passes to an intent when cross-functional iteration is needed:
+Stages are defined by the studio. The simplest studios (like the default software studio) use only the development stage. Multi-stage studios add design, product, or other discipline-specific stages when cross-functional iteration is needed.
 
-```yaml
-# intent.md frontmatter
----
-passes: [design, product, dev]
-active_pass: "design"
----
-```
+Studios are selected during `/haiku:new` and their stages run automatically via `/haiku:run`.
 
-When all units in a pass complete, the intent transitions to the next pass automatically. Units belong to a specific pass via their `pass:` frontmatter field.
+#### Stage Constraints
 
-#### Workflow Constraints
+Each stage restricts which hats are available during its execution. Hats are defined as files in `stages/{stage}/hats/{hat}.md`, ensuring the right discipline is applied at the right time.
 
-Each pass restricts which workflows are available during its execution. If a workflow is requested that the active pass doesn't support, the pass's default workflow is used instead.
+| Stage | Available Hats | Focus |
+|-------|---------------|-------|
+| `design` | Designer, Design Reviewer | Visual and UX work |
+| `product` | Product Owner, Specification Writer | Behavioral specs |
+| `development` | Planner, Builder, Reviewer | Implementation |
 
-| Pass | Available Workflows | Default Workflow |
-|------|---------------------|------------------|
-| `design` | `design` | `design` |
-| `product` | `default`, `bdd` | `default` |
-| `dev` | `default`, `tdd`, `adversarial`, `bdd` | `default` |
+This prevents mismatches -- you won't accidentally run development hats during a design stage.
 
-This prevents mismatches -- you won't accidentally run TDD during a design pass.
+#### Stage-Backs
 
-#### Pass-Backs
+When a later stage discovers issues that require earlier-stage work, the intent iterates backward:
 
-When a later pass discovers issues that require earlier-pass work, the intent iterates backward:
-
-1. `active_pass` is set backward to the target pass (e.g., dev to product, product to design)
+1. The active stage is set backward to the target stage (e.g., development to product, product to design)
 2. New units are created alongside existing completed ones
-3. Forward progression resumes after the pass-back is resolved
+3. Forward progression resumes after the stage-back is resolved
 
-Pass-backs are triggered by reviewer recommendation or user decision. They represent normal cross-disciplinary iteration -- for example, a dev pass discovering a technical constraint that invalidates a design assumption sends work back to the design pass for correction.
+Stage-backs are triggered by reviewer recommendation or user decision. They represent normal cross-disciplinary iteration -- for example, a development stage discovering a technical constraint that invalidates a design assumption sends work back to the design stage for correction.
 
 #### Customization
 
-The pass system supports two customization mechanisms:
+The stage system supports customization through the studio directory structure:
 
-- **Augment built-in passes:** Create `.ai-dlc/passes/{name}.md` where `{name}` matches a built-in pass (e.g., `design`, `product`, `dev`). Your instructions are appended to the built-in instructions under a "Project Augmentation" heading.
-- **Define custom passes:** Create `.ai-dlc/passes/{name}.md` with a name that doesn't match any built-in pass. The custom pass is used directly.
+- **Augment built-in stages:** Create a `STAGE.md` in `.haiku/studios/{studio}/stages/{name}/` where `{name}` matches a built-in stage. Your instructions are appended to the built-in instructions under a "Project Augmentation" heading.
+- **Define custom stages:** Create a new stage directory in `.haiku/studios/{studio}/stages/{name}/` with a name that doesn't match any built-in stage. The custom stage is used directly.
 
-To set default passes for all new intents in a project, configure `default_passes` in `.ai-dlc/settings.yml`:
+To set the default studio for all new intents in a project, configure it in `.haiku/settings.yml`:
 
 ```yaml
-# .ai-dlc/settings.yml
-default_passes: [design, product, dev]
+# .haiku/settings.yml
+default_studio: software
 ```
 
-For deeper theory on how passes fit into the methodology, see the [Iteration Through Passes](https://ai-dlc.dev/papers/ai-dlc-2026/#iteration-through-passes) section of the paper.
+For deeper theory on how stages fit into the methodology, see the [Studios & Stages](/docs/studios/) documentation.
 
 ### Unit Dependencies (DAG)
 
@@ -143,7 +135,7 @@ This enables:
 
 ### Project Knowledge Layer
 
-AI-DLC accumulates project intelligence in a **Knowledge Layer** -- structured artifacts in `.ai-dlc/knowledge/` that persist across intents. Five artifact types capture what the project *is*:
+H·AI·K·U accumulates project intelligence in a **Knowledge Layer** -- structured artifacts in `.haiku/knowledge/` that persist across intents. Five artifact types capture what the project *is*:
 
 | Artifact | What It Captures |
 |----------|-----------------|
@@ -153,7 +145,7 @@ AI-DLC accumulates project intelligence in a **Knowledge Layer** -- structured a
 | **conventions** | Coding standards, naming patterns, file organization |
 | **domain** | Domain model, entity relationships, bounded contexts |
 
-Knowledge artifacts are populated automatically during elaboration:
+Knowledge artifacts are populated automatically during inception:
 - **Brownfield projects:** A synthesis subagent scans the codebase and distills patterns into artifacts
 - **Greenfield projects:** Scaffold artifacts are created, then seeded via the Design Direction picker
 
@@ -161,17 +153,17 @@ All four execution hats read relevant knowledge artifacts, so the fifth intent i
 
 ### Design Direction
 
-For greenfield or early-stage projects, elaboration includes a **Design Direction** phase where the team selects a visual archetype and tunes parameters. The available archetypes (Brutalist, Editorial, Dense/Utilitarian, Playful/Warm) and tunable parameters (density, border treatment, color temperature, typographic contrast) produce a **design blueprint** that:
+For greenfield or early-stage projects, inception includes a **Design Direction** phase where the team selects a visual archetype and tunes parameters. The available archetypes (Brutalist, Editorial, Dense/Utilitarian, Playful/Warm) and tunable parameters (density, border treatment, color temperature, typographic contrast) produce a **design blueprint** that:
 
 - Seeds the `design` knowledge artifact for the project
-- Guides wireframe generation during elaboration
+- Guides wireframe generation during inception
 - Provides design context to all hats during execution
 
 This phase is skipped for established projects where design knowledge already exists.
 
 ## Completion Criteria
 
-Completion Criteria are the most important concept in AI-DLC. They define success in measurable, verifiable terms.
+Completion Criteria are the most important concept in H·AI·K·U. They define success in measurable, verifiable terms.
 
 ### Why They Matter
 
@@ -210,7 +202,7 @@ Don't just specify what should work - specify what should fail:
 
 ### Quality Gates
 
-Quality gates are automated checks that the AI harness mechanically enforces — the agent **cannot stop** until all gates pass. They are defined in YAML frontmatter on the intent and each unit, auto-detected during elaboration, and enforced on every Stop/SubagentStop event via the `quality-gate.sh` hook.
+Quality gates are automated checks that the harness mechanically enforces — the agent **cannot stop** until all gates pass. They are defined in YAML frontmatter on the intent and each unit, auto-detected during inception, and enforced on every Stop/SubagentStop event via the `quality-gate.sh` hook.
 
 ```yaml
 # intent.md or unit-*.md frontmatter
@@ -226,7 +218,7 @@ quality_gates:
 **Key properties:**
 
 - **Harness-enforced** — The agent is mechanically blocked from stopping if any gate fails. This is not advisory; it is structural.
-- **Auto-detected** — During elaboration, the discovery skill inspects repo tooling (`package.json`, `go.mod`, `pyproject.toml`, `Cargo.toml`) and proposes appropriate gates for confirmation.
+- **Auto-detected** — During inception, the discovery skill inspects repo tooling (`package.json`, `go.mod`, `pyproject.toml`, `Cargo.toml`) and proposes appropriate gates for confirmation.
 - **Additive (ratchet)** — Gates are merged additively: unit gates add to intent gates. Builders can add gates but never remove them. The reviewer verifies gate integrity.
 - **Scoped to building** — Only building hats (builder, implementer, refactorer) are enforced. Planner, reviewer, and designer hats skip enforcement silently.
 
@@ -239,7 +231,7 @@ Backpressure is the principle that quality gates should **block** non-conforming
 
 **Prescription** (traditional): "First write the interface, then implement, then write tests, then integration tests..."
 
-**Backpressure** (AI-DLC): "These conditions must be satisfied. Figure out how."
+**Backpressure** (H·AI·K·U): "These conditions must be satisfied. Figure out how."
 
 ### How It Works
 
@@ -268,7 +260,7 @@ Each failure is data. Each iteration refines the approach. The skill shifts from
 
 ## Operating Modes
 
-AI-DLC distinguishes three levels of human involvement, chosen based on the nature of the work.
+H·AI·K·U distinguishes three levels of human involvement, chosen based on the nature of the work.
 
 ### HITL (Human-in-the-Loop)
 
@@ -361,6 +353,34 @@ Human reviews output
 - **OHOTL**: GPS drives while you watch, you can redirect anytime
 - **AHOTL**: You set destination, define acceptable routes, check when you arrive
 
+## Execution Modes: Continuous vs Discrete
+
+When creating an intent with `/haiku:new`, you select an execution mode that controls how stages advance.
+
+### Continuous Mode
+
+Continuous mode runs each stage in sequence, advancing automatically when review gates allow. When a gate passes (`auto`), the framework moves to the next stage without human intervention. When a gate requires approval (`ask`), external review (`external`), or an external event (`await`), the framework pauses at that gate, then continues through remaining stages once resolved.
+
+This is the default. It suits initiatives where the human trusts the review gates to enforce quality at each stage boundary.
+
+### Discrete Mode
+
+Discrete mode runs the same stage loop but always stops after each stage completes, regardless of the review gate setting. The human explicitly advances through stages by invoking `/haiku:run` again.
+
+This suits larger initiatives, cross-team work, and situations where each stage needs explicit human review before the next begins — for example, when a product stage's outputs must be approved by a different stakeholder than the development stage's outputs.
+
+### How They Differ
+
+Both modes execute the same five-step stage loop (decompose, execute, adversarial review, persist, gate). The difference is post-gate behavior:
+
+| Aspect | Continuous | Discrete |
+|--------|-----------|----------|
+| **After `auto` gate passes** | Advance to next stage | Stop; wait for `/haiku:run` |
+| **After `ask` gate** | Pause for approval, then advance | Pause for approval, then stop |
+| **After `external` gate** | Block until resolved, then advance | Block until resolved, then stop |
+| **After `await` gate** | Block until event, then advance | Block until event, then stop |
+| **Best for** | Trusted pipelines, small intents | Large intents, multi-stakeholder review |
+
 ## Bolts
 
 A **Bolt** is a single iteration cycle - one focused work session bounded by context resets (`/clear`).
@@ -388,24 +408,46 @@ A Bolt naturally ends when:
 
 ## State Management
 
-AI-DLC uses a two-tier state model:
+H·AI·K·U tracks state at three levels — intent, stage, and unit — using frontmatter fields and JSON state files. MCP tools (`haiku_intent_*`, `haiku_stage_*`, `haiku_unit_*`) are the primary interface for reading and writing state.
 
-### Committed Artifacts (`.ai-dlc/`)
+### Intent State
 
-Persisted across sessions, branches, and team members:
+Stored as frontmatter fields in `intent.md`:
+
+| Field | Purpose |
+|------|---------|
+| `started_at` | When the intent began |
+| `completed_at` | When the intent finished |
+| `status` | Current intent status (active, completed, blocked) |
+
+### Stage State
+
+Stored in `stages/{stage}/state.json` within the intent directory:
+
+| Field | Purpose |
+|------|---------|
+| `phase` | Current phase within the stage (decompose, execute, review, persist, gate) |
+| `started_at` | When the stage began |
+| `completed_at` | When the stage finished |
+| `gate_entered_at` | When the review gate was reached |
+| `gate_outcome` | Result of gate evaluation (passed, waiting, blocked) |
+
+### Unit State
+
+Stored as frontmatter fields in `unit-*.md`:
+
+| Field | Purpose |
+|------|---------|
+| `bolt` | Current bolt (iteration) number |
+| `hat` | Current hat within the bolt's hat sequence |
+| `status` | Unit status (pending, active, completed, blocked) |
+| `started_at` | When the unit began |
+| `completed_at` | When the unit finished |
+
+### Supporting Files
 
 | File | Purpose |
 |------|---------|
-| `intent.md` | What we're building, overall criteria |
-| `unit-*.md` | Individual units with their criteria |
-
-### Ephemeral State (`han keep`)
-
-Session-scoped, cleared on `/ai-dlc:reset`:
-
-| Key | Purpose |
-|-----|---------|
-| `iteration.json` | Current hat, iteration count, status |
 | `scratchpad.md` | Learnings and progress notes |
 | `blockers.md` | Documented blockers |
 
@@ -413,43 +455,43 @@ Session-scoped, cleared on `/ai-dlc:reset`:
 
 If you `/clear` without the stop hook:
 
-1. Committed artifacts (`.ai-dlc/`) are safe
-2. Ephemeral state persists in `han keep`
-3. Run `/ai-dlc:execute` to continue
+1. Committed artifacts (`.haiku/`) are safe — intent, stage, and unit state are persisted to disk
+2. MCP tools reconstruct full execution context on session start
+3. Run `/haiku:run` to continue
 
-## Iteration Through Passes
+## Iteration Through Stages
 
-AI-DLC treats iteration as the natural state of product development. The same State → Work → Feedback → Learn → Adjust pattern applies at every level:
+H·AI·K·U treats iteration as the natural state of product development. The same State -> Work -> Feedback -> Learn -> Adjust pattern applies at every level:
 
 ```
-Product → Intent → Pass → Unit → Bolt
+Product → Intent → Stage → Unit → Bolt
 ```
 
-Each level contains the same loop. Passes make the cross-functional iteration explicit rather than ad-hoc.
+Each level contains the same loop. Stages make the cross-functional iteration explicit rather than ad-hoc.
 
-### When to Use Passes
+### When to Use Stages
 
-- **Single-pass (default):** Most dev work. Skip passes entirely -- just elaborate and construct.
-- **Multi-pass:** When an intent needs design exploration, product specs, or other discipline-specific iteration before (or after) dev work.
+- **Single-stage (default):** Most dev work. Use a simple studio with only the development stage -- just create the intent and execute.
+- **Multi-stage:** When an intent needs design exploration, product specs, or other discipline-specific iteration before (or after) dev work. Select a studio with multiple stages.
 
 ### Backward Flow
 
-Backward arrows between passes are expected, not failures:
+Backward arrows between stages are expected, not failures:
 
 ```
-Design Pass → Product Pass → Dev Pass
+Design Stage → Product Stage → Dev Stage
      ↑              ↑             │
      │              └─ constraint ─┘
      └──── design gap ─┘
 ```
 
-When dev discovers a technical constraint that changes the product spec, the intent moves back to the product pass. When product finds a design gap, it moves back to the design pass. This is normal iteration.
+When dev discovers a technical constraint that changes the product spec, the intent moves back to the product stage. When product finds a design gap, it moves back to the design stage. This is normal iteration.
 
-For the full theoretical treatment of passes, see the [Iteration Through Passes](https://ai-dlc.dev/papers/ai-dlc-2026/#iteration-through-passes) section of the paper.
+For the full theoretical treatment of stages, see the [Studios & Stages](/docs/studios/) documentation.
 
 ## Design Providers
 
-AI-DLC supports six design providers that connect your workflow to external design tools: **Canva**, **Figma**, **OpenPencil**, **Pencil**, **Penpot**, and **Excalidraw**. Providers are detected automatically from available MCP tools or configured explicitly in `.ai-dlc/settings.yml`.
+H·AI·K·U supports six design providers that connect your workflow to external design tools: **Canva**, **Figma**, **OpenPencil**, **Pencil**, **Penpot**, and **Excalidraw**. Providers are detected automatically from available MCP tools or configured explicitly in `.haiku/settings.yml`.
 
 Each provider has different capabilities — some support components and prototyping (Figma, Penpot), others offer AI-powered design generation (Canva, OpenPencil, Pencil), and all support reading, writing, and exporting designs. During elaboration, the design provider pulls relevant mockups and component specs. During execution, builders reference design specs and reviewers cross-check implementations.
 
@@ -457,15 +499,54 @@ Design references use provider-specific URI schemes (e.g., `figma://file-key#nod
 
 See the [Design Providers Guide](/docs/guide-design-providers/) for setup instructions, capability details, and configuration for each provider.
 
+## Intent Templates
+
+Studios ship with parameterized intent templates in `studios/{name}/templates/`. Templates provide pre-filled units with `{{ parameter }}` substitution, so common patterns can be instantiated without manual elaboration.
+
+Use `/haiku:new --template <name> --param key=value` to create an intent from a template. For example:
+
+```
+/haiku:new --template new-feature --param feature_name="User Profiles" --param api_prefix="/api/v2"
+```
+
+Ten templates ship across seven studios:
+
+| Template | Studio | Purpose |
+|----------|--------|---------|
+| `new-feature` | software | Standard feature with inception through security |
+| `bugfix` | software | Bug investigation and fix with regression tests |
+| `refactor` | software | Code restructuring with safety checks |
+| `new-prospect` | sales | New prospect research and qualification |
+| `new-customer-onboarding` | customer-success | Customer onboarding workflow |
+| `quarterly-evidence-collection` | compliance | Periodic compliance evidence gathering |
+| `production-incident` | incident-response | Incident response from triage to postmortem |
+| `product-launch` | marketing | Product launch campaign from research to measurement |
+| `api-documentation` | documentation | API documentation from audit to publish |
+
+Templates define units with completion criteria, dependencies, and stage assignments. Parameters are substituted at instantiation time, producing a fully elaborated intent ready for `/haiku:run`.
+
 ## Operations Phase
 
-After construction and integration complete, many features require ongoing maintenance — scheduled jobs, reactive responses to production events, or periodic human reviews. The operations phase provides a structured way to define and manage these tasks using `/ai-dlc:operate`. Operations are defined as spec files alongside the code and tracked through the same state system as the rest of AI-DLC.
+After construction and integration complete, many features require ongoing maintenance — scheduled jobs, reactive responses to production events, or periodic human reviews. The operations phase provides a structured way to define and manage these tasks using `/haiku:operate`. Operations are defined as spec files alongside the code and tracked through the same state system as the rest of H·AI·K·U.
+
+### Studio Operation Templates
+
+Studios prescribe operation templates in `studios/{name}/operations/`. When you run `/haiku:operate`, it reads the current studio's templates to offer domain-appropriate operations. For example, the software studio provides deployment, monitoring, and rollback operations; the incident-response studio provides communication and escalation operations.
+
+Thirty-eight operation templates ship across twelve studios. Teams can add project-specific operations in `.haiku/studios/{name}/operations/` using the same override mechanism as stages and hats.
+
+### Studio Reflection Dimensions
+
+Studios prescribe reflection dimensions in `studios/{name}/reflections/`. When you run `/haiku:reflect`, it reads the current studio's dimensions to structure the post-mortem analysis along axes relevant to the domain. The software studio reflects on code quality, test coverage, and architecture decisions; the sales studio reflects on deal velocity, objection handling, and pipeline accuracy.
+
+Twenty-six reflection dimensions ship across twelve studios. Custom dimensions follow the same project-level override pattern.
 
 See the [Operations Guide](/docs/operations-guide/) for a full walkthrough.
 
 ## Next Steps
 
-- **[Workflows](/docs/workflows/)** - Learn the four named workflows
-- **[Hats](/docs/hats/)** - Understand each hat's responsibilities
+- **[Studios & Stages](/docs/studios/)** - Learn about studios and their stage pipelines
+- **[The Hat System](/docs/hats/)** - Understand each hat's responsibilities within stages
+- **[CLI Reference](/docs/cli-reference/)** - Full command reference
 - **[Example: Feature Implementation](/docs/example-feature/)** - See concepts in action
 - **[Operations Guide](/docs/operations-guide/)** - Manage ongoing operational tasks

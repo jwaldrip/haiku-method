@@ -14,12 +14,12 @@ allowed-tools:
 
 ## Name
 
-`ai-dlc:followup` - Create a follow-up intent that iterates on a previous one.
+`haiku:followup` - Create a follow-up intent that iterates on a previous one.
 
 ## Synopsis
 
 ```
-/ai-dlc:followup [previous-intent-slug]
+/haiku:followup [previous-intent-slug]
 ```
 
 ## Description
@@ -34,19 +34,19 @@ This addresses scenarios where:
 
 **User Flow:**
 ```
-User: /ai-dlc:followup
+User: /haiku:followup
 AI: Found intents: my-feature, api-refactor. Which is this a follow-up to?
 User: my-feature
 AI: What does this follow-up address?
 User: "PR reviewer asked me to add error handling to the API endpoint"
 AI: Created new intent fix-api-error-handling (iterates_on: my-feature).
-    Transitioning to /ai-dlc:elaborate...
+    Transitioning to /haiku:elaborate...
 ```
 
-**What this does NOT do:**
-- Modify the previous intent or its units
-- Add units to completed intents
-- Re-elaborate the original intent
+**What this **MUST NOT** do:**
+- The agent **MUST NOT** modify the previous intent or its units
+- The agent **MUST NOT** add units to completed intents
+- The agent **MUST NOT** re-elaborate the original intent
 
 **Key behavior:** The new intent is fully independent — it has its own slug, its own units, its own worktree. The `iterates_on` field is a reference link that tells the elaboration phase to load prior context automatically.
 
@@ -56,13 +56,13 @@ AI: Created new intent fix-api-error-handling (iterates_on: my-feature).
 
 ```bash
 if [ "${CLAUDE_CODE_IS_COWORK:-}" = "1" ]; then
-  echo "ERROR: /ai-dlc:followup cannot run in cowork mode."
+  echo "ERROR: /haiku:followup cannot run in cowork mode."
   echo "Run this in a full Claude Code CLI session."
   exit 1
 fi
 ```
 
-If `CLAUDE_CODE_IS_COWORK=1`, stop immediately with the message above. Do NOT proceed.
+If `CLAUDE_CODE_IS_COWORK=1`, the agent **MUST** stop immediately with the message above. The agent **MUST NOT** proceed.
 
 ### Step 1: Find Previous Intent
 
@@ -71,12 +71,12 @@ If a slug was provided as an argument, verify it exists (see sources below). If 
 **A: Check filesystem first (highest priority):**
 
 ```bash
-for intent_file in .ai-dlc/*/intent.md; do
+for intent_file in .haiku/intents/*/intent.md; do
   [ -f "$intent_file" ] || continue
   dir=$(dirname "$intent_file")
   slug=$(basename "$dir")
-  status=$(dlc_frontmatter_get "status" "$intent_file" 2>/dev/null || echo "active")
-  title=$(dlc_frontmatter_get "title" "$intent_file" 2>/dev/null || echo "$slug")
+  status=$(haiku_intent_get { slug, field: "status" } 2>/dev/null || echo "active")
+  title=$(haiku_intent_get { slug, field: "title" } 2>/dev/null || echo "$slug")
   echo "$slug|$status|$title"
 done
 ```
@@ -84,11 +84,10 @@ done
 **B: Check git branches as fallback (for cleaned-up intents):**
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/dag.sh"
-branch_intents=$(discover_branch_intents true)
-echo "$branch_intents" | while IFS='|' read -r slug workflow source branch; do
+# Discover intents from git branches directly (no shell lib needed)
+git branch -a | grep 'haiku/.*/main$' | sed 's|.*haiku/||;s|/main$||' | sort -u | while read -r slug; do
   [ -z "$slug" ] && continue
-  echo "$slug ($source: $branch)"
+  echo "$slug"
 done
 ```
 
@@ -97,20 +96,20 @@ done
 Look for intent branches in git that may have been cleaned up from the filesystem but still have history:
 
 ```bash
-git branch -a | grep 'ai-dlc/.*/main$' | sed 's|.*ai-dlc/||;s|/main$||' | sort -u
+git branch -a | grep 'haiku/.*/main$' | sed 's|.*haiku/||;s|/main$||' | sort -u
 ```
 
 For each discovered slug, try to read its intent.md from the branch:
 
 ```bash
-git show "ai-dlc/${slug}/main:.ai-dlc/${slug}/intent.md" 2>/dev/null
+git show "haiku/${slug}/main:.haiku/intents/${slug}/intent.md" 2>/dev/null
 ```
 
 **Selection logic:**
 - If slug was provided as argument: validate it exists and proceed
 - 1 intent found: auto-select
 - Multiple intents found: present them via `AskUserQuestion`
-- 0 intents found: error, suggest `/ai-dlc:elaborate` to start fresh
+- 0 intents found: error, suggest `/haiku:elaborate` to start fresh
 
 ```json
 {
@@ -134,25 +133,25 @@ Once the previous intent is selected, load its full context:
 PREVIOUS_SLUG="{selected-slug}"
 
 # Try filesystem first
-if [ -f ".ai-dlc/${PREVIOUS_SLUG}/intent.md" ]; then
-  PREVIOUS_INTENT=$(cat ".ai-dlc/${PREVIOUS_SLUG}/intent.md")
+if [ -f ".haiku/intents/${PREVIOUS_SLUG}/intent.md" ]; then
+  PREVIOUS_INTENT=$(cat ".haiku/intents/${PREVIOUS_SLUG}/intent.md")
   PREVIOUS_SOURCE="filesystem"
 else
   # Fallback: read from git branch
-  PREVIOUS_INTENT=$(git show "ai-dlc/${PREVIOUS_SLUG}/main:.ai-dlc/${PREVIOUS_SLUG}/intent.md" 2>/dev/null)
+  PREVIOUS_INTENT=$(git show "haiku/${PREVIOUS_SLUG}/main:.haiku/intents/${PREVIOUS_SLUG}/intent.md" 2>/dev/null)
   PREVIOUS_SOURCE="git-branch"
 fi
 
 # Load previous units
 if [ "$PREVIOUS_SOURCE" = "filesystem" ]; then
-  for unit_file in .ai-dlc/${PREVIOUS_SLUG}/unit-*.md; do
+  for unit_file in .haiku/intents/${PREVIOUS_SLUG}/stages/*/units/unit-*.md; do
     [ -f "$unit_file" ] && cat "$unit_file"
   done
 else
-  git show "ai-dlc/${PREVIOUS_SLUG}/main" -- ".ai-dlc/${PREVIOUS_SLUG}/unit-*.md" 2>/dev/null || \
-  git ls-tree --name-only "ai-dlc/${PREVIOUS_SLUG}/main" ".ai-dlc/${PREVIOUS_SLUG}/" 2>/dev/null | \
+  git show "haiku/${PREVIOUS_SLUG}/main" -- ".haiku/intents/${PREVIOUS_SLUG}/stages/*/units/unit-*.md" 2>/dev/null || \
+  git ls-tree --name-only "haiku/${PREVIOUS_SLUG}/main" ".haiku/intents/${PREVIOUS_SLUG}/" 2>/dev/null | \
     grep 'unit-' | while read -r f; do
-      git show "ai-dlc/${PREVIOUS_SLUG}/main:$f" 2>/dev/null
+      git show "haiku/${PREVIOUS_SLUG}/main:$f" 2>/dev/null
     done
 fi
 ```
@@ -216,11 +215,12 @@ The user will use the "Other" free-text input to describe the follow-up. Engage 
 
 Generate a slug for the new intent derived from the user's description (e.g., `fix-api-error-handling`, `add-pagination-support`).
 
-Create `.ai-dlc/{new-slug}/intent.md` with the `iterates_on` field:
+Create `.haiku/intents/{new-slug}/intent.md` with the `iterates_on` field:
 
 ```markdown
 ---
-workflow: {inherit from previous intent or use default}
+studio: {inherit from previous intent or use software}
+active_stage: {inherit from previous intent or use development}
 git:
   change_strategy: {inherit from previous intent}
   auto_merge: {inherit from previous intent}
@@ -257,17 +257,16 @@ This intent iterates on **{previous title}** (`{previous-slug}`).
 {Any additional context from the user's description or the review feedback}
 ```
 
-**Do NOT create units yet.** The elaboration phase handles unit decomposition.
+**The agent **MUST NOT** create units yet.** The elaboration phase handles unit elaboration.
 
 ```bash
-source "${CLAUDE_PLUGIN_ROOT}/lib/telemetry.sh"
-aidlc_telemetry_init
-aidlc_record_followup_created "${INTENT_SLUG}" "${PREVIOUS_SLUG}"
+# Telemetry is tracked automatically by the MCP server
+# Follow-up creation is recorded when haiku_intent_set is called
 ```
 
 ### Step 5: Transition to Elaboration
 
-After creating the intent scaffold, invoke `/ai-dlc:elaborate {new-slug}` to let the user flesh out the new intent. The elaborate skill will detect the `iterates_on` field and automatically load context from the previous intent.
+After creating the intent scaffold, invoke `/haiku:elaborate {new-slug}` to let the user flesh out the new intent. The elaborate skill will detect the `iterates_on` field and automatically load context from the previous intent.
 
 ```markdown
 ## Follow-Up Intent Created
@@ -276,20 +275,20 @@ After creating the intent scaffold, invoke `/ai-dlc:elaborate {new-slug}` to let
 **Slug:** {new-slug}
 **Iterates On:** {previous-slug} ({previous-title})
 
-The intent scaffold has been created at `.ai-dlc/{new-slug}/intent.md`.
+The intent scaffold has been created at `.haiku/intents/{new-slug}/intent.md`.
 Transitioning to elaboration to flesh out the details...
 ```
 
 Then invoke the elaborate skill:
 
 ```
-/ai-dlc:elaborate {new-slug}
+/haiku:elaborate {new-slug}
 ```
 
 The elaborate skill will:
 1. Detect `iterates_on: {previous-slug}` in the intent frontmatter
 2. Load the previous intent's context (units, specs, domain model)
-3. Use that context to inform clarifying questions, discovery, and unit decomposition
+3. Use that context to inform clarifying questions, discovery, and unit elaboration
 4. Skip or shorten phases where prior context is sufficient
 
 ## Examples
@@ -297,7 +296,7 @@ The elaborate skill will:
 ### Follow-Up After Review Feedback
 
 ```
-User: /ai-dlc:followup
+User: /haiku:followup
 AI: Found intents:
   - auth-system (completed, 4/4 units done)
   - api-refactor (active, 2/5 units done)
@@ -330,7 +329,7 @@ AI: ## Follow-Up Intent Created
 ### Follow-Up for Bug Fix
 
 ```
-User: /ai-dlc:followup auth-system
+User: /haiku:followup auth-system
 AI: Loaded previous intent: Auth System Overhaul (completed)
     What does this follow-up address?
 

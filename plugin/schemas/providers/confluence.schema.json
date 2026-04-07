@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://ai-dlc.dev/schemas/providers/confluence.schema.json",
+	"$id": "https://haiku.dev/schemas/providers/confluence.schema.json",
 	"title": "Confluence Provider Config",
 	"description": "Provider-specific configuration for Confluence spec provider",
 	"type": "object",
@@ -20,6 +20,11 @@
 		"template_id": {
 			"type": "string",
 			"description": "Confluence page template ID for new spec pages"
+		},
+		"url_template": {
+			"type": "string",
+			"description": "URL template for linking to Confluence pages. Variables: {cloud_id} (Atlassian site URL), {space_key} (Confluence space key), {key} (page ID)",
+			"default": "https://{cloud_id}/wiki/spaces/{space_key}/pages/{key}"
 		}
 	},
 	"additionalProperties": false
