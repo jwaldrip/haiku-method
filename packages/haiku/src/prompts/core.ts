@@ -285,14 +285,18 @@ function buildRunInstructions(
 				}
 			}
 
-			// Mechanics
+			// Mechanics — units always run in subagents
+			const worktreePath = action.worktree as string || ""
 			if (action.action === "start_unit") {
 				sections.push(
 					`### Mechanics\n\n` +
+					`Spawn an Agent subagent for this unit. The main agent orchestrates; subagents do unit work.\n` +
+					(worktreePath ? `Worktree: \`${worktreePath}\` — the subagent works here.\n\n` : "\n") +
+					`The subagent should:\n` +
 					`1. \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${unit}", hat: "${hat}" }\`\n` +
 					`2. Do the hat's work\n` +
-					`3. Advance hat or complete unit\n` +
-					`4. \`haiku_run_next { intent: "${slug}" }\``,
+					`3. Advance hat or complete unit\n\n` +
+					`After the subagent completes, call \`haiku_run_next { intent: "${slug}" }\``,
 				)
 			} else {
 				sections.push(
@@ -319,10 +323,17 @@ function buildRunInstructions(
 			}
 			sections.push(`Hats: ${hats.join(" → ")}\nUnits: ${units.join(", ")}`)
 
+			const worktrees = (action.worktrees as Record<string, string | null>) || {}
+			const useTeams = process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === "true"
+
 			sections.push(
 				`### Mechanics\n\n` +
-				`Spawn an Agent per unit (\`isolation: "worktree"\`). Include the stage definition in each agent's prompt.\n\n` +
-				units.map(u => `- **${u}**: \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${u}", hat: "${firstHat}" }\``).join("\n") +
+				`Spawn ${useTeams ? "an agent team" : "an Agent per unit"}. Each unit has its own worktree — subagents work there, the main agent orchestrates.\n` +
+				`Include the stage definition in each subagent's prompt.\n\n` +
+				units.map(u => {
+					const wt = worktrees[u]
+					return `- **${u}**${wt ? ` (worktree: \`${wt}\`)` : ""}: \`haiku_unit_start { intent: "${slug}", stage: "${stage}", unit: "${u}", hat: "${firstHat}" }\``
+				}).join("\n") +
 				`\n\nAfter all complete: \`haiku_run_next { intent: "${slug}" }\``,
 			)
 			break

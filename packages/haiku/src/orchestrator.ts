@@ -26,6 +26,7 @@ import {
 	unitPath,
 	syncSessionMetadata,
 } from "./state-tools.js"
+import { createIntentBranch, isOnIntentBranch, createUnitWorktree, createIntentPR } from "./git-worktree.js"
 
 // ── Path helpers ───────────────────────────────────────────────────────────
 
@@ -120,6 +121,11 @@ function fsmStartStage(slug: string, stage: string): void {
 	const intentFile = join(intentDir(slug), "intent.md")
 	if (existsSync(intentFile)) {
 		setFrontmatterField(intentFile, "active_stage", stage)
+	}
+
+	// Intent branch isolation: create/switch to haiku/{slug}/main on first stage
+	if (!isOnIntentBranch(slug)) {
+		createIntentBranch(slug)
 	}
 
 	emitTelemetry("haiku.stage.started", { intent: slug, stage })
@@ -349,8 +355,12 @@ export function runNext(slug: string): OrchestratorAction {
 		}
 
 		if (readyUnits.length > 1) {
-			// Multiple units ready — return all for parallel team execution
+			// Multiple units ready — create worktrees for parallel execution
 			const hats = resolveStageHats(studio, currentStage)
+			const unitWorktrees: Record<string, string | null> = {}
+			for (const u of readyUnits) {
+				unitWorktrees[u.name] = createUnitWorktree(slug, u.name)
+			}
 			return {
 				action: "start_units",
 				intent: slug,
@@ -359,6 +369,7 @@ export function runNext(slug: string): OrchestratorAction {
 				units: readyUnits.map(u => u.name),
 				first_hat: hats[0] || "",
 				hats,
+				worktrees: unitWorktrees,
 				stage_metadata: resolveStageMetadata(studio, currentStage),
 				message: `${readyUnits.length} units ready for parallel execution: ${readyUnits.map(u => u.name).join(", ")}`,
 			}
@@ -367,6 +378,8 @@ export function runNext(slug: string): OrchestratorAction {
 		if (readyUnits.length > 0) {
 			const unit = readyUnits[0]
 			const hats = resolveStageHats(studio, currentStage)
+			// Create worktree for solo unit too — all units are isolated
+			const worktreePath = createUnitWorktree(slug, unit.name)
 			return {
 				action: "start_unit",
 				intent: slug,
@@ -375,6 +388,7 @@ export function runNext(slug: string): OrchestratorAction {
 				unit: unit.name,
 				first_hat: hats[0] || "",
 				hats,
+				worktree: worktreePath,
 				stage_metadata: resolveStageMetadata(studio, currentStage),
 				message: `Start unit '${unit.name}' with hat '${hats[0] || ""}' in stage '${currentStage}'`,
 			}
@@ -457,20 +471,24 @@ export function runNext(slug: string): OrchestratorAction {
 			return { action: "stage_complete_discrete", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete. Run /haiku:run to start '${nextStage}'.` }
 		}
 
-		if (reviewType === "ask") {
-			// FSM side effect: set gate_entered_at (marks the gate as waiting for approval)
+		if (reviewType === "ask" || reviewType === "external" || reviewType.includes("ask") || reviewType.includes("external")) {
+			// All non-auto gates open the review UI. Gate type determines the options shown.
+			// ask → Approve / Request Changes
+			// external → Request Changes / Open PR
+			// [external, ask] or [ask, external] → Approve / Request Changes / Open PR
 			fsmGateAsk(slug, currentStage)
-			return { action: "gate_ask", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete — awaiting your approval to advance` }
-		}
-
-		if (reviewType === "external") {
-			// FSM side effect: enter gate
-			fsmGateAsk(slug, currentStage)
-			return { action: "gate_external", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete — push for external review` }
+			return {
+				action: "gate_review",
+				intent: slug,
+				studio,
+				stage: currentStage,
+				next_stage: nextStage,
+				gate_type: reviewType,
+				message: `Stage '${currentStage}' complete — opening review`,
+			}
 		}
 
 		if (reviewType === "await") {
-			// FSM side effect: enter gate
 			fsmGateAsk(slug, currentStage)
 			return { action: "gate_await", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete — awaiting external event before advancing` }
 		}
@@ -770,7 +788,7 @@ export const orchestratorToolDefs = [
  * Callback for opening a review and blocking until the user decides.
  * Set by server.ts at startup to avoid circular imports.
  */
-let _openReviewAndWait: ((intentDir: string, reviewType: string) => Promise<{ decision: string; feedback: string; annotations?: unknown }>) | null = null
+let _openReviewAndWait: ((intentDir: string, reviewType: string, gateType?: string) => Promise<{ decision: string; feedback: string; annotations?: unknown }>) | null = null
 
 export function setOpenReviewHandler(handler: typeof _openReviewAndWait): void {
 	_openReviewAndWait = handler
@@ -784,49 +802,38 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 		const result = runNext(slug)
 		emitTelemetry("haiku.orchestrator.action", { intent: slug, action: result.action })
 
-		// Gate actions: open review internally, block until user decides, then advance
-		if (result.action === "gate_ask" && _openReviewAndWait) {
+		// Gate review: open review UI, block until user decides, process decision
+		if (result.action === "gate_review" && _openReviewAndWait) {
+			const stage = result.stage as string
+			const nextStage = result.next_stage as string | null
+			const gateType = result.gate_type as string
 			const intentDirPath = `.haiku/intents/${slug}`
 			try {
-				const reviewResult = await _openReviewAndWait(intentDirPath, "intent")
+				const reviewResult = await _openReviewAndWait(intentDirPath, "intent", gateType)
 				if (reviewResult.decision === "approved") {
-					// Advance the gate
-					const stage = result.stage as string
-					const nextStage = result.next_stage as string | null
 					if (nextStage) {
 						fsmAdvanceStage(slug, stage, nextStage)
 						syncSessionMetadata(slug, args.state_file as string | undefined)
-						return text(JSON.stringify({
-							action: "advance_stage",
-							intent: slug,
-							stage,
-							next_stage: nextStage,
-							gate_outcome: "advanced",
-							message: `Gate approved — advancing to '${nextStage}'`,
-						}, null, 2))
+						return text(JSON.stringify({ action: "advance_stage", intent: slug, stage, next_stage: nextStage, gate_outcome: "advanced", message: `Approved — advancing to '${nextStage}'` }, null, 2))
 					}
-					// Last stage
 					fsmCompleteStage(slug, stage, "advanced")
 					fsmIntentComplete(slug)
 					syncSessionMetadata(slug, args.state_file as string | undefined)
-					return text(JSON.stringify({
-						action: "intent_complete",
-						intent: slug,
-						message: `Gate approved — intent complete`,
-					}, null, 2))
+					return text(JSON.stringify({ action: "intent_complete", intent: slug, message: "Approved — intent complete" }, null, 2))
 				}
-				// Changes requested
+				if (reviewResult.decision === "open_pr") {
+					// User chose external review — create PR from intent branch
+					const prTitle = `haiku: ${slug} — stage ${stage}`
+					const prBody = reviewResult.feedback || `Review stage '${stage}' for intent '${slug}'`
+					const prUrl = createIntentPR(slug, prTitle, prBody)
+					fsmCompleteStage(slug, stage, "blocked")
+					syncSessionMetadata(slug, args.state_file as string | undefined)
+					return text(JSON.stringify({ action: "gate_external_pr", intent: slug, stage, pr_url: prUrl, message: prUrl ? `PR created: ${prUrl}` : "PR creation failed — push manually" }, null, 2))
+				}
+				// changes_requested
 				syncSessionMetadata(slug, args.state_file as string | undefined)
-				return text(JSON.stringify({
-					action: "changes_requested",
-					intent: slug,
-					stage: result.stage,
-					feedback: reviewResult.feedback,
-					annotations: reviewResult.annotations,
-					message: `Changes requested: ${reviewResult.feedback || "(see annotations)"}`,
-				}, null, 2))
+				return text(JSON.stringify({ action: "changes_requested", intent: slug, stage, feedback: reviewResult.feedback, annotations: reviewResult.annotations, message: `Changes requested: ${reviewResult.feedback || "(see annotations)"}` }, null, 2))
 			} catch {
-				// Timeout or error — return the gate_ask so agent can handle
 				syncSessionMetadata(slug, args.state_file as string | undefined)
 				return text(JSON.stringify(result, null, 2))
 			}

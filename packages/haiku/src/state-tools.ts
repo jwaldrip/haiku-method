@@ -10,6 +10,7 @@ import { z } from "zod"
 import matter from "gray-matter"
 import { emitTelemetry } from "./telemetry.js"
 import { writeHaikuMetadata, type HaikuSessionMetadata } from "./session-metadata.js"
+import { mergeUnitWorktree } from "./git-worktree.js"
 
 // ── Path resolution ────────────────────────────────────────────────────────
 
@@ -373,8 +374,15 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			setFrontmatterField(path, "completed_at", timestamp())
 			emitTelemetry("haiku.unit.completed", { intent: args.intent as string, stage: args.stage as string, unit: args.unit as string })
 			gitCommitState(`haiku: complete unit ${args.unit as string}`)
+
+			// Merge unit worktree back to intent branch (if running in a worktree)
+			const mergeResult = mergeUnitWorktree(args.intent as string, args.unit as string)
+			if (!mergeResult.success) {
+				return text(JSON.stringify({ status: "completed_merge_failed", message: mergeResult.message }))
+			}
+
 			syncSessionMetadata(args.intent as string, args.state_file as string | undefined)
-			return text("ok")
+			return text(mergeResult.message === "no worktree" ? "ok" : `ok (${mergeResult.message})`)
 		}
 		case "haiku_unit_advance_hat": {
 			const path = unitPath(args.intent as string, args.stage as string, args.unit as string)
