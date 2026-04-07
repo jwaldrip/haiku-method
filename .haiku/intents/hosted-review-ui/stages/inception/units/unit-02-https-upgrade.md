@@ -1,11 +1,12 @@
 ---
-status: active
+status: completed
 type: backend
 depends_on:
   - unit-01-cert-infrastructure
 bolt: 1
-hat: architect
+hat: decomposer
 started_at: '2026-04-07T14:38:57Z'
+completed_at: '2026-04-07T14:39:06Z'
 ---
 
 # HTTPS Upgrade
