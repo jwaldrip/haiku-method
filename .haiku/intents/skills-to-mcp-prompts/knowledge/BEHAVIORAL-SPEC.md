@@ -700,3 +700,205 @@ No McpError is thrown.
 
 The distinction: protocol errors mean "your request is malformed", application errors mean
 "your request is valid but the current state cannot satisfy it".
+
+---
+
+## 9. Supporting & Niche Prompt Behaviors
+
+The 15 prompts below follow established patterns from the core prompts. Grouped by behavioral pattern with representative scenarios for each.
+
+### Pattern A — State Read + Instruction Return
+
+**Prompts:** `haiku:capacity`, `haiku:release-notes`, `haiku:ideate`, `haiku:scaffold`, `haiku:migrate`
+
+These prompts read project state, format it, and return a single user-role message with the data plus instructions for the agent to act on.
+
+#### 9.1 Happy Path: State Read Returns Formatted Data
+
+```
+Given intent history exists with 3 completed intents across studio "software"
+  And each intent has bolt counts, stage durations, and unit summaries
+When  prompts/get is called for haiku:capacity with { studio: "software" }
+Then  the response is a GetPromptResult with 1 message
+  And messages[0] has role "user"
+  And the content includes aggregated metrics: total intents, total bolts, per-stage unit counts
+  And the content includes instructions for the agent to analyze patterns and present findings
+```
+
+#### 9.2 Edge: Empty State Returns Informative Message
+
+```
+Given no intents have been completed (empty .haiku/intents/ or all intents in_progress)
+When  prompts/get is called for haiku:capacity with {}
+Then  the response is a GetPromptResult with 1 message
+  And messages[0] has role "user"
+  And the content states "No completed intents found. Complete an intent to see capacity metrics."
+  And the content suggests: "Run /haiku:run to advance an active intent"
+```
+
+#### 9.3 Happy Path: Release Notes Reads Changelog
+
+```
+Given CHANGELOG.md exists at repo root with entries for v1.2.0 and v1.1.0
+When  prompts/get is called for haiku:release-notes with { version: "1.2.0" }
+Then  the response is a GetPromptResult with 1 message
+  And messages[0] includes the v1.2.0 changelog section
+  And messages[0] includes instructions to summarize or format the notes
+```
+
+### Pattern B — Elicitation + Side Effect
+
+**Prompts:** `haiku:setup`, `haiku:composite`, `haiku:adopt`
+
+These prompts use elicitation to gather structured input before constructing the prompt messages.
+
+#### 9.4 Happy Path: Elicitation Gathers Input
+
+```
+Given studios "software" and "content" are available
+  And the client supports elicitation
+When  prompts/get is called for haiku:composite with { description: "Full-stack feature with docs" }
+Then  the handler calls elicitation/create with a form listing available studios
+  And the form requires selecting at least 2 studios
+  And after the user selects "software" and "content", the handler constructs a 3-message response
+  And messages[2] includes parallel stage mapping and sync point definitions
+```
+
+#### 9.5 Error: Elicitation Declined
+
+```
+Given the client supports elicitation
+When  prompts/get is called for haiku:setup with {}
+  And the user declines the elicitation (action: "decline")
+Then  the handler returns a GetPromptResult with 1 message
+  And messages[0] states "Setup cancelled. Run /haiku:setup when ready to configure."
+```
+
+#### 9.6 Error: Invalid Elicitation Selection
+
+```
+Given studios "software", "content", and "data" are available
+When  prompts/get is called for haiku:composite with {}
+  And the user selects only 1 studio via elicitation
+Then  the handler re-elicits with error context:
+      "Composite intents require at least 2 studios. Please select additional studios."
+```
+
+### Pattern C — Mode Setting + Chain
+
+**Prompts:** `haiku:autopilot`, `haiku:quick`
+
+These prompts set a mode on the intent and then return prompt messages equivalent to another prompt (chaining).
+
+#### 9.7 Happy Path: Autopilot Sets Mode and Chains to Run
+
+```
+Given an active intent "my-feature" exists with status "in_progress"
+When  prompts/get is called for haiku:autopilot with { intent: "my-feature" }
+Then  the handler sets mode=autopilot on the intent's state
+  And the handler constructs messages equivalent to haiku:run
+  And messages[2] includes additional autopilot-specific instructions:
+      "Proceed through all stages without pausing for user input at 'ask' gates"
+```
+
+#### 9.8 Happy Path: Quick Creates Single-Stage Intent
+
+```
+Given no active intent exists
+When  prompts/get is called for haiku:quick with { description: "Fix typo in README" }
+Then  the handler creates a new intent with a single-stage lifecycle
+  And elaboration is skipped — the intent goes directly to execution
+  And messages follow the 3-message pattern
+  And messages[2] includes the task description and instructs the agent to implement directly
+```
+
+#### 9.9 Error: Autopilot Active Intent Conflict
+
+```
+Given an active intent "existing-feature" exists with mode=autopilot already set
+When  prompts/get is called for haiku:autopilot with { description: "New feature" }
+Then  the handler returns a GetPromptResult with 1 message
+  And messages[0] states "An autopilot intent is already running: existing-feature. Complete or cancel it first."
+```
+
+### Pattern E — Subcommand Dispatch
+
+**Prompts:** `haiku:backlog`, `haiku:seed`, `haiku:operate`
+
+These prompts accept an action argument that routes to subcommand-specific handler logic. The first message includes subcommand routing based on the resolved action.
+
+#### 9.10 Happy Path: Dispatch to Subcommand
+
+```
+Given .haiku/backlog/ contains 3 intent stubs
+When  prompts/get is called for haiku:backlog with { action: "list" }
+Then  the response is a GetPromptResult with 1 message
+  And messages[0] includes formatted list of backlog items with descriptions and priorities
+  And messages[0] includes instructions for the agent to present the backlog summary
+```
+
+#### 9.11 Edge: No Action Argument Defaults to List
+
+```
+Given .haiku/backlog/ contains 2 intent stubs
+When  prompts/get is called for haiku:backlog with {}
+Then  the handler defaults action to "list"
+  And the response is identical to calling with { action: "list" }
+```
+
+#### 9.12 Error: Unknown Subcommand
+
+```
+When  prompts/get is called for haiku:backlog with { action: "explode" }
+Then  the server throws McpError with code -32602 (InvalidParams)
+  And the error message is "Invalid value for action: explode. Expected: add, list, review, promote"
+```
+
+### Pattern F — Adversarial/Challenge
+
+**Prompts:** `haiku:pressure-testing`, `haiku:triggers`
+
+These prompts load specific state and return challenge or event-driven prompts.
+
+#### 9.13 Happy Path: Pressure Testing Loads Unit Implementation
+
+```
+Given intent "my-feature" is active at stage "construction"
+  And unit "unit-01-api" is in progress with hat "engineer"
+  And the unit has implementation files tracked in its refs
+When  prompts/get is called for haiku:pressure-testing with {}
+Then  the response follows the 3-message pattern
+  And messages[0] includes the unit's implementation context (refs content, completion criteria)
+  And messages[2] includes adversarial challenge instructions:
+      "Identify edge cases, failure modes, and assumptions not covered by completion criteria"
+  And messages[2] includes specific challenge dimensions: error handling, concurrency, input validation
+```
+
+#### 9.14 Error: No Active Unit for Pressure Testing
+
+```
+Given no intent is active, or the active intent has no in-progress unit
+When  prompts/get is called for haiku:pressure-testing with {}
+Then  the handler returns a GetPromptResult with 1 message
+  And messages[0] states "No active unit to pressure-test. Start a unit with /haiku:run first."
+```
+
+#### 9.15 Happy Path: Triggers Polls Providers
+
+```
+Given .haiku/settings.yml has providers configured: ["github", "linear"]
+  And the github provider has 2 new events (PR merged, issue created)
+When  prompts/get is called for haiku:triggers with {}
+Then  the response is a GetPromptResult with 1 message
+  And messages[0] includes a summary of provider events grouped by provider
+  And messages[0] includes instructions for the agent to create intents or advance gates based on events
+```
+
+#### 9.16 Error: No Providers Configured for Triggers
+
+```
+Given .haiku/settings.yml has no providers configured (or providers: [])
+When  prompts/get is called for haiku:triggers with {}
+Then  the handler returns a GetPromptResult with 1 message
+  And messages[0] states "No providers configured. Run /haiku:setup to configure event providers."
+```

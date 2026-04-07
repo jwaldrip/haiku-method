@@ -299,23 +299,49 @@ We do not use `MethodNotFound` (-32601), `InternalError` (-32603), or custom cod
 
 ### 3.3 Error Catalog
 
+#### Protocol-Level Errors (McpError -32602)
+
+These represent invalid requests that the registry can reject before any handler logic runs.
+The server throws `McpError(ErrorCode.InvalidParams, message)`.
+
 | Error Condition | Thrown By | Code | Message Format |
 |---|---|---|---|
 | Unknown prompt name | `getPrompt()` | -32602 | `Unknown prompt: {name}` |
 | Missing required argument | `getPrompt()` | -32602 | `Missing required argument: {argName} for prompt {promptName}` |
 | Invalid argument value | prompt handler | -32602 | `Invalid value for {argName}: {value}. Expected: {expected}` |
-| No active intent (when required) | prompt handler | -32602 | `No active intent found. Create one with /haiku:new` |
 | Intent not found | prompt handler | -32602 | `Intent not found: {slug}` |
 
-**Error flow:**
+#### Application-Level Errors (prompt messages)
+
+These represent valid requests that encounter a state problem. The handler returns a
+`GetPromptResult` with a single user-role message describing the error and a recovery action.
+No `McpError` is thrown.
+
+| Error Condition | Returned By | Response Type | Message Format |
+|---|---|---|---|
+| No active intent (when required) | prompt handler | `GetPromptResult` (1 user message) | `No active intent found. Create one with /haiku:new` |
+
+"No active intent" is a state resolution failure, not a parameter validation failure: the user
+did not provide an explicit slug, and the system cannot auto-resolve one. Contrast with "Intent
+not found" above, where the user explicitly provides a non-existent slug (parameter validation).
+See BEHAVIORAL-SPEC.md scenario 2.7 for the authoritative behavior.
+
+**Error flow (protocol-level):**
 
 1. SDK deserializes request and validates JSON-RPC envelope
 2. Our handler validates prompt name (throws `McpError` if unknown)
 3. Our handler validates required arguments (throws `McpError` if missing)
-4. Prompt-specific handler validates argument values and state (throws `McpError` on failure)
+4. Prompt-specific handler validates argument values and explicit lookups (throws `McpError` on failure)
 5. SDK catches `McpError`, serializes as JSON-RPC error response
 
-**Wire format of an error response:**
+**Error flow (application-level):**
+
+1. SDK deserializes request and validates JSON-RPC envelope (passes)
+2. Our handler validates prompt name and required arguments (passes)
+3. Prompt-specific handler encounters a state problem (e.g., no active intent to auto-resolve)
+4. Handler returns `GetPromptResult` with a single user-role message describing the error
+
+**Wire format of a protocol error response:**
 
 ```json
 {
@@ -324,6 +350,23 @@ We do not use `MethodNotFound` (-32601), `InternalError` (-32603), or custom cod
   "error": {
     "code": -32602,
     "message": "Missing required argument: intent for prompt haiku:run"
+  }
+}
+```
+
+**Wire format of an application error response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "messages": [
+      {
+        "role": "user",
+        "content": { "type": "text", "text": "No active intent found. Create one with /haiku:new" }
+      }
+    ]
   }
 }
 ```
@@ -382,3 +425,88 @@ No other SDK modules are needed for the prompts subsystem. The `Server` class it
 | Server responds `completion/complete` | Out | `CompleteResult` |
 | Server responds with error | Out | `McpError` (code + message) |
 | Internal registration | Internal only | `PromptDef`, `PromptArgDef`, `PromptHandler`, `ArgumentCompleter` |
+
+---
+
+## 6. Side-Effect Contracts
+
+Prompt handlers may trigger side effects beyond returning messages. These are not part of the MCP prompts protocol itself but are internal contracts that prompt handlers rely on.
+
+### 6.1 Elicitation Contract
+
+The server uses elicitation to gather structured input from the user mid-handler, before constructing the final prompt messages. Elicitation is an MCP capability, not a prompts-specific feature.
+
+**Invocation:**
+
+```typescript
+const result = await server.elicitInput({
+  message: string,                          // Human-readable question or instruction
+  requestedSchema: {
+    type: "object",
+    properties: {
+      [field: string]: {
+        type: string,                       // "string", "number", "boolean"
+        title: string,                      // Display label
+        description: string,                // Help text
+        enum?: string[]                     // Constrained choices (renders as select/radio)
+      }
+    },
+    required: string[]                      // Which fields must be answered
+  }
+})
+```
+
+**Response:**
+
+```typescript
+interface ElicitationResult {
+  action: "accept" | "decline" | "cancel"   // User's disposition
+  content?: Record<string, string>          // Field values (present when action = "accept")
+}
+```
+
+**Wire method:** `elicitation/create` (server-to-client request)
+
+**Used by:**
+- `haiku:new` — studio selection when no project-level override
+- `haiku:new` — active intent conflict resolution
+- `haiku:new` — template parameter gathering
+- `haiku:refine` — target selection when no target argument provided
+- `haiku:composite` — multi-studio selection
+- `haiku:setup` — provider configuration
+- `haiku:adopt` — existing feature identification
+
+**Fallback behavior:**
+
+If the client does not support the `elicitation` capability, the handler catches the capability error and falls back to including the question in the prompt messages instead. The agent is then instructed to ask the user via `ask_user_visual_question`. See BEHAVIORAL-SPEC.md scenario 5.5 for the authoritative behavior.
+
+### 6.2 `open_review` Contract
+
+The `open_review` MCP tool creates a visual review session. Prompt handlers call it internally as a side effect before returning messages.
+
+**Input:**
+
+```typescript
+interface OpenReviewInput {
+  intent_dir: string                        // Absolute path to .haiku/intents/{slug}/
+  review_type: "intent" | "unit"            // Scope of the review
+  target?: string                           // Specific unit or stage name (for unit reviews)
+}
+```
+
+**Output:**
+
+```typescript
+interface OpenReviewOutput {
+  review_url: string                        // URL for the visual review session
+  session_id: string                        // Unique session identifier for polling
+}
+```
+
+**Used by:**
+- `haiku:run` — when the orchestrator returns `gate_ask` action. The handler calls `open_review` before constructing the gate prompt messages. The returned `review_url` is embedded in the instruction message so the agent can direct the user to it.
+
+**Error handling:**
+- If `open_review` fails (e.g., port conflict), the handler falls back to a text-only gate prompt. See BEHAVIORAL-SPEC.md scenario 4.3 for the authoritative fallback behavior.
+
+**Note:** `open_review` already exists as a registered MCP tool. Prompt handlers invoke it internally via the tool dispatch mechanism, not by importing a function directly.
