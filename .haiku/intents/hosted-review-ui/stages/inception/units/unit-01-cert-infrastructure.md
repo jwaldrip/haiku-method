@@ -1,7 +1,10 @@
 ---
-status: pending
+status: active
 type: backend
 depends_on: []
+bolt: 1
+hat: architect
+started_at: '2026-04-07T14:37:22Z'
 ---
 
 # Cert Infrastructure
