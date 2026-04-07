@@ -297,11 +297,31 @@ export function runNext(slug: string): OrchestratorAction {
 	const skipStages = (intent.skip_stages as string[]) || []
 	const studioStages = allStudioStages.filter(s => !skipStages.includes(s))
 
-	// Determine current stage
+	// Determine current stage — with consistency check
 	let currentStage = activeStage
 	if (!currentStage) {
 		currentStage = studioStages[0]
 	}
+
+	// Consistency check: verify all stages before active_stage are completed.
+	// If not, reset to the first incomplete stage. This catches stale active_stage
+	// values set by old binaries or direct file edits.
+	const activeIdx = studioStages.indexOf(currentStage)
+	if (activeIdx > 0) {
+		for (let i = 0; i < activeIdx; i++) {
+			const prevState = readJson(join(iDir, "stages", studioStages[i], "state.json"))
+			const prevStatus = (prevState.status as string) || "pending"
+			if (prevStatus !== "completed") {
+				// Found an incomplete stage before active_stage — reset
+				currentStage = studioStages[i]
+				// Fix the intent's active_stage to match reality
+				setFrontmatterField(intentFile, "active_stage", currentStage)
+				emitTelemetry("haiku.fsm.consistency_fix", { intent: slug, stale_stage: activeStage, corrected_stage: currentStage })
+				break
+			}
+		}
+	}
+
 	// If current stage was skipped, advance to next non-skipped stage
 	if (skipStages.includes(currentStage)) {
 		const idx = allStudioStages.indexOf(currentStage)
