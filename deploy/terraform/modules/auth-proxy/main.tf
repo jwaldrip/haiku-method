@@ -224,19 +224,6 @@ resource "google_certificate_manager_certificate" "auth_proxy" {
   }
 }
 
-resource "google_certificate_manager_certificate_map" "auth_proxy" {
-  name    = "haiku-auth-proxy-certmap"
-  project = var.project_id
-}
-
-resource "google_certificate_manager_certificate_map_entry" "auth_proxy" {
-  name         = "haiku-auth-proxy-certmap-entry"
-  project      = var.project_id
-  map          = google_certificate_manager_certificate_map.auth_proxy.name
-  certificates = [google_certificate_manager_certificate.auth_proxy.id]
-  hostname     = "auth.${var.domain}"
-}
-
 # HTTPS proxy
 resource "google_compute_region_target_https_proxy" "auth_proxy" {
   name                             = "haiku-auth-proxy-https"
