@@ -166,7 +166,7 @@ resource "google_compute_region_network_endpoint_group" "auth_proxy" {
   network_endpoint_type = "SERVERLESS"
 
   cloud_run {
-    service = google_cloudfunctions2_function.auth_proxy.service_config[0].service
+    service = local.function_name
   }
 }
 
