@@ -2,7 +2,7 @@
 title: "How GigSmart's Team Works with AI Using H·AI·K·U"
 date: 2026-04-07
 author: Jason Waldrip
-description: A look at how H·AI·K·U — built at GigSmart — brings structure and quality to human-AI collaboration.
+description: H·AI·K·U was born at The Bushido Collective and is now owned and maintained by GigSmart. Here's how we use it — and why we took ownership.
 ---
 
 # How GigSmart's Team Works with AI Using H·AI·K·U
@@ -84,6 +84,16 @@ We're continuing to push H·AI·K·U forward:
 - **More studios** — every team at GigSmart that works with AI is a candidate for a purpose-built studio
 
 If your team is working with AI and finding that the outputs are inconsistent, the quality is unpredictable, or the collaboration feels one-sided — H·AI·K·U might be what you need. Not to go faster, but to go together.
+
+## The Transition
+
+H·AI·K·U was born at [The Bushido Collective](https://thebushido.co) — a collective of senior engineers and technical leaders focused on rigorous AI-assisted workflows. The initial methodology, the plugin architecture, and the core principles all came out of TBC's work.
+
+But GigSmart was always where the framework got real. We were the first production environment, the first team to push it past demos and into daily engineering work. Every quality gate, every review agent, every stage transition was shaped by what we learned shipping real features under real deadlines.
+
+When the opportunity came to take ownership, it was a natural step. The framework was already ours in practice — now it's ours in name. GigSmart maintains H·AI·K·U, funds its development, and uses it every day across engineering, product, and operations.
+
+The Bushido Collective remains credited as the origin. The lineage matters. But going forward, H·AI·K·U is a GigSmart project — open source under Apache 2.0, available to anyone who wants structured human-AI collaboration.
 
 ---
 
