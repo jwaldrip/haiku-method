@@ -157,7 +157,7 @@ resource "google_compute_subnetwork" "proxy_only" {
   project       = var.project_id
   region        = var.region
   network       = "default"
-  ip_cidr_range = "10.129.0.0/23"
+  ip_cidr_range = "172.16.0.0/23"
   purpose       = "REGIONAL_MANAGED_PROXY"
   role          = "ACTIVE"
 }
@@ -249,4 +249,6 @@ resource "google_compute_forwarding_rule" "auth_proxy" {
   port_range            = "443"
   load_balancing_scheme = "EXTERNAL_MANAGED"
   target                = google_compute_region_target_https_proxy.auth_proxy.id
+
+  depends_on = [google_compute_subnetwork.proxy_only]
 }
