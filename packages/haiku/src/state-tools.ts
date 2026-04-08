@@ -5,7 +5,7 @@
 
 import { execFileSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { join, resolve } from "node:path"
 import { z } from "zod"
 import matter from "gray-matter"
 import { emitTelemetry } from "./telemetry.js"
@@ -462,7 +462,18 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const unitOutputs = (unitFm.outputs as string[]) || []
 			if (unitOutputs.length > 0) {
 				const iDir = intentDir(args.intent as string)
-				const missing = unitOutputs.filter(o => !existsSync(join(iDir, o)))
+				const escaped = unitOutputs.filter(o => {
+					const resolved = resolve(iDir, o)
+					return !resolved.startsWith(resolve(iDir) + "/")
+				})
+				if (escaped.length > 0) {
+					return text(JSON.stringify({ error: "unit_outputs_escaped", escaped, message: `Cannot complete unit: ${escaped.length} output path(s) escape the intent directory: ${escaped.join(", ")}. Fix the outputs in the unit frontmatter.` }))
+				}
+				const missing = unitOutputs.filter(o => {
+					const resolved = resolve(iDir, o)
+					if (!resolved.startsWith(resolve(iDir) + "/")) return false // escaped — already caught above
+					return !existsSync(resolved)
+				})
 				if (missing.length > 0) {
 					const sf = args.state_file as string | undefined
 					if (sf) logSessionEvent(sf, { event: "outputs_missing", intent: args.intent, stage: args.stage, unit: args.unit, missing })

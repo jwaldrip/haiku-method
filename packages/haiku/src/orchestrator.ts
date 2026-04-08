@@ -31,7 +31,6 @@ import {
 import { createIntentBranch, isOnIntentBranch, createUnitWorktree } from "./git-worktree.js"
 import { getSessionIntent, logSessionEvent } from "./session-metadata.js"
 import { computeWaves, buildDAG, topologicalSort } from "./dag.js"
-import { parseAllUnits } from "./index.js"
 import type { DAGGraph } from "./types.js"
 import { validateIdentifier } from "./prompts/helpers.js"
 
@@ -564,6 +563,7 @@ export function runNext(slug: string): OrchestratorAction {
 				const fm = readFrontmatter(join(unitsDir, f))
 				const id = f.replace(".md", "")
 				for (const dep of (fm.depends_on as string[]) || []) {
+					if (!dagAdj.has(dep)) continue // cross-stage dep — skip
 					dagEdges.push({ from: dep, to: id })
 					dagAdj.get(dep)?.push(id)
 				}
@@ -1004,6 +1004,7 @@ function computeUnitWaves(units: UnitInfo[]): { waves: Map<number, string[]>; un
 	}
 	for (const u of units) {
 		for (const dep of u.dependsOn) {
+			if (!adjacency.has(dep)) continue // cross-stage dep — skip
 			edges.push({ from: dep, to: u.name })
 			const existing = adjacency.get(dep)
 			if (existing) {
@@ -1396,11 +1397,10 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 
 				// Classify error: agent-fixable or retryable errors go back to the agent
 				const agentFixable = errorMsg.includes("Could not parse intent") ||
-					errorMsg.includes("not found") ||
 					errorMsg.includes("No such file") ||
 					errorMsg.includes("ENOENT") ||
 					errorMsg.includes("frontmatter") ||
-					errorMsg.includes("Invalid") ||
+					errorMsg.includes("invalid identifier") ||
 					errorMsg.includes("timeout") ||
 					errorMsg.includes("Timeout")
 

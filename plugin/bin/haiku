@@ -15876,7 +15876,7 @@ var init_protocol = __esm({
               return;
             }
             const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-            await new Promise((resolve6) => setTimeout(resolve6, pollInterval));
+            await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
             options2?.signal?.throwIfAborted();
           }
         } catch (error2) {
@@ -15893,7 +15893,7 @@ var init_protocol = __esm({
        */
       request(request, resultSchema, options2) {
         const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options2 ?? {};
-        return new Promise((resolve6, reject) => {
+        return new Promise((resolve7, reject) => {
           const earlyReject = (error2) => {
             reject(error2);
           };
@@ -15971,7 +15971,7 @@ var init_protocol = __esm({
               if (!parseResult.success) {
                 reject(parseResult.error);
               } else {
-                resolve6(parseResult.data);
+                resolve7(parseResult.data);
               }
             } catch (error2) {
               reject(error2);
@@ -16232,12 +16232,12 @@ var init_protocol = __esm({
           }
         } catch {
         }
-        return new Promise((resolve6, reject) => {
+        return new Promise((resolve7, reject) => {
           if (signal.aborted) {
             reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
             return;
           }
-          const timeoutId = setTimeout(resolve6, interval);
+          const timeoutId = setTimeout(resolve7, interval);
           signal.addEventListener("abort", () => {
             clearTimeout(timeoutId);
             reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -19264,7 +19264,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve6.call(this, root, ref);
+      let _sch = resolve7.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
@@ -19291,7 +19291,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve6(root, ref) {
+    function resolve7(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -19866,7 +19866,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve6(baseURI, relativeURI, options2) {
+    function resolve7(baseURI, relativeURI, options2) {
       const schemelessOptions = options2 ? Object.assign({ scheme: "null" }, options2) : { scheme: "null" };
       const resolved = resolveComponent(parse4(baseURI, schemelessOptions), parse4(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -20093,7 +20093,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve6,
+      resolve: resolve7,
       resolveComponent,
       equal,
       serialize,
@@ -23893,12 +23893,12 @@ var init_stdio2 = __esm({
         this.onclose?.();
       }
       send(message) {
-        return new Promise((resolve6) => {
+        return new Promise((resolve7) => {
           const json = serializeMessage(message);
           if (this._stdout.write(json)) {
-            resolve6();
+            resolve7();
           } else {
-            this._stdout.once("drain", resolve6);
+            this._stdout.once("drain", resolve7);
           }
         });
       }
@@ -23920,14 +23920,14 @@ function notifySessionUpdate(sessionId) {
   sessionEvents.emit(`session:${sessionId}`);
 }
 function waitForSession(sessionId, timeoutMs = 30 * 60 * 1e3) {
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     const timer = setTimeout(() => {
       sessionEvents.removeListener(`session:${sessionId}`, handler);
       reject(new Error("Session timeout"));
     }, timeoutMs);
     function handler() {
       clearTimeout(timer);
-      resolve6();
+      resolve7();
     }
     sessionEvents.once(`session:${sessionId}`, handler);
   });
@@ -24162,13 +24162,13 @@ async function handleMockupGet(sessionId, filePath) {
   }
   const mockupsDir = join2(session.intent_dir, "mockups");
   const resolved = resolve(mockupsDir, filePath);
-  if (!resolved.startsWith(resolve(mockupsDir))) {
+  if (!resolved.startsWith(resolve(mockupsDir) + "/")) {
     return new Response("Forbidden", { status: 403 });
   }
   try {
     const realResolved = await realpath(resolved).catch(() => null);
     const realBase = await realpath(mockupsDir).catch(() => resolve(mockupsDir));
-    if (!realResolved || !realResolved.startsWith(realBase)) {
+    if (!realResolved || !realResolved.startsWith(realBase + "/")) {
       return new Response("Forbidden", { status: 403 });
     }
     const data = await readFile2(resolved);
@@ -24187,7 +24187,7 @@ async function handleWireframeGet(sessionId, filePath) {
     return new Response("Session not found", { status: 404 });
   }
   const resolved = resolve(session.intent_dir, filePath);
-  if (!resolved.startsWith(resolve(session.intent_dir))) {
+  if (!resolved.startsWith(resolve(session.intent_dir) + "/")) {
     return new Response("Forbidden", { status: 403 });
   }
   try {
@@ -24195,7 +24195,7 @@ async function handleWireframeGet(sessionId, filePath) {
     const realBase = await realpath(session.intent_dir).catch(
       () => resolve(session.intent_dir)
     );
-    if (!realResolved || !realResolved.startsWith(realBase)) {
+    if (!realResolved || !realResolved.startsWith(realBase + "/")) {
       return new Response("Forbidden", { status: 403 });
     }
     const data = await readFile2(resolved);
@@ -24214,7 +24214,7 @@ async function handleStageArtifactGet(sessionId, filePath) {
     return new Response("Session not found", { status: 404 });
   }
   const resolved = resolve(session.intent_dir, filePath);
-  if (!resolved.startsWith(resolve(session.intent_dir))) {
+  if (!resolved.startsWith(resolve(session.intent_dir) + "/")) {
     return new Response("Forbidden", { status: 403 });
   }
   try {
@@ -24222,7 +24222,7 @@ async function handleStageArtifactGet(sessionId, filePath) {
     const realBase = await realpath(session.intent_dir).catch(
       () => resolve(session.intent_dir)
     );
-    if (!realResolved || !realResolved.startsWith(realBase)) {
+    if (!realResolved || !realResolved.startsWith(realBase + "/")) {
       return new Response("Forbidden", { status: 403 });
     }
     const data = await readFile2(resolved);
@@ -24605,7 +24605,7 @@ async function startHttpServer() {
   );
 }
 function listenOnPort(port) {
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     const server2 = createServer(async (req, res) => {
       const host = req.headers.host ?? `127.0.0.1:${port}`;
       const url = `http://${host}${req.url ?? "/"}`;
@@ -24655,7 +24655,7 @@ function listenOnPort(port) {
     });
     server2.listen(port, "127.0.0.1", () => {
       httpServer = server2;
-      resolve6();
+      resolve7();
     });
   });
 }
@@ -26903,7 +26903,7 @@ var init_git_worktree = __esm({
 // src/state-tools.ts
 import { execFileSync as execFileSync2 } from "node:child_process";
 import { existsSync as existsSync3, mkdirSync as mkdirSync3, readFileSync as readFileSync2, readdirSync, writeFileSync as writeFileSync2 } from "node:fs";
-import { join as join5 } from "node:path";
+import { join as join5, resolve as resolve2 } from "node:path";
 function findHaikuRoot() {
   let dir = process.cwd();
   for (let i = 0; i < 20; i++) {
@@ -27212,7 +27212,18 @@ ${scope}` : "ok");
       const unitOutputs = unitFm.outputs || [];
       if (unitOutputs.length > 0) {
         const iDir = intentDir(args2.intent);
-        const missing = unitOutputs.filter((o) => !existsSync3(join5(iDir, o)));
+        const escaped = unitOutputs.filter((o) => {
+          const resolved = resolve2(iDir, o);
+          return !resolved.startsWith(resolve2(iDir) + "/");
+        });
+        if (escaped.length > 0) {
+          return text(JSON.stringify({ error: "unit_outputs_escaped", escaped, message: `Cannot complete unit: ${escaped.length} output path(s) escape the intent directory: ${escaped.join(", ")}. Fix the outputs in the unit frontmatter.` }));
+        }
+        const missing = unitOutputs.filter((o) => {
+          const resolved = resolve2(iDir, o);
+          if (!resolved.startsWith(resolve2(iDir) + "/")) return false;
+          return !existsSync3(resolved);
+        });
         if (missing.length > 0) {
           const sf = args2.state_file;
           if (sf) logSessionEvent(sf, { event: "outputs_missing", intent: args2.intent, stage: args2.stage, unit: args2.unit, missing });
@@ -28005,6 +28016,7 @@ function runNext(slug) {
         const fm = readFrontmatter(join7(unitsDir2, f));
         const id = f.replace(".md", "");
         for (const dep of fm.depends_on || []) {
+          if (!dagAdj.has(dep)) continue;
           dagEdges.push({ from: dep, to: id });
           dagAdj.get(dep)?.push(id);
         }
@@ -28324,6 +28336,7 @@ function computeUnitWaves(units) {
   }
   for (const u3 of units) {
     for (const dep of u3.dependsOn) {
+      if (!adjacency.has(dep)) continue;
       edges.push({ from: dep, to: u3.name });
       const existing = adjacency.get(dep);
       if (existing) {
@@ -28595,7 +28608,7 @@ ${errorStack}
           );
         } catch {
         }
-        const agentFixable = errorMsg.includes("Could not parse intent") || errorMsg.includes("not found") || errorMsg.includes("No such file") || errorMsg.includes("ENOENT") || errorMsg.includes("frontmatter") || errorMsg.includes("Invalid") || errorMsg.includes("timeout") || errorMsg.includes("Timeout");
+        const agentFixable = errorMsg.includes("Could not parse intent") || errorMsg.includes("No such file") || errorMsg.includes("ENOENT") || errorMsg.includes("frontmatter") || errorMsg.includes("invalid identifier") || errorMsg.includes("timeout") || errorMsg.includes("Timeout");
         if (agentFixable) {
           syncSessionMetadata(slug, args2.state_file);
           return {
@@ -29128,7 +29141,7 @@ var init_completions = __esm({
 // src/prompts/core.ts
 import { spawnSync } from "node:child_process";
 import { existsSync as existsSync7, readFileSync as readFileSync6, readdirSync as readdirSync5 } from "node:fs";
-import { join as join9, resolve as resolve2 } from "node:path";
+import { join as join9, resolve as resolve3 } from "node:path";
 function resolveIntent(args2) {
   if (args2.intent) {
     validateIdentifier(args2.intent, "intent slug");
@@ -29370,9 +29383,9 @@ ${unitContent}`);
 ${hatContent}`);
       if (unitRefs.length > 0) {
         sections.push(`### Refs`);
-        const dirResolved = resolve2(dir);
+        const dirResolved = resolve3(dir);
         for (const ref of unitRefs) {
-          const refResolved = resolve2(dir, ref);
+          const refResolved = resolve3(dir, ref);
           if (!refResolved.startsWith(dirResolved)) continue;
           if (existsSync7(join9(dir, ref))) {
             const content = readFileSync6(join9(dir, ref), "utf8");
@@ -31369,7 +31382,7 @@ Analyze the codebase and surface high-impact improvement ideas that survive adve
 var server_exports = {};
 import { spawn } from "node:child_process";
 import { readdir as readdir2 } from "node:fs/promises";
-import { dirname as dirname2, join as join12, resolve as resolve3 } from "node:path";
+import { dirname as dirname2, join as join12, resolve as resolve4 } from "node:path";
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -31626,8 +31639,8 @@ var init_server3 = __esm({
       }
       if (name === "open_review") {
         const input = OpenReviewInput.parse(args2);
-        const allowedBase = resolve3(process.cwd(), ".haiku");
-        const intentDir3 = resolve3(process.cwd(), input.intent_dir);
+        const allowedBase = resolve4(process.cwd(), ".haiku");
+        const intentDir3 = resolve4(process.cwd(), input.intent_dir);
         if (!intentDir3.startsWith(`${allowedBase}/`) && intentDir3 !== allowedBase) {
           return {
             content: [
@@ -31898,7 +31911,7 @@ var init_server3 = __esm({
         const context = input.context ?? "";
         const questions = input.questions;
         const imagePaths = input.image_paths ?? [];
-        const imageBaseDirs = imagePaths.map((p) => dirname2(resolve3(p)));
+        const imageBaseDirs = imagePaths.map((p) => dirname2(resolve4(p)));
         const session = createQuestionSession({
           title,
           questions,
@@ -32058,7 +32071,7 @@ var init_server3 = __esm({
       };
     });
     setOpenReviewHandler(async (intentDirRel, reviewType) => {
-      const intentDirAbs = resolve3(process.cwd(), intentDirRel);
+      const intentDirAbs = resolve4(process.cwd(), intentDirRel);
       const intent = await parseIntent(intentDirAbs);
       if (!intent) throw new Error("Could not parse intent");
       const units = await parseAllUnits(intentDirAbs);
@@ -33132,14 +33145,14 @@ var init_inject_state_file = __esm({
 
 // src/hooks/validate-unit-type.ts
 import { existsSync as existsSync16, readFileSync as readFileSync13 } from "node:fs";
-import { join as join21, resolve as resolve4, basename as basename5 } from "node:path";
+import { join as join21, resolve as resolve5, basename as basename5 } from "node:path";
 function out4(s) {
   process.stdout.write(s + "\n");
 }
 async function validateUnitType(input, pluginRoot) {
   const filePath = input.file_path || input.path || "";
   if (!filePath) return;
-  const absPath = resolve4(process.cwd(), filePath);
+  const absPath = resolve5(process.cwd(), filePath);
   const haikuMatch = absPath.match(/\.haiku\/intents\/([^/]+)\/stages\/([^/]+)\/units\/([^/]+\.md)$/);
   if (!haikuMatch) return;
   const [, intentSlug, stageName, unitFile] = haikuMatch;
@@ -33179,7 +33192,7 @@ var init_validate_unit_type = __esm({
 });
 
 // src/hooks/guard-fsm-fields.ts
-import { resolve as resolve5 } from "node:path";
+import { resolve as resolve6 } from "node:path";
 function out5(s) {
   process.stdout.write(s);
 }
@@ -33188,7 +33201,7 @@ async function guardFsmFields(input) {
   if (toolName !== "Write" && toolName !== "Edit") return;
   const filePath = input.file_path || "";
   if (!filePath) return;
-  const absPath = resolve5(process.cwd(), filePath);
+  const absPath = resolve6(process.cwd(), filePath);
   const isIntentFile = absPath.match(/\.haiku\/intents\/[^/]+\/intent\.md$/);
   const isStageState = absPath.match(/\.haiku\/intents\/[^/]+\/stages\/[^/]+\/state\.json$/);
   const isUnitFile = absPath.match(/\.haiku\/intents\/[^/]+\/stages\/[^/]+\/units\/[^/]+\.md$/);

@@ -186,7 +186,7 @@ async function handleMockupGet(
 	const mockupsDir = join(session.intent_dir, "mockups")
 	const resolved = resolve(mockupsDir, filePath)
 	// Pre-check with resolve() before attempting realpath
-	if (!resolved.startsWith(resolve(mockupsDir))) {
+	if (!resolved.startsWith(resolve(mockupsDir) + "/")) {
 		return new Response("Forbidden", { status: 403 })
 	}
 
@@ -194,7 +194,7 @@ async function handleMockupGet(
 		// Symlink-safe check: ensure resolved real path stays within base dir
 		const realResolved = await realpath(resolved).catch(() => null)
 		const realBase = await realpath(mockupsDir).catch(() => resolve(mockupsDir))
-		if (!realResolved || !realResolved.startsWith(realBase)) {
+		if (!realResolved || !realResolved.startsWith(realBase + "/")) {
 			return new Response("Forbidden", { status: 403 })
 		}
 		const data = await readFile(resolved)
@@ -220,7 +220,7 @@ async function handleWireframeGet(
 	// Wireframe paths are relative to the intent dir
 	const resolved = resolve(session.intent_dir, filePath)
 	// Pre-check with resolve() before attempting realpath
-	if (!resolved.startsWith(resolve(session.intent_dir))) {
+	if (!resolved.startsWith(resolve(session.intent_dir) + "/")) {
 		return new Response("Forbidden", { status: 403 })
 	}
 
@@ -230,7 +230,7 @@ async function handleWireframeGet(
 		const realBase = await realpath(session.intent_dir).catch(() =>
 			resolve(session.intent_dir),
 		)
-		if (!realResolved || !realResolved.startsWith(realBase)) {
+		if (!realResolved || !realResolved.startsWith(realBase + "/")) {
 			return new Response("Forbidden", { status: 403 })
 		}
 		const data = await readFile(resolved)
@@ -256,7 +256,7 @@ async function handleStageArtifactGet(
 	// filePath is like "stages/{stage}/artifacts/{file}"
 	const resolved = resolve(session.intent_dir, filePath)
 	// Pre-check with resolve() before attempting realpath
-	if (!resolved.startsWith(resolve(session.intent_dir))) {
+	if (!resolved.startsWith(resolve(session.intent_dir) + "/")) {
 		return new Response("Forbidden", { status: 403 })
 	}
 
@@ -266,7 +266,7 @@ async function handleStageArtifactGet(
 		const realBase = await realpath(session.intent_dir).catch(() =>
 			resolve(session.intent_dir),
 		)
-		if (!realResolved || !realResolved.startsWith(realBase)) {
+		if (!realResolved || !realResolved.startsWith(realBase + "/")) {
 			return new Response("Forbidden", { status: 403 })
 		}
 		const data = await readFile(resolved)
