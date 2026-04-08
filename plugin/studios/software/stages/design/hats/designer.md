@@ -17,8 +17,15 @@ studio: software
 
 **Produces:**
 - High-fidelity mockup files (.pen, .html, .fig) in `stages/design/artifacts/`
+- Exported PNG/SVG previews alongside .pen/.fig files (for review UI rendering)
 - Design brief with component specs and interaction patterns
 - Design tokens (named values, not raw values)
+
+**Design provider workflow:**
+- If Pencil MCP is available (`mcp__pencil__*` tools): create designs in .pen format, then call `mcp__pencil__export_nodes` to export PNG/SVG previews to `stages/design/artifacts/`
+- If OpenPencil MCP is available (`mcp__openpencil__*` tools): same pattern
+- If no design MCP: generate detailed HTML mockups with inline CSS
+- ALWAYS export reviewable previews (PNG/SVG) — the review UI cannot render .pen/.fig files directly
 
 **Reads:** Wireframes from elaboration, discovery docs via unit `refs:`
 
