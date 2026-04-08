@@ -27189,6 +27189,17 @@ ${scope}` : "ok");
       const path = unitPath(args2.intent, args2.stage, args2.unit);
       const unitRaw = readFileSync2(path, "utf8");
       const { data: unitFm } = parseFrontmatter(unitRaw);
+      const currentHat = unitFm.hat || "";
+      const stageHats = resolveStageHats(args2.intent, args2.stage);
+      if (stageHats.length > 0 && currentHat) {
+        const hatIdx = stageHats.indexOf(currentHat);
+        const isLastHat = hatIdx === stageHats.length - 1;
+        if (!isLastHat) {
+          const sf = args2.state_file;
+          if (sf) logSessionEvent(sf, { event: "hat_sequence_incomplete", intent: args2.intent, stage: args2.stage, unit: args2.unit, current_hat: currentHat, expected_last: stageHats[stageHats.length - 1] });
+          return text(JSON.stringify({ error: "hat_sequence_incomplete", current_hat: currentHat, remaining_hats: stageHats.slice(hatIdx + 1), message: `Cannot complete unit: hat sequence not finished. Current hat: "${currentHat}", remaining: ${stageHats.slice(hatIdx + 1).join(" \u2192 ")}. Advance through all hats before completing.` }));
+        }
+      }
       const unchecked = (unitRaw.match(/- \[ \]/g) || []).length;
       if (unchecked > 0) {
         const sf = args2.state_file;

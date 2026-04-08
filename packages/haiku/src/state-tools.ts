@@ -434,6 +434,19 @@ export function handleStateTool(name: string, args: Record<string, unknown>): { 
 			const unitRaw = readFileSync(path, "utf8")
 			const { data: unitFm } = parseFrontmatter(unitRaw)
 
+			// Verify the unit went through all hats
+			const currentHat = (unitFm.hat as string) || ""
+			const stageHats = resolveStageHats(args.intent as string, args.stage as string)
+			if (stageHats.length > 0 && currentHat) {
+				const hatIdx = stageHats.indexOf(currentHat)
+				const isLastHat = hatIdx === stageHats.length - 1
+				if (!isLastHat) {
+					const sf = args.state_file as string | undefined
+					if (sf) logSessionEvent(sf, { event: "hat_sequence_incomplete", intent: args.intent, stage: args.stage, unit: args.unit, current_hat: currentHat, expected_last: stageHats[stageHats.length - 1] })
+					return text(JSON.stringify({ error: "hat_sequence_incomplete", current_hat: currentHat, remaining_hats: stageHats.slice(hatIdx + 1), message: `Cannot complete unit: hat sequence not finished. Current hat: "${currentHat}", remaining: ${stageHats.slice(hatIdx + 1).join(" → ")}. Advance through all hats before completing.` }))
+				}
+			}
+
 			// Verify completion criteria are checked
 			const unchecked = (unitRaw.match(/- \[ \]/g) || []).length
 			if (unchecked > 0) {
