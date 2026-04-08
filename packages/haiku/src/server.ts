@@ -891,22 +891,41 @@ setOpenReviewHandler(async (intentDirRel: string, reviewType: string) => {
 	const port = await startHttpServer()
 	const reviewUrl = `http://127.0.0.1:${port}/review/${session.session_id}`
 
-	try {
-		const cmd = process.platform === "darwin" ? ["open", reviewUrl] : ["xdg-open", reviewUrl]
-		spawn(cmd[0], cmd.slice(1), { stdio: "ignore", detached: true }).unref()
-	} catch { /* */ }
+	function openBrowser() {
+		try {
+			const cmd = process.platform === "darwin" ? ["open", reviewUrl] : ["xdg-open", reviewUrl]
+			spawn(cmd[0], cmd.slice(1), { stdio: "ignore", detached: true }).unref()
+		} catch { /* */ }
+	}
 
-	await waitForSession(session.session_id, 30 * 60 * 1000)
+	openBrowser()
 
-	const updated = getSession(session.session_id)
-	if (updated && updated.session_type === "review" && updated.status === "decided") {
-		return {
-			decision: updated.decision,
-			feedback: updated.feedback,
-			annotations: updated.annotations,
+	// Retry loop: wait → check → reopen if needed → wait again
+	for (let attempt = 0; attempt < 3; attempt++) {
+		try {
+			await waitForSession(session.session_id, 10 * 60 * 1000) // 10 min per attempt
+		} catch {
+			// Timeout — check if session is still pending (user might still be looking)
+			const check = getSession(session.session_id)
+			if (check && check.session_type === "review" && check.status === "decided") {
+				// Decided while we were handling the timeout
+				return { decision: check.decision, feedback: check.feedback, annotations: check.annotations }
+			}
+			// Still pending — try reopening the browser
+			if (attempt < 2) {
+				console.error(`[haiku] Review session timeout (attempt ${attempt + 1}/3) — reopening browser`)
+				openBrowser()
+				continue
+			}
+		}
+
+		const updated = getSession(session.session_id)
+		if (updated && updated.session_type === "review" && updated.status === "decided") {
+			return { decision: updated.decision, feedback: updated.feedback, annotations: updated.annotations }
 		}
 	}
-	throw new Error("Review timeout")
+
+	throw new Error("Review timeout after 3 attempts (30 min total)")
 })
 
 // Wire up elicitation fallback for when the review UI fails

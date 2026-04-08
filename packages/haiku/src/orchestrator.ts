@@ -1401,13 +1401,15 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 						{ flag: "a" })
 				} catch { /* logging failure is non-fatal */ }
 
-				// Classify error: agent-fixable errors should go back to the agent, not to elicitation
+				// Classify error: agent-fixable or retryable errors go back to the agent
 				const agentFixable = errorMsg.includes("Could not parse intent") ||
 					errorMsg.includes("not found") ||
 					errorMsg.includes("No such file") ||
 					errorMsg.includes("ENOENT") ||
 					errorMsg.includes("frontmatter") ||
-					errorMsg.includes("Invalid")
+					errorMsg.includes("Invalid") ||
+					errorMsg.includes("timeout") ||
+					errorMsg.includes("Timeout")
 
 				if (agentFixable) {
 					syncSessionMetadata(slug, args.state_file as string | undefined)
