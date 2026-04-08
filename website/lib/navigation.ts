@@ -295,13 +295,6 @@ export const footerNavigation = {
 			},
 		],
 	},
-	legal: {
-		title: "Legal",
-		items: [
-			{ title: "Privacy Policy", href: "/docs/privacy/" },
-			{ title: "Terms of Service", href: "/docs/terms/" },
-		],
-	},
 }
 
 /**

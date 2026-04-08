@@ -7,14 +7,13 @@ export function Footer() {
 		footerNavigation.developers,
 		footerNavigation.guides,
 		footerNavigation.resources,
-		footerNavigation.legal,
 	]
 
 	return (
 		<footer className="border-t border-stone-200 bg-stone-50 pb-20 dark:border-stone-800 dark:bg-stone-900 md:pb-0">
 			<div className="mx-auto max-w-6xl px-4 py-12">
 				{/* Main footer content */}
-				<div className="grid gap-8 md:grid-cols-2 lg:grid-cols-6">
+				<div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
 					{/* Brand column */}
 					<div className="lg:col-span-2">
 						<Link href="/" className="text-xl font-bold tracking-tight">
@@ -90,6 +89,10 @@ export function Footer() {
 					<p className="text-sm text-stone-500 dark:text-stone-400">
 						&copy; {new Date().getFullYear()} GigSmart, Inc. Apache 2.0
 						License.
+						{" · "}
+						<Link href="/privacy" className="hover:text-stone-900 dark:hover:text-white">Privacy</Link>
+						{" · "}
+						<Link href="/terms" className="hover:text-stone-900 dark:hover:text-white">Terms</Link>
 					</p>
 					<a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
 						<span>Powered by</span>
