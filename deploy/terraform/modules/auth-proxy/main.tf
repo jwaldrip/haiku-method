@@ -179,7 +179,8 @@ resource "google_compute_region_backend_service" "auth_proxy" {
   load_balancing_scheme = "EXTERNAL_MANAGED"
 
   backend {
-    group = google_compute_region_network_endpoint_group.auth_proxy.id
+    group           = google_compute_region_network_endpoint_group.auth_proxy.id
+    capacity_scaler = 1.0
   }
 }
 
