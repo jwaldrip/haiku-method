@@ -39,7 +39,7 @@ jobs:
         working-directory: deploy/terraform
         run: terraform apply -auto-approve
         env:
-          TF_VAR_gcp_project_id: waldrip-net
+          TF_VAR_gcp_project_id: gigsmart-oss
           TF_VAR_domain: ${{ vars.HAIKU_DOMAIN || 'haikumethod.ai' }}
           TF_VAR_enable_auth_proxy: "true"
           TF_VAR_auth_proxy_subdomain: ${{ vars.TF_VAR_auth_proxy_subdomain || 'auth' }}

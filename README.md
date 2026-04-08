@@ -22,7 +22,7 @@ Studio > Stage > Unit > Bolt
 ## Installation
 
 ```
-/install thebushidocollective/ai-dlc
+/install gigsmart/ai-dlc
 ```
 
 No external dependencies. The plugin ships a single binary (`plugin/bin/haiku`) that handles MCP tools, hooks, and state management.

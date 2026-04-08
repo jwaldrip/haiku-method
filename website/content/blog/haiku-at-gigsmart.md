@@ -2,12 +2,12 @@
 title: "How GigSmart's Team Works with AI Using H·AI·K·U"
 date: 2026-04-07
 author: Jason Waldrip
-description: A look at how H·AI·K·U — built by the Bushido Collective and battle-tested at GigSmart — brings structure and quality to human-AI collaboration.
+description: A look at how H·AI·K·U — built at GigSmart — brings structure and quality to human-AI collaboration.
 ---
 
 # How GigSmart's Team Works with AI Using H·AI·K·U
 
-*By Jason Waldrip, CTO at GigSmart and Partner at The Bushido Collective*
+*By Jason Waldrip, CTO at GigSmart*
 
 H·AI·K·U didn't start as H·AI·K·U. It started as an idea in an AWS research paper about AI-assisted development lifecycles. That paper planted a seed: what if AI agents had structure — not just prompts, but a lifecycle with phases, quality gates, and human checkpoints?
 
@@ -87,4 +87,4 @@ If your team is working with AI and finding that the outputs are inconsistent, t
 
 ---
 
-*Born at [The Bushido Collective](https://thebushido.co). Battle-tested at [GigSmart](https://gigsmart.com). Available at [haikumethod.ai](https://haikumethod.ai).*
+*Built at [GigSmart](https://gigsmart.com). Open source at [haikumethod.ai](https://haikumethod.ai).*

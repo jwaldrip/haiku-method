@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "gcs" {
-    bucket = "waldrip-net-terraform-state"
+    bucket = "gigsmart-oss-terraform-state"
     prefix = "haiku"
   }
 }

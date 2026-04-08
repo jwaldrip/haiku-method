@@ -266,7 +266,7 @@ function buildRunInstructions(
 				`   - A unit spec says WHAT will be produced and HOW to verify it\n` +
 				`   - The execution phase produces the actual deliverables\n` +
 				`   - Do NOT write full specs, schemas, or implementations during elaboration\n` +
-				`3. Write unit files to \`.haiku/intents/${slug}/stages/${stage}/units/\`\n` +
+				`3. Write unit files to \`.haiku/intents/${slug}/stages/${stage}/units/unit-NN-slug.md\` (e.g. \`unit-01-auth-flow.md\`, \`unit-02-session-mgmt.md\`)\n` +
 				`4. Call \`haiku_run_next { intent: "${slug}" }\` — the orchestrator validates and opens the review gate`,
 			)
 

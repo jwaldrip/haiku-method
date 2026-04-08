@@ -1,14 +1,12 @@
 ---
 title: About H·AI·K·U
-description: The evolution from AWS's AI-DLC paper to a universal lifecycle framework — built by the Bushido Collective, forged at GigSmart
+description: The evolution from AWS's AI-DLC paper to a universal lifecycle framework — built at GigSmart, open source under Apache 2.0
 order: 100
 ---
 
 # About H·AI·K·U
 
-*Born at The Bushido Collective. Battle-tested at GigSmart.*
-
-![The Bushido Collective + GigSmart](/images/co-brand.svg)
+*Built by GigSmart. Open source under Apache 2.0.*
 
 ## The Lineage
 
@@ -32,7 +30,7 @@ Ralph introduced **hat-based orchestration** — specialized personas (code-assi
 
 ### Generation 2: AI-DLC 2026
 
-In January 2026, [Jason Waldrip](https://github.com/jwaldrip) — partner at The Bushido Collective and CTO of GigSmart — took Raja's paper, absorbed the Ralph loop philosophy, and started writing a production methodology. The work began as an off-hours project at TBC. When it started showing results, the broader GigSmart team wanted in. [Chris Driscol](https://github.com/cdriscol), [Josh Elliott](https://github.com/jcelliott), and [Craig McDonald](https://github.com/thrackle) provided critical insights and contributions — challenging assumptions, shaping the patterns that survived contact with reality, and ensuring the methodology held up under the pressure of real production work.
+In January 2026, [Jason Waldrip](https://github.com/jwaldrip) — CTO of GigSmart — took Raja's paper, absorbed the Ralph loop philosophy, and started writing a production methodology. [Chris Driscol](https://github.com/cdriscol), [Josh Elliott](https://github.com/jcelliott), and [Craig McDonald](https://github.com/thrackle) provided critical insights and contributions — challenging assumptions, shaping the patterns that survived contact with reality, and ensuring the methodology held up under the pressure of real production work.
 
 The 2026 paper credited its foundations explicitly — Raja's artifacts and "reimagine, don't retrofit" philosophy, Huntley's autonomous loop patterns, Steve Wilson's Human-on-the-Loop governance, paddo.dev's analysis of SDLC collapse and the "19-agent trap," and HumanLayer's 12 Factor Agents principles.
 
@@ -67,9 +65,9 @@ What H·AI·K·U added beyond AI-DLC 2026:
 
 The methodology is for everyone — not just developers.
 
-## The Bushido Collective
+## Origins
 
-[The Bushido Collective](https://thebushido.co) is a collective of senior engineers and technical leaders who build tools and practices for rigorous, repeatable AI-assisted work. H·AI·K·U is our primary project.
+H·AI·K·U is built and maintained by [GigSmart](https://gigsmart.com). The framework was forged in GigSmart's production environment — a large Elixir/Phoenix platform with complex billing, real-time matching, and multi-tenant architecture — where real features with real deadlines and real users exposed every weakness in the methodology.
 
 We believe:
 - Single-pass human-AI collaboration is the ideal; multi-pass is a concession
@@ -77,16 +75,7 @@ We believe:
 - The AI shouldn't manage its own lifecycle — a state machine should
 - Files are memory; completion criteria enable autonomy; backpressure beats prescription
 
-## GigSmart — Founding Contributor
-
-[GigSmart](https://gigsmart.com) isn't just a user of H·AI·K·U — they're a founding contributor. The framework was forged in their production environment, where real features with real deadlines and real users exposed every weakness in the methodology.
-
-Key contributions from the GigSmart team:
-- Battle-testing the studio/stage/hat model across real features
-- Validating the inception -> design -> product -> development -> operations -> security pipeline
-- Pushing the limits of parallel execution and worktree isolation
-- Providing the real-world feedback that shaped the review UI, gate behavior, and FSM enforcement
-- Proving that AI-assisted development can be rigorous enough for production systems
+The GigSmart team battle-tested the studio/stage/hat model across real features, validated the inception -> design -> product -> development -> operations -> security pipeline, pushed the limits of parallel execution and worktree isolation, and provided the real-world feedback that shaped the review UI, gate behavior, and FSM enforcement.
 
 ## Acknowledgments
 
@@ -110,5 +99,5 @@ H·AI·K·U is built on:
 ## Contributing
 
 H·AI·K·U is open source under the Apache 2.0 license. Contributions welcome:
-- [GitHub Repository](https://github.com/TheBushidoCollective/haiku-method)
+- [GitHub Repository](https://github.com/gigsmart/haiku-method)
 - [Website](https://haikumethod.ai)

@@ -22,16 +22,9 @@ export function Footer() {
 						<p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
 							Human + AI Knowledge Unification.
 						</p>
-						<div className="mt-5 space-y-3">
+						<div className="mt-5">
 							<div>
-								<span className="text-[10px] text-stone-400 dark:text-stone-500 lowercase">born at</span>
-								<a href="https://thebushido.co" target="_blank" rel="noopener noreferrer" className="mt-0.5 flex items-center gap-2 text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors">
-									<span className="text-base" style={{ fontFamily: "'Noto Sans JP', 'Hiragino Sans', serif" }}>武士道</span>
-									<span className="text-xs font-medium">The Bushido Collective</span>
-								</a>
-							</div>
-							<div>
-								<span className="text-[10px] text-stone-400 dark:text-stone-500 lowercase tracking-wide">battle tested at</span>
+								<span className="text-[10px] text-stone-400 dark:text-stone-500 lowercase tracking-wide">maintained by</span>
 								<a href="https://gigsmart.com" target="_blank" rel="noopener noreferrer" className="mt-0.5 block">
 									<img src="/images/battle-tested-at.svg" alt="GigSmart" className="h-[16px] brightness-0 opacity-40 dark:invert dark:opacity-50 hover:opacity-70 transition-opacity" />
 								</a>
@@ -88,8 +81,8 @@ export function Footer() {
 				{/* Bottom section */}
 				<div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-stone-200 pt-8 dark:border-stone-800 md:flex-row">
 					<p className="text-sm text-stone-500 dark:text-stone-400">
-						&copy; {new Date().getFullYear()} The Bushido Collective. Apache
-						2.0 License.
+						&copy; {new Date().getFullYear()} GigSmart, Inc. Apache 2.0
+						License.
 					</p>
 					<a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
 						<span>Powered by</span>
