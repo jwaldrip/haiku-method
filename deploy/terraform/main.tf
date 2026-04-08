@@ -27,6 +27,17 @@ module "dns" {
 # Auth Proxy — Cloud Function for OAuth code→token exchange
 # -----------------------------------------------------------------------------
 
+# Import orphaned resources from partial applies
+import {
+  to = module.auth_proxy[0].google_compute_region_backend_service.auth_proxy
+  id = "projects/${var.gcp_project_id}/regions/${var.gcp_region}/backendServices/haiku-auth-proxy-backend"
+}
+
+import {
+  to = module.auth_proxy[0].google_compute_region_network_endpoint_group.auth_proxy
+  id = "projects/${var.gcp_project_id}/regions/${var.gcp_region}/networkEndpointGroups/haiku-auth-proxy-neg"
+}
+
 module "auth_proxy" {
   count  = var.enable_auth_proxy ? 1 : 0
   source = "./modules/auth-proxy"

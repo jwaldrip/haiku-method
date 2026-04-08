@@ -151,17 +151,6 @@ resource "google_cloudfunctions2_function" "auth_proxy" {
 # Regional HTTPS Load Balancer — provides public access without allUsers IAM
 # ---------------------------------------------------------------------------
 
-# Import blocks for resources that may exist from partial applies
-import {
-  to = google_compute_region_backend_service.auth_proxy
-  id = "projects/${var.project_id}/regions/${var.region}/backendServices/haiku-auth-proxy-backend"
-}
-
-import {
-  to = google_compute_region_network_endpoint_group.auth_proxy
-  id = "projects/${var.project_id}/regions/${var.region}/networkEndpointGroups/haiku-auth-proxy-neg"
-}
-
 # Reserve a static IP for the load balancer
 resource "google_compute_address" "auth_proxy" {
   name    = "haiku-auth-proxy-ip"
