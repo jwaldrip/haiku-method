@@ -32,7 +32,7 @@ Ralph introduced **hat-based orchestration** — specialized personas (code-assi
 
 ### Generation 2: AI-DLC 2026
 
-In January 2026, [Jason Waldrip](https://github.com/jwaldrip) — partner at The Bushido Collective and CTO of GigSmart — took Raja's paper, absorbed the Ralph loop philosophy, and started writing a production methodology. The work began as an off-hours project at TBC. When it started showing results, the broader GigSmart team wanted in. [Chris Driscol](https://github.com/cdriscol), [Josh Elliott](https://github.com/jcelliott), and [Craig McDonald](https://github.com/thrackle) joined to battle-test the methodology against real production work.
+In January 2026, [Jason Waldrip](https://github.com/jwaldrip) — partner at The Bushido Collective and CTO of GigSmart — took Raja's paper, absorbed the Ralph loop philosophy, and started writing a production methodology. The work began as an off-hours project at TBC. When it started showing results, the broader GigSmart team wanted in. [Chris Driscol](https://github.com/cdriscol), [Josh Elliott](https://github.com/jcelliott), and [Craig McDonald](https://github.com/thrackle) provided critical insights and contributions — challenging assumptions, shaping the patterns that survived contact with reality, and ensuring the methodology held up under the pressure of real production work.
 
 The 2026 paper credited its foundations explicitly — Raja's artifacts and "reimagine, don't retrofit" philosophy, Huntley's autonomous loop patterns, Steve Wilson's Human-on-the-Loop governance, paddo.dev's analysis of SDLC collapse and the "19-agent trap," and HumanLayer's 12 Factor Agents principles.
 
