@@ -4,8 +4,6 @@ description: The evolution from AWS's AI-DLC paper to a universal lifecycle fram
 order: 100
 ---
 
-# About H·AI·K·U
-
 *Born at The Bushido Collective. Now owned and maintained by GigSmart.*
 
 ## The Lineage

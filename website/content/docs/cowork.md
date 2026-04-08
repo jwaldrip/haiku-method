@@ -4,8 +4,6 @@ description: Use H·AI·K·U on repositories you don't have checked out locally
 order: 13
 ---
 
-# Cowork Mode
-
 Cowork mode lets you use H·AI·K·U when you're not inside a git repository — for example, when an orchestrator is coordinating work across multiple repos, or when you're working from a team/cowork Claude session.
 
 ## How It Works

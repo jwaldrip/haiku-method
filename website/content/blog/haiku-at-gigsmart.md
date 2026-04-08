@@ -5,8 +5,6 @@ author: Jason Waldrip
 description: H·AI·K·U was born at The Bushido Collective and is now owned and maintained by GigSmart. Here's how we use it — and why we took ownership.
 ---
 
-# How GigSmart's Team Works with AI Using H·AI·K·U
-
 *By Jason Waldrip, CTO at GigSmart*
 
 H·AI·K·U didn't start as H·AI·K·U. It started as an idea in an AWS research paper about AI-assisted development lifecycles. That paper planted a seed: what if AI agents had structure — not just prompts, but a lifecycle with phases, quality gates, and human checkpoints?

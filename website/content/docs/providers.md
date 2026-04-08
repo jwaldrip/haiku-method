@@ -4,8 +4,6 @@ description: Connect H·AI·K·U to Jira, Notion, Figma, Slack, and other extern
 order: 10
 ---
 
-# Providers
-
 Providers connect H·AI·K·U to external systems your team already uses — ticketing, specs, design tools, and communication channels. When configured, H·AI·K·U automatically syncs work across these systems during elaboration and execution.
 
 ## Provider Categories
