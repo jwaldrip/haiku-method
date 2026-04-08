@@ -87,4 +87,4 @@ If your team is working with AI and finding that the outputs are inconsistent, t
 
 ---
 
-*Built at [GigSmart](https://gigsmart.com). Open source at [haikumethod.ai](https://haikumethod.ai).*
+*Born at [The Bushido Collective](https://thebushido.co). Now owned and maintained by [GigSmart](https://gigsmart.com). Open source at [haikumethod.ai](https://haikumethod.ai).*

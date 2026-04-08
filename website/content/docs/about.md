@@ -1,12 +1,12 @@
 ---
 title: About H·AI·K·U
-description: The evolution from AWS's AI-DLC paper to a universal lifecycle framework — built at GigSmart, open source under Apache 2.0
+description: The evolution from AWS's AI-DLC paper to a universal lifecycle framework — born at The Bushido Collective, now owned and maintained by GigSmart, open source under Apache 2.0
 order: 100
 ---
 
 # About H·AI·K·U
 
-*Built by GigSmart. Open source under Apache 2.0.*
+*Born at The Bushido Collective. Now owned and maintained by GigSmart.*
 
 ## The Lineage
 
@@ -74,6 +74,8 @@ We believe:
 - Quality comes from structure, not from hoping the AI gets it right
 - The AI shouldn't manage its own lifecycle — a state machine should
 - Files are memory; completion criteria enable autonomy; backpressure beats prescription
+
+H·AI·K·U was originally developed at [The Bushido Collective](https://thebushido.co) as an open-source project. In 2026, ownership transferred to [GigSmart](https://gigsmart.com), where the framework continues to be actively developed and maintained.
 
 The GigSmart team battle-tested the studio/stage/hat model across real features, validated the inception -> design -> product -> development -> operations -> security pipeline, pushed the limits of parallel execution and worktree isolation, and provided the real-world feedback that shaped the review UI, gate behavior, and FSM enforcement.
 
