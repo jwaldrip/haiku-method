@@ -32,7 +32,7 @@ export default function DocsPage() {
 						<code>/haiku:new</code> - Create a new intent and select a studio
 					</li>
 					<li>
-						<code>/haiku:run</code> - Run the stage pipeline
+						<code>/haiku:resume</code> - Run the stage pipeline
 					</li>
 					<li>
 						<code>/haiku:execute</code> - Drive unit implementations

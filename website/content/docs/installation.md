@@ -117,7 +117,7 @@ However, committing is recommended - it provides:
 
 ### Commands Not Recognized
 
-**Symptom:** `/haiku:new` or `/haiku:run` don't activate
+**Symptom:** `/haiku:new` or `/haiku:resume` don't activate
 
 **Solutions:**
 1. Restart Claude session
