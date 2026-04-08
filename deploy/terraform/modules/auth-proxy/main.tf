@@ -204,39 +204,37 @@ resource "google_compute_region_url_map" "auth_proxy" {
   default_service = google_compute_region_backend_service.auth_proxy.id
 }
 
-# Google-managed SSL certificate
-resource "google_compute_region_ssl_certificate" "auth_proxy" {
-  name    = "haiku-auth-proxy-cert"
-  project = var.project_id
-  region  = var.region
+# Google-managed SSL certificate via Certificate Manager
+resource "google_certificate_manager_certificate" "auth_proxy" {
+  name     = "haiku-auth-proxy-cert"
+  project  = var.project_id
+  location = var.region
 
-  # Self-signed placeholder — use managed cert via google_certificate_manager_certificate for production
-  # For now, traffic goes through the LB IP directly; DNS CNAME handles the domain
-  certificate = tls_self_signed_cert.auth_proxy.cert_pem
-  private_key = tls_private_key.auth_proxy.private_key_pem
-}
-
-resource "tls_private_key" "auth_proxy" {
-  algorithm = "RSA"
-  rsa_bits  = 2048
-}
-
-resource "tls_self_signed_cert" "auth_proxy" {
-  private_key_pem = tls_private_key.auth_proxy.private_key_pem
-  subject {
-    common_name = "auth.${var.domain}"
+  managed {
+    domains = ["auth.${var.domain}"]
   }
-  validity_period_hours = 8760
-  allowed_uses          = ["key_encipherment", "digital_signature", "server_auth"]
+}
+
+resource "google_certificate_manager_certificate_map" "auth_proxy" {
+  name    = "haiku-auth-proxy-certmap"
+  project = var.project_id
+}
+
+resource "google_certificate_manager_certificate_map_entry" "auth_proxy" {
+  name         = "haiku-auth-proxy-certmap-entry"
+  project      = var.project_id
+  map          = google_certificate_manager_certificate_map.auth_proxy.name
+  certificates = [google_certificate_manager_certificate.auth_proxy.id]
+  hostname     = "auth.${var.domain}"
 }
 
 # HTTPS proxy
 resource "google_compute_region_target_https_proxy" "auth_proxy" {
-  name             = "haiku-auth-proxy-https"
-  project          = var.project_id
-  region           = var.region
-  url_map          = google_compute_region_url_map.auth_proxy.id
-  ssl_certificates = [google_compute_region_ssl_certificate.auth_proxy.id]
+  name            = "haiku-auth-proxy-https"
+  project         = var.project_id
+  region          = var.region
+  url_map         = google_compute_region_url_map.auth_proxy.id
+  certificate_map = "//certificatemanager.googleapis.com/${google_certificate_manager_certificate_map.auth_proxy.id}"
 }
 
 # Forwarding rule
