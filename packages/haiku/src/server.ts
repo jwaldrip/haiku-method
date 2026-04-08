@@ -789,16 +789,59 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				process.platform === "darwin"
 					? ["open", directionUrl]
 					: ["xdg-open", directionUrl]
-			spawn(cmd[0], cmd.slice(1), { stdio: ["ignore", "ignore", "ignore"] })
+			spawn(cmd[0], cmd.slice(1), { stdio: "ignore", detached: true }).unref()
 		} catch (err) {
 			console.error("Failed to open browser:", err)
+		}
+
+		// Block until the user submits their selection (event-based, no polling)
+		const MAX_WAIT_DD = 30 * 60 * 1000 // 30 minutes
+		try {
+			await waitForSession(session.session_id, MAX_WAIT_DD)
+		} catch {
+			return {
+				content: [
+					{
+						type: "text" as const,
+						text: JSON.stringify({
+							status: "timeout",
+							url: directionUrl,
+							session_id: session.session_id,
+							message: "User did not respond within 30 minutes",
+						}, null, 2),
+					},
+				],
+			}
+		}
+
+		// Session was updated — read the latest state
+		const updatedDirectionSession = getSession(session.session_id)
+		if (updatedDirectionSession && updatedDirectionSession.session_type === "design_direction" && updatedDirectionSession.status === "answered" && updatedDirectionSession.selection) {
+			return {
+				content: [
+					{
+						type: "text" as const,
+						text: JSON.stringify({
+							status: "answered",
+							url: directionUrl,
+							archetype: updatedDirectionSession.selection.archetype,
+							parameters: updatedDirectionSession.selection.parameters,
+						}, null, 2),
+					},
+				],
+			}
 		}
 
 		return {
 			content: [
 				{
 					type: "text" as const,
-					text: `Design direction picker opened: ${directionUrl}\nSession ID: ${session.session_id}\nArchetypes: ${archetypes.length}\nParameters: ${parameters.length}`,
+					text: JSON.stringify({
+						status: "timeout",
+						url: directionUrl,
+						session_id: session.session_id,
+						message: "User did not respond within 30 minutes",
+					}, null, 2),
 				},
 			],
 		}

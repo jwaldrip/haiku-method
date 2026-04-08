@@ -231,6 +231,21 @@ function buildRunInstructions(
 				break
 			}
 
+			// Detect design stages and add MCP provider instructions
+			const stageHats = (stageDef?.data?.hats as string[]) || []
+			const isDesignStage = stage.includes("design") ||
+				stageHats.some(h => h.includes("designer") || h.includes("design")) ||
+				(stageDef?.body && stageDef.body.includes("pick_design_direction"))
+			if (isDesignStage) {
+				sections.push(
+					`## Design Provider MCPs\n\n` +
+					`If design provider MCPs are available (look for tools named \`mcp__pencil__*\`, \`mcp__openpencil__*\`, or \`mcp__figma__*\`), ` +
+					`use them for wireframe generation instead of raw HTML. Check your available tools list.\n\n` +
+					`These providers offer structured design primitives (components, layout, styling) that produce ` +
+					`higher-fidelity wireframes than inline HTML snippets.`,
+				)
+			}
+
 			sections.push(
 				`## Scope\n\n` +
 				`All units MUST be within this stage's domain${unitTypes.length > 0 ? ` (${unitTypes.join(", ")})` : ""}. ` +
@@ -543,6 +558,18 @@ function buildRunInstructions(
 					: `The stage is awaiting external review but no review URL has been recorded.\n\n`) +
 				`Ask the user for the status of the external review. If approved, call \`haiku_run_next { intent: "${slug}" }\` — the FSM will detect the approval and advance.\n\n` +
 				(externalUrl ? "" : `If the user provides a review URL, pass it: \`haiku_run_next { intent: "${slug}", external_review_url: "<url>" }\`\n`),
+			)
+			break
+		}
+
+		case "design_direction_required": {
+			sections.push(
+				`## Design Direction Required\n\n` +
+				`This stage requires wireframe variants before proceeding.\n\n` +
+				`1. Generate 2-3 distinct design approaches as HTML wireframe snippets\n` +
+				`2. Call \`pick_design_direction\` with the variants\n` +
+				`3. After the user selects a direction, call \`haiku_run_next { intent: "${slug}", design_direction_selected: true }\`\n\n` +
+				`Check for design provider MCPs (\`mcp__pencil__*\`, \`mcp__openpencil__*\`) and use them if available.`,
 			)
 			break
 		}

@@ -600,6 +600,23 @@ export function runNext(slug: string): OrchestratorAction {
 			}
 		}
 
+		// Check if the stage requires a design direction selection before proceeding.
+		// Read the STAGE.md body — if it mentions pick_design_direction (RFC 2119 MUST),
+		// enforce that design_direction_selected is set in state.json.
+		const designDirectionSelected = (stageState.design_direction_selected as boolean) || false
+		if (!designDirectionSelected) {
+			const stageMetaForDesign = resolveStageMetadata(studio, currentStage)
+			if (stageMetaForDesign?.body && stageMetaForDesign.body.includes("pick_design_direction")) {
+				return {
+					action: "design_direction_required",
+					intent: slug,
+					studio,
+					stage: currentStage,
+					message: `This stage requires a design direction selection before proceeding. Call pick_design_direction with wireframe variants, then call haiku_run_next { intent: "${slug}", design_direction_selected: true } after the user selects a direction.`,
+				}
+			}
+		}
+
 		// All units valid — open review gate before advancing to execute.
 		// The review UI blocks until the user approves the specs.
 		// This is handled by the handleOrchestratorTool wrapper which
@@ -1172,6 +1189,7 @@ export const orchestratorToolDefs = [
 			properties: {
 				intent: { type: "string", description: "Intent slug" },
 				elaboration_reviewed: { type: "boolean", description: "Set to true after review agents have reviewed the elaboration specs" },
+				design_direction_selected: { type: "boolean", description: "Set to true after the user has selected a design direction via pick_design_direction" },
 				external_review_url: { type: "string", description: "URL where stage was submitted for external review (PR, MR, etc.)" },
 			},
 			required: ["intent"],
@@ -1253,6 +1271,24 @@ export async function handleOrchestratorTool(name: string, args: Record<string, 
 						const ssPath = stageStatePath(slug, activeStage)
 						const ssData = readJson(ssPath)
 						ssData.elaboration_reviewed = true
+						writeJson(ssPath, ssData)
+					}
+				}
+			} catch { /* non-fatal */ }
+		}
+
+		// If design_direction_selected flag is passed, persist it to stage state
+		if (args.design_direction_selected === true) {
+			try {
+				const root = findHaikuRoot()
+				const intentFile = join(root, "intents", slug, "intent.md")
+				if (existsSync(intentFile)) {
+					const intentFm = readFrontmatter(intentFile)
+					const activeStage = (intentFm.active_stage as string) || ""
+					if (activeStage) {
+						const ssPath = stageStatePath(slug, activeStage)
+						const ssData = readJson(ssPath)
+						ssData.design_direction_selected = true
 						writeJson(ssPath, ssData)
 					}
 				}
