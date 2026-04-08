@@ -101,10 +101,12 @@ resource "google_cloudfunctions2_function" "auth_proxy" {
   }
 
   service_config {
-    min_instance_count = 0
-    max_instance_count = 5
-    available_memory   = "256M"
-    timeout_seconds    = 30
+    min_instance_count               = 0
+    max_instance_count               = 5
+    available_memory                 = "256M"
+    timeout_seconds                  = 30
+    ingress_settings                 = "ALLOW_ALL"
+    all_traffic_on_latest_revision   = true
 
     environment_variables = {
       ALLOWED_ORIGIN = var.allowed_origin
@@ -146,11 +148,6 @@ resource "google_cloudfunctions2_function" "auth_proxy" {
 # Run: gcloud projects add-iam-policy-binding PROJECT \
 #   --member="serviceAccount:COMPUTE_SA" --role="roles/secretmanager.secretAccessor"
 
-# Allow unauthenticated access (public OAuth endpoint)
-resource "google_cloud_run_v2_service_iam_member" "public" {
-  project  = var.project_id
-  location = var.region
-  name     = google_cloudfunctions2_function.auth_proxy.service_config[0].service
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
+# Public access is handled via ingress_settings = "ALLOW_ALL" on the function,
+# which allows unauthenticated HTTP requests without needing an allUsers IAM binding.
+# This avoids org policy restrictions on domain-restricted sharing.
