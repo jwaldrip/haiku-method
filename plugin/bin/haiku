@@ -28186,7 +28186,7 @@ function runNext(slug) {
         return { action: "advance_stage", intent: slug, stage: currentStage, next_stage: nextStage, gate_outcome: "advanced", message: `Gate auto-passed \u2014 advancing to '${nextStage}'` };
       }
       fsmStageCompleteDiscrete(slug, currentStage);
-      return { action: "stage_complete_discrete", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete. Run /haiku:run to start '${nextStage}'.` };
+      return { action: "stage_complete_discrete", intent: slug, stage: currentStage, next_stage: nextStage, message: `Stage '${currentStage}' complete. Run /haiku:resume to start '${nextStage}'.` };
     }
     if (reviewType === "ask" || reviewType === "external" || reviewType.includes("ask") || reviewType.includes("external")) {
       fsmGateAsk(slug, currentStage);
@@ -28225,7 +28225,7 @@ function runNext(slug) {
             intent: slug,
             stage: currentStage,
             external_review_url: externalUrl,
-            message: `Stage '${currentStage}' is awaiting external review at: ${externalUrl}. Run /haiku:run again after approval.`
+            message: `Stage '${currentStage}' is awaiting external review at: ${externalUrl}. Run /haiku:resume again after approval.`
           };
         }
       } else {
@@ -28567,7 +28567,7 @@ async function handleOrchestratorTool(name, args2) {
             intent: slug,
             stage,
             feedback: reviewResult.feedback,
-            message: "External review requested. Submit the work for review through your project's review process (PR, MR, review board, etc.). Include the H\xB7AI\xB7K\xB7U browse link in the description so reviewers can see the intent, units, and knowledge artifacts. Record the review URL via haiku_run_next { intent, external_review_url }. Run /haiku:run again after approval."
+            message: "External review requested. Submit the work for review through your project's review process (PR, MR, review board, etc.). Include the H\xB7AI\xB7K\xB7U browse link in the description so reviewers can see the intent, units, and knowledge artifacts. Record the review URL via haiku_run_next { intent, external_review_url }. Run /haiku:resume again after approval."
           }, null, 2));
         }
         if (gateContext === "elaborate_to_execute") {
@@ -29536,7 +29536,7 @@ Stage "${stage}" is complete. The gate has been entered by the orchestrator.
 
 1. Push the branch and commit stage artifacts
 2. Share the review URL with the reviewer
-3. Report: "Awaiting external review. Run /haiku:run when review is complete."`
+3. Report: "Awaiting external review. Run /haiku:resume when review is complete."`
       );
       break;
     }
@@ -29550,7 +29550,7 @@ Stage "${stage}" is complete. The gate has been entered by the orchestrator.
 ### Instructions
 
 1. Report what is being awaited
-2. Stop. Run /haiku:run when the event occurs.`
+2. Stop. Run /haiku:resume when the event occurs.`
       );
       break;
     }
@@ -29576,7 +29576,7 @@ Stage "${stage}" has been completed by the orchestrator.
 
 ### Instructions
 
-Report: "Stage complete. Run /haiku:run to start '${nextStage}'."`
+Report: "Stage complete. Run /haiku:resume to start '${nextStage}'."`
       );
       break;
     }
@@ -29739,18 +29739,39 @@ var init_core3 = __esm({
     init_state_tools();
     init_orchestrator();
     registerPrompt({
-      name: "haiku:run",
-      title: "Run Intent",
-      description: "Advance an H\xB7AI\xB7K\xB7U intent through its next stage",
+      name: "haiku:resume",
+      title: "Resume Intent",
+      description: "Resume an H\xB7AI\xB7K\xB7U intent \u2014 pick up where you left off",
       arguments: [
         {
           name: "intent",
-          description: "Intent slug (auto-detected if omitted)",
+          description: "Intent slug (prompts for selection if omitted)",
           required: false,
           completer: completeIntentSlug
         }
       ],
       handler: async (args2) => {
+        if (!args2.intent) {
+          const active = findActiveIntents();
+          if (active.length === 0) {
+            return singleMessage("No active intents found. Create one with /haiku:new");
+          }
+          if (active.length === 1) {
+            args2.intent = active[0].slug;
+          } else {
+            const intentList = active.map((a) => {
+              const { data } = parseFrontmatter(readFileSync6(join9(intentDir(a.slug), "intent.md"), "utf8"));
+              return `- **${a.slug}**: ${data.title || "(untitled)"} \u2014 stage: ${data.active_stage || "none"}, status: ${data.status}`;
+            }).join("\n");
+            return singleMessage(
+              `Multiple active intents found. Which one do you want to resume?
+
+${intentList}
+
+Run \`/haiku:resume intent=<slug>\` to pick one.`
+            );
+          }
+        }
         const resolved = resolveIntent(args2);
         if ("error" in resolved) return resolved.error;
         const slug = resolved.slug;
@@ -29809,18 +29830,6 @@ ${raw}
           }
         } catch {
         }
-        let activeIntents = [];
-        try {
-          const root = findHaikuRoot();
-          const intentsDir = join9(root, "intents");
-          if (existsSync7(intentsDir)) {
-            activeIntents = readdirSync5(intentsDir, { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync7(join9(intentsDir, d.name, "intent.md"))).filter((d) => {
-              const { data } = parseFrontmatter(readFileSync6(join9(intentsDir, d.name, "intent.md"), "utf8"));
-              return data.status === "active";
-            }).map((d) => d.name);
-          }
-        } catch {
-        }
         const studios = listStudios2();
         const studioSummary = studios.map(
           (s) => `- **${s.name}**: ${s.data.description || ""} (stages: ${JSON.stringify(s.data.stages)}, category: ${s.data.category || "general"})`
@@ -29830,14 +29839,6 @@ ${raw}
           contextParts.push(`## Intent Description
 
 ${args2.description}`);
-        }
-        if (activeIntents.length > 0) {
-          contextParts.push(
-            `## Warning: Active Intents
-
-The following intents are currently active: ${activeIntents.join(", ")}.
-Confirm with the user whether to create a new intent or resume an existing one.`
-          );
         }
         if (projectStudio) {
           contextParts.push(
@@ -29872,7 +29873,7 @@ ${studioSummary}
 5. Summarize the conversation so far into a concise context block (key decisions, constraints, technical details discussed)
 6. Call \`haiku_intent_create\` with description, slug, and the \`context\` argument containing your conversation summary
 7. The tool creates directories, writes intent.md, writes CONVERSATION-CONTEXT.md to knowledge/, and opens a review for user confirmation
-8. Invoke /haiku:run \u2014 the orchestrator opens the review and advances automatically (continuous) or report ready (discrete)`
+8. Invoke /haiku:resume \u2014 the orchestrator opens the review and advances automatically (continuous) or report ready (discrete)`
         );
         const instructionText = contextParts.join("\n\n");
         if (args2.description) {
@@ -30328,7 +30329,7 @@ ${active.body}` : `No active intent. Create one from description: "${desc}"`;
               "Autopilot mode will:",
               "1. Ensure mode=autopilot is set on the intent (set during /haiku:new creation)",
               "2. If no intent exists, run /haiku:new to create one from the description",
-              "3. Run /haiku:run in a loop, advancing through all stages",
+              "3. Run /haiku:resume in a loop, advancing through all stages",
               "4. Override ask gates to auto (only external gates pause autopilot)",
               "5. Pause if elaboration generates >5 units (confirm scope with user)",
               "6. After all stages complete, create a PR for delivery",
@@ -30590,7 +30591,7 @@ ${active.body}` : `No active intent. Create one from description: "${desc}"`;
               `Running quick mode for: "${desc}" using stage: **${stage}**`,
               "",
               "Quick mode is for trivial tasks (fix typos, rename variables, update configs, small refactors touching 1-2 files).",
-              "If the task is bigger than that, stop and recommend /haiku:new + /haiku:run instead.",
+              "If the task is bigger than that, stop and recommend /haiku:new + /haiku:resume instead.",
               "",
               "Steps:",
               "1. Pre-checks: reject cowork mode, check for active intent conflicts, validate scope",
@@ -31222,7 +31223,7 @@ Run the haiku migration binary to convert legacy .ai-dlc/ intents to .haiku/ for
 - \`haiku\` binary must be available on PATH
 - Legacy intents must exist in \`.ai-dlc/\`
 
-After migration, run \`/haiku:run <slug>\` to continue execution.`
+After migration, run \`/haiku:resume <slug>\` to continue execution.`
         );
       }
     });
@@ -33679,7 +33680,7 @@ Migration complete: ${migrated} migrated, ${skipped} skipped.`);
   } else {
     console.log("\nNext steps:");
     console.log("  git add .haiku/intents/ && git commit -m 'haiku: migrate intents from .ai-dlc/'");
-    console.log("  For active intents: run /haiku:run to start from inception");
+    console.log("  For active intents: run /haiku:resume to start from inception");
   }
 }
 var init_migrate = __esm({
