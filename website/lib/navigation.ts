@@ -286,7 +286,7 @@ export const footerNavigation = {
 			{ title: "H·AI·K·U Method", href: "https://haikumethod.ai" },
 			{
 				title: "Portfolio",
-				href: "/browse/github.com/jwaldrip/haiku-method/",
+				href: `/browse/github.com/${process.env.NEXT_PUBLIC_REPO_SLUG ?? "TheBushidoCollective/haiku-method"}/`,
 			},
 		],
 	},
