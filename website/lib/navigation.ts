@@ -284,6 +284,10 @@ export const footerNavigation = {
 				href: "https://github.com/TheBushidoCollective/haiku-method",
 			},
 			{ title: "H·AI·K·U Method", href: "https://haikumethod.ai" },
+			{
+				title: "Portfolio",
+				href: "/browse/github.com/TheBushidoCollective/haiku-method/",
+			},
 		],
 	},
 }
