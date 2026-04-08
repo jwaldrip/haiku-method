@@ -248,6 +248,7 @@ function IntentReview({
   const knowledgeFiles = session.knowledge_files ?? [];
   const stageArtifacts = session.stage_artifacts ?? [];
   const outputArtifacts = session.output_artifacts ?? [];
+  const [dagMaximized, setDagMaximized] = useState(false);
 
   if (!intent) {
     return <p className="text-stone-500">No intent data available.</p>;
@@ -383,10 +384,47 @@ function IntentReview({
       content: (
         <>
           {mermaid && (
-            <Card>
-              <SectionHeading>Dependency Graph</SectionHeading>
-              <MermaidDiagram definition={mermaid} />
-            </Card>
+            <>
+              <Card>
+                <div className="flex items-center justify-between mb-3">
+                  <SectionHeading>Dependency Graph</SectionHeading>
+                  <button
+                    type="button"
+                    onClick={() => setDagMaximized(true)}
+                    className="text-xs px-2 py-1 rounded border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                  >
+                    View Full Size
+                  </button>
+                </div>
+                <MermaidDiagram definition={mermaid} />
+              </Card>
+              {dagMaximized && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                  onClick={() => setDagMaximized(false)}
+                >
+                  <div
+                    className="relative bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 shadow-xl overflow-auto"
+                    style={{ width: "90vw", height: "90vh" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-white/90 dark:bg-stone-900/90 backdrop-blur border-b border-stone-200 dark:border-stone-700">
+                      <span className="font-semibold text-stone-900 dark:text-stone-100">Dependency Graph</span>
+                      <button
+                        type="button"
+                        onClick={() => setDagMaximized(false)}
+                        className="text-sm px-3 py-1 rounded border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <MermaidDiagram definition={mermaid} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           <Card>
             <SectionHeading>Units</SectionHeading>

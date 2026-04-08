@@ -264,6 +264,26 @@ function buildRunInstructions(
 				`2. Break work into units at \`.haiku/intents/${slug}/stages/${stage}/units/\`\n` +
 				`3. Call \`haiku_run_next { intent: "${slug}" }\` — the orchestrator opens the review and advances the phase automatically`,
 			)
+
+			// Check for ticketing provider
+			try {
+				const settingsPath = join(process.cwd(), ".haiku", "settings.yml")
+				if (existsSync(settingsPath)) {
+					const settingsRaw = readFileSync(settingsPath, "utf8")
+					if (settingsRaw.includes("ticketing")) {
+						sections.push(
+							`## Ticketing Integration\n\n` +
+							`A ticketing provider is configured. During elaboration:\n` +
+							`1. Create an epic for this intent (or link to existing one if \`epic:\` is set in intent.md)\n` +
+							`2. For each unit created, create a ticket linked to the epic\n` +
+							`3. Store ticket key in unit frontmatter: \`ticket: PROJ-123\`\n` +
+							`4. Map unit \`depends_on\` to ticket blocked-by relationships\n` +
+							`5. Include the H·AI·K·U browse link in ticket descriptions\n\n` +
+							`See ticketing provider instructions for details on content format and status mapping.`,
+						)
+					}
+				}
+			} catch { /* non-fatal */ }
 			break
 		}
 
@@ -346,6 +366,24 @@ function buildRunInstructions(
 				`- **Failure:** \`haiku_unit_fail { intent: "${slug}", stage: "${stage}", unit: "${unit}" }\` — moves back one hat, increments bolt\n` +
 				`\n**After subagent returns:** call \`haiku_run_next { intent: "${slug}" }\``,
 			)
+
+			// Check for ticketing provider — move ticket to "In Progress"
+			if (action.action === "start_unit") {
+				try {
+					const settingsPath = join(process.cwd(), ".haiku", "settings.yml")
+					if (existsSync(settingsPath)) {
+						const settingsRaw = readFileSync(settingsPath, "utf8")
+						if (settingsRaw.includes("ticketing")) {
+							sections.push(
+								`### Ticketing\n\n` +
+								`A ticketing provider is configured. If this unit has a \`ticket:\` field in its frontmatter, ` +
+								`transition the ticket to "In Progress" when the subagent starts work.\n\n` +
+								`See ticketing provider instructions for status mapping details.`,
+							)
+						}
+					}
+				} catch { /* non-fatal */ }
+			}
 			break
 		}
 

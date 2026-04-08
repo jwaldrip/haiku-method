@@ -241,6 +241,20 @@ export function toMermaidDefinition(
 		}
 	}
 
+	// Add stage progression arrows (between stage groups)
+	if (useStageSubgraphs && stageOrder.length > 1) {
+		for (let i = 0; i < stageOrder.length - 1; i++) {
+			const currentStageUnits = byStage.get(stageOrder[i]) || []
+			const nextStageUnits = byStage.get(stageOrder[i + 1]) || []
+			if (currentStageUnits.length > 0 && nextStageUnits.length > 0) {
+				// Arrow from last unit of current stage to first unit of next stage
+				const lastUnit = currentStageUnits[currentStageUnits.length - 1]
+				const firstUnit = nextStageUnits[0]
+				lines.push(`  ${sanitizeMermaidNodeId(lastUnit.slug)} -.-> ${sanitizeMermaidNodeId(firstUnit.slug)}`)
+			}
+		}
+	}
+
 	// Add external dependency nodes (deps that reference units not in this set)
 	const externalNodes = new Set<string>()
 	for (const edge of dag.edges) {
