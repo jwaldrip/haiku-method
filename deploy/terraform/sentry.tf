@@ -1,10 +1,16 @@
 # -----------------------------------------------------------------------------
-# Sentry — projects and DSN keys
+# Sentry — team, projects, and DSN keys
 # -----------------------------------------------------------------------------
+
+resource "sentry_team" "haiku" {
+  organization = var.sentry_organization
+  name         = "H·AI·K·U"
+  slug         = "haiku"
+}
 
 resource "sentry_project" "haiku_mcp" {
   organization = var.sentry_organization
-  teams        = []
+  teams        = [sentry_team.haiku.slug]
   name         = "H·AI·K·U MCP"
   slug         = "haiku-mcp"
   platform     = "node"
@@ -12,7 +18,7 @@ resource "sentry_project" "haiku_mcp" {
 
 resource "sentry_project" "haiku_spa" {
   organization = var.sentry_organization
-  teams        = []
+  teams        = [sentry_team.haiku.slug]
   name         = "H·AI·K·U Review SPA"
   slug         = "haiku-spa"
   platform     = "javascript-react"
@@ -20,7 +26,7 @@ resource "sentry_project" "haiku_spa" {
 
 resource "sentry_project" "haiku_website" {
   organization = var.sentry_organization
-  teams        = []
+  teams        = [sentry_team.haiku.slug]
   name         = "H·AI·K·U Website"
   slug         = "haiku-website"
   platform     = "javascript-nextjs"
