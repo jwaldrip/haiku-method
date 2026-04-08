@@ -12,9 +12,5 @@ const nextConfig: NextConfig = {
 }
 
 export default withSentryConfig(nextConfig, {
-	// Suppress source map upload (no auth token configured yet)
 	silent: true,
-	// Disable automatic instrumentation that requires a server runtime
-	// (this is a statically exported site)
-	disableLogger: true,
 })
