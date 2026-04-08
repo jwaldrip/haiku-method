@@ -3,7 +3,7 @@ title: "H·AI·K·U: Human + AI Knowledge Unification"
 subtitle: "A Universal Framework for Structured Human-AI Collaboration"
 description: "A methodology paper describing H·AI·K·U's four-phase lifecycle, studio-based domain adaptation, and the plugin implementation that enforces structured collaboration through backpressure, hat-based role separation, and persistence abstraction."
 date: "2026-04-03"
-authors: ["The Bushido Collective"]
+authors: ["GigSmart"]
 tags: ["methodology", "human-ai-collaboration", "haiku", "framework", "autonomous-agents"]
 ---
 
@@ -15,7 +15,7 @@ H·AI·K·U builds on foundational work in human-AI collaboration methodology, g
 
 **Raja SP, Amazon Web Services** — *AI-Driven Development Lifecycle (AI-DLC) Method Definition* (July 2025). The core concepts of Intent, Unit, Bolt, and the philosophy of reimagining methods rather than retrofitting AI into existing processes originate from this work. [16]
 
-**The Bushido Collective** — *AI-DLC 2026* (January 2026). The software development profile that served as the first complete implementation of H·AI·K·U principles, demonstrating backpressure-driven quality, human-on-the-loop workflows, and autonomous execution loops in production.
+**GigSmart** — *AI-DLC 2026* (January 2026). The software development profile that served as the first complete implementation of H·AI·K·U principles, demonstrating backpressure-driven quality, human-on-the-loop workflows, and autonomous execution loops in production.
 
 ### Key Influences
 
@@ -528,4 +528,4 @@ The framework is intentionally extensible through studios rather than through co
 
 ---
 
-*H·AI·K·U is an open methodology maintained by The Bushido Collective. Contributions and adaptations are welcome.*
+*H·AI·K·U is an open methodology maintained by GigSmart. Contributions and adaptations are welcome.*

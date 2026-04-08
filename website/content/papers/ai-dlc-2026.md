@@ -3,7 +3,7 @@ title: "AI-Driven Development Lifecycle 2026 (AI-DLC 2026)"
 subtitle: "A Methodology for the Age of Autonomous Agents"
 description: "A comprehensive methodology reimagining software development for the era of autonomous AI agents, introducing human-on-the-loop workflows, backpressure-driven quality, and the Ralph Wiggum autonomous loop pattern."
 date: "2026-01-21"
-authors: ["Raja SP", "The Bushido Collective"]
+authors: ["Raja SP", "GigSmart"]
 tags: ["methodology", "autonomous-agents", "ai-development", "sdlc", "hotl", "hitl"]
 archived: true
 superseded_by: "haiku-method"
@@ -1826,4 +1826,4 @@ For detailed runbooks with system prompts, entry/exit criteria, and failure mode
 
 *AI-DLC 2026 is an open methodology and the software development profile of [H•AI•K•U](https://haikumethod.ai) (Human + AI Knowledge Unification). See the [H•AI•K•U Methodology Paper](https://haikumethod.ai/paper/) for the universal framework that AI-DLC implements for software teams. Contributions and adaptations are welcome.*
 
-**[View source on GitHub →](https://github.com/TheBushidoCollective/haiku-method/blob/main/website/content/papers/ai-dlc-2026.md)**
+**[View source on GitHub →](https://github.com/gigsmart/haiku-method/blob/main/website/content/papers/ai-dlc-2026.md)**

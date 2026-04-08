@@ -2,7 +2,7 @@ import { getChangelog } from "@/lib/changelog"
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
 
-const GITHUB_REPO = "https://github.com/TheBushidoCollective/ai-dlc"
+const GITHUB_REPO = "https://github.com/gigsmart/ai-dlc"
 
 export const metadata: Metadata = {
 	title: "Changelog",
