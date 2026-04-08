@@ -46,6 +46,28 @@ jobs:
       - name: Clear stale Terraform lock
         run: gcloud storage rm "gs://${{ steps.gcp.outputs.tf_state_bucket }}/haiku/default.tflock" 2>/dev/null || true
 
+      - name: Import orphaned resources
+        working-directory: deploy/terraform
+        run: |
+          # Import resources that may exist from partial applies
+          PROJECT="${{ steps.gcp.outputs.project_id }}"
+          REGION="${{ env.TF_VAR_gcp_region || 'us-central1' }}"
+          terraform import "module.auth_proxy[0].google_compute_region_backend_service.auth_proxy" "projects/${PROJECT}/regions/${REGION}/backendServices/haiku-auth-proxy-backend" 2>/dev/null || true
+          terraform import "module.auth_proxy[0].google_compute_region_network_endpoint_group.auth_proxy" "projects/${PROJECT}/regions/${REGION}/networkEndpointGroups/haiku-auth-proxy-neg" 2>/dev/null || true
+          terraform import "module.auth_proxy[0].google_compute_region_ssl_certificate.auth_proxy" "projects/${PROJECT}/regions/${REGION}/sslCertificates/haiku-auth-proxy-cert" 2>/dev/null || true
+          terraform import "module.auth_proxy[0].google_compute_address.auth_proxy" "projects/${PROJECT}/regions/${REGION}/addresses/haiku-auth-proxy-ip" 2>/dev/null || true
+        env:
+          TF_VAR_gcp_project_id: ${{ steps.gcp.outputs.project_id }}
+          TF_VAR_domain: ${{ vars.HAIKU_DOMAIN || 'haikumethod.ai' }}
+          TF_VAR_enable_auth_proxy: "true"
+          TF_VAR_auth_proxy_subdomain: ${{ vars.TF_VAR_auth_proxy_subdomain || 'auth' }}
+          TF_VAR_auth_proxy_allowed_origin: ${{ vars.HAIKU_AUTH_ALLOWED_ORIGIN || 'https://haikumethod.ai' }}
+          TF_VAR_github_oauth_client_id: ${{ vars.NEXT_PUBLIC_HAIKU_GITHUB_OAUTH_CLIENT_ID }}
+          TF_VAR_github_oauth_client_secret: ${{ secrets.HAIKU_GITHUB_OAUTH_CLIENT_SECRET }}
+          TF_VAR_gitlab_oauth_client_id: ${{ vars.NEXT_PUBLIC_HAIKU_GITLAB_OAUTH_CLIENT_ID }}
+          TF_VAR_gitlab_oauth_client_secret: ${{ secrets.HAIKU_GITLAB_OAUTH_CLIENT_SECRET }}
+          TF_VAR_enable_mcp_dns: "false"
+
       - name: Terraform Apply
         id: terraform
         working-directory: deploy/terraform
